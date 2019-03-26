@@ -1,6 +1,5 @@
 /*
  *   MIRACL compiler/hardware definitions - mirdef.h
- *   Copyright (c) 1988-2000 Shamus Software Ltd.
  *
  *   This version is suitable for use with the GCC compiler
  *   in a C/C++ only unix environment.

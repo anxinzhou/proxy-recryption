@@ -3,8 +3,6 @@
  *   multiple polynomial quadratic sieve.
  *   See "The Multiple Polynomial Quadratic Sieve", R.D. Silverman,
  *   Math. Comp. Vol. 48, 177, Jan. 1987, pp329-339
- *
- *   Copyright (c) 1988-1999 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -149,8 +147,10 @@ BOOL gotcha(void)
         expint(epr[k],r,TT);
         multiply(TT,YY,YY);
     }
-/* debug only
+/* debug only 
+	printf("\nX= ");
     cotnum(XX,stdout);
+	printf("Y= ");
     cotnum(YY,stdout);
     if (e[0]==1) printf("-1");
     else printf("1");
@@ -259,7 +259,7 @@ BOOL gotcha(void)
     { /* check for false alarm */
         printf("\ntrying...\n");
         add(XX,YY,TT);
-        if (compare(XX,YY)==0 || compare(TT,NN)==0) found=FALSE;
+        if (mr_compare(XX,YY)==0 || mr_compare(TT,NN)==0) found=FALSE;
         if (!found) printf("working... %5d",jj);
     }
     return found;
@@ -504,7 +504,7 @@ int main()
                 if (size(PP)<0) add(PP,DD,PP);
                 mad(PP,PP,PP,DD,DD,VV);       /* VV = PP^2 mod kN  */
                 absol(TT,TT);
-                if (compare(TT,RR)<0) S=1;    /* check for -ve VV */
+                if (mr_compare(TT,RR)<0) S=1;    /* check for -ve VV */
                 if (S==1) subtract(DD,VV,VV);
                 copy(VV,TT);
                 e[0]=S;

@@ -20,7 +20,6 @@
  *
  *   Requires: big.cpp
  *
- *   Copyright (c) 2000-2001 Shamus Software Ltd.
  */
 
 #include <iostream>

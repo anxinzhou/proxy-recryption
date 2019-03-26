@@ -6,7 +6,7 @@
 mr_small muldiv(mr_small a,mr_small b,mr_small c,mr_small m,mr_small *rp)
 {
     mr_small q;
-    mr_large ldres,dble=(mr_large)a*b+c;
+    mr_large dble=(mr_large)a*b+c;
     q=(mr_small)MR_LROUND(dble/m);
     *rp=(mr_small)(dble-(mr_large)q*m);
     return q;
@@ -17,7 +17,7 @@ mr_small muldiv(mr_small a,mr_small b,mr_small c,mr_small m,mr_small *rp)
 mr_small imuldiv(mr_small a,mr_small b,mr_small c,mr_small m,mr_large im,mr_small *rp)
 {
     mr_small q;
-    mr_large ldres,dble=(mr_large)a*b+c;
+    mr_large dble=(mr_large)a*b+c;
     q=(mr_small)MR_LROUND(dble*im);
     *rp=(mr_small)(dble-(mr_large)q*m);
     return q;

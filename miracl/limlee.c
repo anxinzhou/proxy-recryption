@@ -18,7 +18,6 @@
  *   It may be quicker, and is quite valid, to make OBITS > QBITS.
  *   This allows the pool size to be decreased.
  *
- *   Copyright (c) 2000-2003 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -120,9 +119,9 @@ int main()
         forever
         { 
             bigrand(high,p1);
-            if (compare(p1,low)<0) continue;
+            if (mr_compare(p1,low)<0) continue;
             nxprime(p1,p1);
-            if (compare(p1,high)>0) continue;
+            if (mr_compare(p1,high)>0) continue;
             copy(p1,pool[i]);  
             break;
         }

@@ -24,10 +24,10 @@ point multiplication takes 3 seconds at 4MHz, without any assembly language used
 #define MR_GENERIC_MT 
 #define MAXBASE ((mr_small)1<<(MIRACL-1))
 #define MR_BITSINCHAR 8
-#define MR_SHORT_OF_MEMORY
 #define MR_SMALL_EWINDOW
 #define MR_NO_STANDARD_IO 
 #define MR_NO_FILE_IO  
+#define MR_NO_ECC_MULTIADD
 #define MR_SIMPLE_BASE
 #define MR_SIMPLE_IO
 #define MR_NO_SS
@@ -49,9 +49,15 @@ Use with this mirdef.h header (for a PC using MS C)
 #define MR_GENERIC_MT
 #define MAXBASE ((mr_small)1<<(MIRACL-1))
 #define MR_BITSINCHAR 8
-#define MR_SHORT_OF_MEMORY
 #define MR_SMALL_EWINDOW
 #define MR_NO_SS
+#define MR_SIMPLE_BASE
+#define MR_SIMPLE_IO
+
+In an embedded environment perhaps these should be defined as well..
+
+#define MR_NO_STANDARD_IO
+#define MR_NO_FILE_IO
 
 Build the library from these modules (Example using MS C compiler)
 
@@ -82,6 +88,12 @@ cl /O2 ecdh2m8.c miracl.lib
 #include <string.h>
 #include "miracl.h"
 
+
+#define HEXDIGS (MIRACL/4)
+
+/* !!!!!! THIS CODE AND THESE ROMS ARE NOW CREATED AUTOMATICALLY USING THE ROMAKER2.C APPLICATION !!!!!!!! */
+/* !!!!!! READ COMMENTS IN ROMAKER2.C !!!!!! */
+
 #define CURVE_M 163
 #define CURVE_A 7
 #define CURVE_B 6
@@ -101,7 +113,7 @@ static const mr_small rom[]=
 #define WINDOW 4
 
 /* 2^4 =16 precomputed points based on fixed generator G(x,y) */
-/* (created using ebrick2.c program with window size of 4)    */
+/* (created using romaker2.c program with window size of 4)   */
 
 
 /* Koblitz curve - precomputed data based on fixed generator G */
@@ -155,7 +167,7 @@ static const mr_small prom[]=
 
 int main()
 {
-    int ia,ib,promptr;
+    int promptr;
     epoint *PA,*PB;
     big A,B,a,b,q,pa,pb,key,x,y;
     ebrick2 binst;
@@ -163,7 +175,7 @@ int main()
 
 /* Specify base 16 here so that HEX can be read in directly without a base-change */
 
-    miracl *mip=mirsys(&instance,WORDS*2,16); /* size of bigs is fixed */
+    miracl *mip=mirsys(&instance,WORDS*HEXDIGS,16); /* size of bigs is fixed */
     char mem_big[MR_BIG_RESERVE(10)];         /* we need 10 bigs... */
     char mem_ecp[MR_ECP_RESERVE(2)];          /* ..and two elliptic curve points */
  	memset(mem_big, 0, MR_BIG_RESERVE(10));   /* clear the memory */
@@ -187,11 +199,11 @@ int main()
 
     irand(mip, 3L);                      /* change parameter for different random numbers */
     promptr=0;
-    init_big_from_rom(B,WORDS,rom,84,&promptr);  /* Read in curve parameter B from ROM */
+    init_big_from_rom(B,WORDS,rom,WORDS*4,&promptr);  /* Read in curve parameter B from ROM */
                                                  /* don't need q or G(x,y) (we have precomputed table from it) */
-    init_big_from_rom(q,WORDS,rom,84,&promptr);
-    init_big_from_rom(x,WORDS,rom,84,&promptr);
-    init_big_from_rom(y,WORDS,rom,84,&promptr);
+    init_big_from_rom(q,WORDS,rom,WORDS*4,&promptr);
+    init_big_from_rom(x,WORDS,rom,WORDS*4,&promptr);
+    init_big_from_rom(y,WORDS,rom,WORDS*4,&promptr);
 
     convert(mip,1,A);                            /* set A=1 */
 
@@ -203,15 +215,17 @@ int main()
 
     bigbits(mip,CURVE_M,a);  /* A's random number */
 
-    ia=mul2_brick(mip,&binst,a,pa,pa);    /* a*G =(pa,ya), ia is sign of ya */
+    mul2_brick(mip,&binst,a,pa,pa);    /* a*G =(pa,ya) */
 
     bigbits(mip,CURVE_M,b);  /* B's random number */
-    ib=mul2_brick(mip,&binst,b,pb,pb);    /* b*G =(pb,yb), ib is sign of yb */
+    mul2_brick(mip,&binst,b,pb,pb);    /* b*G =(pb,yb) */
+
+/* Swap X values */
 
 /* online calculations */
     ecurve2_init(mip,CURVE_M,CURVE_A,CURVE_B,CURVE_C,A,B,FALSE,MR_PROJECTIVE);
 
-    epoint2_set(mip,pb,pb,ib,PB); /* decompress PB */
+    epoint2_set(mip,pb,pb,0,PB); /* decompress PB */
     ecurve2_mult(mip,a,PB,PB);
     epoint2_get(mip,PB,key,key);
 
@@ -222,7 +236,7 @@ printf("Alice's Key= ");
 otnum(mip,key,stdout);
 #endif
 
-    epoint2_set(mip,pa,pa,ia,PB); /* decompress PA */
+    epoint2_set(mip,pa,pa,0,PB); /* decompress PA */
     ecurve2_mult(mip,b,PB,PB);
     epoint2_get(mip,PB,key,key);
 

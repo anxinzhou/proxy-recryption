@@ -9,7 +9,6 @@
  *
  *   Also suitable for DJGPP GNU C Compiler
  *   ... but change __int64 to long long
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #define MIRACL 32

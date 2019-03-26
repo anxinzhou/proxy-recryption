@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *    MIRACL  C++ Header file ZZn6.h
  *
@@ -17,7 +51,6 @@
  * p = 1 mod 6
  * irreducible poly is x^6+n
  *
- *    Copyright (c) 2006 Shamus Software Ltd.
  */
 
 #ifndef ZZN6_H
@@ -25,48 +58,51 @@
 
 #include "zzn3.h"
 
-extern void init_zzn6(Big&);
-
 class ZZn6
 {
     ZZn3 a,b;
+    BOOL unitary;
 public:
-    ZZn6()   {}
-    ZZn6(int w) {a=(ZZn3)w; b=0;}
-    ZZn6(const ZZn6& w) {a=w.a; b=w.b; }
-    ZZn6(const ZZn3 &x,const ZZn3& y) {a=x; b=y; }
-    ZZn6(const ZZn &x) {a=x; b=0; }
-    ZZn6(const Big &x) {a=(ZZn)x; b=0; }
+    ZZn6()   {unitary=FALSE;}
+    ZZn6(int w) {a=(ZZn3)w; b=0; if (w==1) unitary=TRUE; else unitary=FALSE;}
+    ZZn6(const ZZn6& w) {a=w.a; b=w.b; unitary=w.unitary;}
+    ZZn6(const ZZn3 &x,const ZZn3& y) {a=x; b=y; unitary=FALSE; }
+	ZZn6(const ZZn3 &x) {a=x; b=0; unitary=FALSE; }
+    ZZn6(const ZZn &x) {a=x; b=0; unitary=FALSE;}
+    ZZn6(const Big &x) {a=(ZZn)x; b=0; unitary=FALSE;}
     
-    void set(const ZZn3 &x,const ZZn3 &y) {a=x; b=y; }
-    void set(const ZZn3 &x) {a=x; b.clear();}
-    void seti(const ZZn3 &x) {a.clear(); b=x;}
-    void set(const Big &x) {a=(ZZn)x; b.clear(); }
+    void set(const ZZn3 &x,const ZZn3 &y) {a=x; b=y; unitary=FALSE;}
+    void set(const ZZn3 &x) {a=x; b.clear(); unitary=FALSE;}
+    void seti(const ZZn3 &x) {a.clear(); b=x; unitary=FALSE;}
+    void set(const Big &x) {a=(ZZn)x; b.clear(); unitary=FALSE;}
 
-    void get(ZZn3 &,ZZn3 &) ;
-    void get(ZZn3 &) ;
+    void get(ZZn3 &,ZZn3 &) const;
+	void geti(ZZn3&) const;
+    void get(ZZn3 &) const;
     
-    void clear() {a=0; b=0; }
+    void clear() {a=0; b=0; unitary=FALSE;}
+    void mark_as_unitary() {unitary=TRUE;}
+    BOOL is_unitary() {return unitary;}
     
     BOOL iszero()  const {if (a.iszero() && b.iszero()) return TRUE; return FALSE; }
- //   BOOL isunity() const {if (a.isunity() && b.iszero()) return TRUE; return FALSE; }
+    BOOL isunity() const {if (a.isunity() && b.iszero()) return TRUE; return FALSE; }
  //   BOOL isminusone() const {if (a.isminusone() && b.iszero()) return TRUE; return FALSE; }
 
     ZZn6& powq(void);
-    ZZn6& operator=(int i) {a=i; b=0; return *this;}
-    ZZn6& operator=(const ZZn& x) {a=x; b=0; return *this; }
-    ZZn6& operator=(const ZZn3& x) {a=x; b=0; return *this; }
-    ZZn6& operator=(const ZZn6& x) {a=x.a; b=x.b; return *this; }
-    ZZn6& operator+=(const ZZn& x) {a+=x; return *this; }
-    ZZn6& operator+=(const ZZn3& x) {a+=x; return *this; }
-    ZZn6& operator+=(const ZZn6& x) {a+=x.a; b+=x.b; return *this; }
-    ZZn6& operator-=(const ZZn& x) {a-=x;  return *this; }
-    ZZn6& operator-=(const ZZn3& x) {a-=x; return *this; }
-    ZZn6& operator-=(const ZZn6& x) {a-=x.a; b-=x.b; return *this; }
+    ZZn6& operator=(int i) {a=i; b=0; if (i==1) unitary=TRUE; else unitary=FALSE; return *this;}
+    ZZn6& operator=(const ZZn& x) {a=x; b=0; unitary=FALSE; return *this; }
+    ZZn6& operator=(const ZZn3& x) {a=x; b=0; unitary=FALSE; return *this; }
+    ZZn6& operator=(const ZZn6& x) {a=x.a; b=x.b; unitary=x.unitary; return *this; }
+    ZZn6& operator+=(const ZZn& x) {a+=x; unitary=FALSE; return *this; }
+    ZZn6& operator+=(const ZZn3& x) {a+=x; unitary=FALSE; return *this; }
+    ZZn6& operator+=(const ZZn6& x) {a+=x.a; b+=x.b; unitary=FALSE; return *this; }
+    ZZn6& operator-=(const ZZn& x) {a-=x; unitary=FALSE;  return *this; }
+    ZZn6& operator-=(const ZZn3& x) {a-=x; unitary=FALSE; return *this; }
+    ZZn6& operator-=(const ZZn6& x) {a-=x.a; b-=x.b; unitary=FALSE; return *this; }
     ZZn6& operator*=(const ZZn6&); 
-    ZZn6& operator*=(const ZZn3& x) {a*=x; b*=x; return *this; }
-    ZZn6& operator*=(const ZZn& x) {a*=x; b*=x; return *this; }
-    ZZn6& operator*=(int x) {a*=x; b*=x; return *this;}
+    ZZn6& operator*=(const ZZn3& x) {a*=x; b*=x; unitary=FALSE; return *this; }
+    ZZn6& operator*=(const ZZn& x) {a*=x; b*=x; unitary=FALSE; return *this; }
+    ZZn6& operator*=(int x) {a*=x; b*=x; unitary=FALSE; return *this;}
     ZZn6& operator/=(const ZZn6&); 
     ZZn6& operator/=(const ZZn3&);
     ZZn6& operator/=(const ZZn&);
@@ -95,6 +131,8 @@ public:
     friend ZZn6 operator/(const ZZn6&,const ZZn&);
     friend ZZn6 operator/(const ZZn6&,int);
 
+	friend ZZn6 rhs(const ZZn6&);
+
     friend ZZn3  real(const ZZn6& x)      {return x.a;}
     friend ZZn3  imaginary(const ZZn6& x) {return x.b;}
 
@@ -104,6 +142,11 @@ public:
     friend ZZn6 powl(const ZZn6&,const Big&);
     friend ZZn6 conj(const ZZn6&);
     friend ZZn6 inverse(const ZZn6&);
+	friend ZZn6 tx(const ZZn6&);
+	friend ZZn6 tx2(const ZZn6&);
+	friend ZZn6 tx4(const ZZn6&);
+	friend ZZn6 txd(const ZZn6&);
+
 #ifndef MR_NO_RAND
     friend ZZn6 randn6(void);        // random ZZn6
 #endif

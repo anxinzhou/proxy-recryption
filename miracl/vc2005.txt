@@ -1,7 +1,6 @@
-With Visual C++ V8.0, the supplied library file ms32.lib will not work, so you 
-will first need to create a new one.
+To build the MIRACL library with Visual C++ V8.0
 
-Select New Project, Win32 Console Application
+Select New Project, Console Application
 
 Name: miracl
 Location: d:\myprojects (for example)
@@ -48,6 +47,7 @@ mrflsh3.c
 mrflsh4.c
 mrfrnd.c
 mrgcd.c
+mrgcm.c
 mrio1.c
 mrio2.c
 mrjack.c
@@ -68,6 +68,9 @@ mrsroot.c
 mrstrong.c
 mrxgcd.c
 mrzzn2.c
+mrzzn2b.c
+mrzzn3.c
+mrecn2.c
 
 Then Click on Build miracl. The library is created in directory 
 d:\myprojects\miracl\debug\miracl.lib

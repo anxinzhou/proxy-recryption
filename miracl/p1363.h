@@ -1,10 +1,43 @@
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
+
 /*
  *  MIRACL P1363 header file
  *  DL - Discrete Logarithm
  *  ECp - GF(p) Elliptic Curve
  *  EC2 - GF(2^m) Elliptic Curve
  *  IF - Integer factorisation-based methods
- *  Copyright (c) 2000 Shamus Software Ltd.
  */
 
 #ifndef P1363_H
@@ -27,6 +60,8 @@
 /****** UNCOMMENT THIS TO ALLOCATE FIXED SIZE OCTET'S FROM THE STACK *******/
 
 /* #define OCTET_FROM_STACK_SIZE 200 */
+
+/* #define OCTET_FROM_STACK_SIZE 60 */
 
 /***************************************************************************/
 
@@ -149,6 +184,7 @@ typedef struct
 /* Octet string handlers */
 
 extern P1363_API BOOL OCTET_INIT(octet *,int);
+extern P1363_API void OCTET_INIT_FROM_ARRAY(octet *,int,char *);
 extern P1363_API void OCTET_CLEAR(octet *);
 extern P1363_API void OCTET_EMPTY(octet *);
 extern P1363_API void OCTET_COPY(octet *,octet *);
@@ -167,6 +203,7 @@ extern P1363_API void OCTET_JOIN_LONG(long,int,octet *);
 extern P1363_API void OCTET_JOIN_STRING(char *,octet *);
 extern P1363_API void OCTET_JOIN_BYTES(char *,int,octet *);
 extern P1363_API void OCTET_JOIN_BYTE(int,int,octet *);
+extern P1363_API void OCTET_PRINT_STRING(octet *);
 
 /* P1363 Auxiliary Functions */
 
@@ -248,10 +285,9 @@ extern P1363_API void EC2_DOMAIN_KILL(ec2_domain *);
 extern P1363_API int  EC2_DOMAIN_INIT(ec2_domain *,char *,char **,int);
 extern P1363_API int  EC2_DOMAIN_VALIDATE(BOOL (*)(void),ec2_domain *);
 extern P1363_API int  EC2_KEY_PAIR_GENERATE(BOOL (*)(void),ec2_domain *,csprng *,octet *,BOOL,octet *);
-extern P1363_API int  EC2_PUBLIC_KEY_VALIDATE(BOOL (*)(void),ec2_domain 
-*,BOOL,octet *);
+extern P1363_API int  EC2_PUBLIC_KEY_VALIDATE(BOOL (*)(void),ec2_domain *,BOOL,octet *);
 
-/* P1363 ECP primitives */
+/* P1363 EC2 primitives */
 
 extern P1363_API int EC2SVDP_DH(BOOL (*)(void),ec2_domain *,octet *,octet *,octet *);
 extern P1363_API int EC2SVDP_DHC(BOOL (*)(void),ec2_domain *,octet *,octet *,BOOL,octet *);

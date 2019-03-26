@@ -7,8 +7,6 @@
  *   slower, but it is resistant to chosen ciphertext attack.
  *
  *   Requires: big.cpp crt.cpp
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <iostream>

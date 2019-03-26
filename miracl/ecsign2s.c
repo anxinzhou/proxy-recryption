@@ -1,5 +1,5 @@
 /*
- *   Proposed Digital Signature Standard (DSS)
+ *   Digital Signature Standard (DSS)
  *
  *   Elliptic Curve variation GF(2^m) - See Dr. Dobbs Journal, April 1997
  *
@@ -25,8 +25,6 @@
  *   for a 32-bit processor, or 11 for a 16-bit processor (11*16 > 163).
  *   The system parameters can be found in the file common2.ecs
  *   Assumes MR_GENERIC_MT is defined in mirdef.h
- *
- *   Copyright (c) 2000-2007 Shamus Software Ltd.
  */
 
 #include <stdio.h>

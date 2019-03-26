@@ -1,4 +1,39 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
+ *
  *    MIRACL  C++  functions zzn.cpp
  *
  *    AUTHOR  :    M. Scott
@@ -7,7 +42,6 @@
  *                 representation
  *    NOTE    :    Must be used in conjunction with big.h and big.cpp
  *
- *    Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include "zzn.h"
@@ -20,12 +54,7 @@ ZZn& ZZn::operator/=(int i)
  if (i==1) return *this; 
  if (i==2)
  { // make a special effort... modulus is odd
-    copy(fn,get_mip()->w1);
-    if (remain(get_mip()->w1,2)!=0)
-        add(get_mip()->w1,get_mip()->modulus,get_mip()->w1);
-    subdiv(get_mip()->w1,2,get_mip()->w1);
-    copy(get_mip()->w1,fn);
-
+    nres_div2(fn,fn);
     return *this;
  }
  ZZn x=i;
@@ -68,7 +97,6 @@ ZZn operator/(int i, const ZZn& b2)
 ZZn operator/(const ZZn& b1, const ZZn& b2)
 {ZZn z=b1; z/=b2; return z;}
 
-
 ZZn pow( const ZZn& b1, const Big& b2)
 {ZZn z; nres_powmod(b1.fn,b2.getbig(),z.fn);return z;}
 
@@ -77,6 +105,10 @@ ZZn pow( const ZZn& b,int i)
 
 ZZn pow( const ZZn& b1, const Big& b2, const ZZn& b3,const Big& b4)
 {ZZn z; nres_powmod2(b1.fn,b2.getbig(),b3.fn,b4.getbig(),z.fn); return z;}
+
+int jacobi(const ZZn& x)
+{redc(x.fn,get_mip()->w1); return jack(get_mip()->w1,get_mip()->modulus); }
+
 #ifndef MR_NO_RAND
 ZZn randn(void)
 {ZZn z; bigrand(get_mip()->modulus,z.fn); return z;}
@@ -86,6 +118,13 @@ BOOL qr(const ZZn& x)
 
 BOOL qnr(const ZZn& x)
 {redc(x.fn,get_mip()->w1); if (jack(get_mip()->w1,get_mip()->modulus)==-1) return TRUE; return FALSE;}
+
+ZZn one(void) 
+{
+    ZZn w;
+    w=get_mip()->one;
+    return w;
+}
 
 ZZn getA(void)
 {
@@ -131,10 +170,10 @@ ZZn powl(const ZZn& x,const Big& k)
     return luc(2*x,k)/2;
 }
 
-ZZn luc( const ZZn& b1, const Big& b2, ZZn *b3)
-{ZZn z; if (b3!=NULL) nres_lucas(b1.fn,b2.getbig(),b3->fn,z.fn); 
-        else          nres_lucas(b1.fn,b2.getbig(),z.fn,z.fn); 
- return z;}
+//ZZn luc( const ZZn& b1, const Big& b2, ZZn *b3)
+//{ZZn z; if (b3!=NULL) nres_lucas(b1.fn,b2.getbig(),b3->fn,z.fn); 
+//        else          nres_lucas(b1.fn,b2.getbig(),z.fn,z.fn); 
+// return z;}
 
 
 ZZn sqrt(const ZZn& b)

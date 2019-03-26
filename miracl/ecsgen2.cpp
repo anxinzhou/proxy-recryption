@@ -22,8 +22,6 @@
  *   cf.q where cf is the "co-factor", normally 2 or 4.
  * 
  *   Requires: big.cpp ec2.cpp
- * 
- *   Copyright (c) 2000-2003 Shamus Software Ltd.
  */
 
 #include <iostream>

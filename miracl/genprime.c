@@ -7,7 +7,6 @@
  *   See "Non-Interactive Public-Key Cryptography", Maurer & Yacobi
  *   Eurocrypt '91
  *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>

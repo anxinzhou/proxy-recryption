@@ -3,7 +3,6 @@
  * a Hilbert matrix
  * i.e. solves   Hx=b, where b is the vector [1,1,1....1]
  *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -12,10 +11,7 @@
 static flash AA[50][50];
 static flash bb[50];
 
-BOOL gauss(A,b,n)
-flash A[][50];
-flash b[];
-int n;
+BOOL gauss(flash A[][50],flash b[],int n)
 { /* solve Ax=b using Gaussian elimination *
    * solution x returned in b              */
     int i,j,k,m;

@@ -4,6 +4,9 @@ version 6.0, follow these steps. Remember a "Release" build will be
 faster than a "Debug" build. For MS VC++ .NET see below.
 
 
+First build the library from the command line, using one of the supplied
+batch files, like ms32doit.bat, or ms64doit.bat for a 64-bit build.
+
 1. Create a new empty project of type "Win32 Console Application"
    Give it the name of the associated main project file, e.g. limlee 
    for limlee.cpp
@@ -11,7 +14,7 @@ faster than a "Debug" build. For MS VC++ .NET see below.
 2. Click on "Project", and then on "Add to Project", and then on "Files"
 
 3. Select "library files (.lib)" from the "Files of type" drop-down list.
-   Look for the precompiled MIRACL library file ms32.lib, and insert it 
+   Look for the precompiled MIRACL library file miracl.lib, and insert it 
    into the project.
 
 4. Add the main project file (e.g.limlee.cpp) into the project.
@@ -35,11 +38,13 @@ faster than a "Debug" build. For MS VC++ .NET see below.
 
 
 
-To create a new version of the MIRACL library, 
+To create a new version of the MIRACL library using Visual Studio, 
 
 1. Compile and run the config.c utility, and rename the generated mirdef.tst 
    to mirdef.h 
-   Note that Microsoft C has a 64-bit integer data type called __int64
+   Note that Microsoft C has a 64-bit integer data type called "__int64"
+   (although with newer versions of the compiler now its OK to refer to it 
+   as "long long")
 
 2. Create a new project of type "Win32 Static Library". Then click on "Finish".
 
@@ -70,7 +75,7 @@ To create MIRACL applications under Microsoft Windows using Microsoft C++
 
 3. Click on Project, and on "Add existing Item", and Select "All files" from 
    the "Files of type" drop-down list.
-   Look for the precompiled MIRACL library file ms32.lib, and insert it 
+   Look for the precompiled MIRACL library file miracl.lib, and insert it 
    into the project.
 
 4. Only if it is a C++ main project file, also add into the project any

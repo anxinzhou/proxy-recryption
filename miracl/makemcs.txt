@@ -361,7 +361,32 @@ simultaneously.
 New features 12/10/2007
 
 NEW: PMUL, PMUL_START and PMUL_END macros to support fast reduction for 
-pseudo mersenne prime moduli. See c.mcs 
+pseudo mersenne prime moduli. 
+
+
+PMULT
+
+When reducing modulo p=2^m-d, where m is a multiple of the word length and
+d is single precision, we have the useful identity 2^m=d mod p. The product 
+of two field elements can be considered as 2^m.U+L, where U is the upper 
+half of the product, and L is the lower half. Therefore the reduced value 
+is 2^m.U+L mod p = dU+L. The dU component can in turn be considered as 
+2^m.x+Y, where x will be single precision. So the final result is d.x+Y+L. 
+Finally a couple of subtractions of p might be required to get a result 
+less than p. The function PMULT calculates d.x and Y
+
+        PMUL_START 
+
+        Initialises pointers to the top half of the product a[], and arrays 
+        to hold d.x (b[]) and Y (c[]). Moves d to a register.
+
+        PMUL
+
+        Sets c[i]=a[i]*d and propagates carries. Sets b[i]=0
+
+        PMUL_END
+
+        Sets b[0] (and b[1]) to d.x
 
 NEW: Macros to support Hybrid method - see http://eprint.iacr.org/2007/299
 Basically a 2x2 or 4x4 block of partial products are calculated together

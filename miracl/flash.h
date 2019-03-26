@@ -6,7 +6,6 @@
  *             
  *    PURPOSE :    Definition of class Flash
  *
- *    Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #ifndef FLASH_H

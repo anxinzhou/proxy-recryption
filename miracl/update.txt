@@ -374,3 +374,80 @@ Support for Pseudo Mersenne Prime moduli of the form 2^n-c, where n is a
 multiple of the word length, and c is a small constant. See ecdhp32.c 
 for an example of use. Improved support for ARM processor.
 
+Version 5.3.3
+
+Solinas's Joint Sparse Form now used for elliptic curve double addition.
+New C support for E(Fp^2) elliptic curves. Implementation of the R-ate pairing.
+New smaller/faster jacobi symbol code. New utilities romaker.c and romaker2.c
+to automatically generate ROMs and precomputed values for elliptic curves.
+
+Version 5.4
+
+Edwards Curves now supported - see edwards.txt
+Full support for Win64 applications (64-bit windows)
+Some minor improvements to pairings. Some new pairings supported.
+
+Version 5.4.1
+
+New faster pairing implementations - using better extension field towerings. 
+Some bug fixes
+
+Version 5.4.2
+
+New pairing implementation at high security levels (AES-192 -ake18kssx.cpp). 
+Some bug fixes. Support for .NET managed code - see managed.txt
+
+Version 5.4.3
+
+Support for AES-GCM mode of operation. See aesgcm.txt and new module mrgcm.c
+Precompiled libraries are no longer included in the distribution.
+
+Version 5.4.4
+
+New pairing implementation at high security levels (AES-256 - ake24blsa.cpp). 
+Some bug fixes in pairing code.
+
+Version 5.5
+
+New high level interface for implementing pairing-based protocols. 
+See pairings.txt
+Protocols can be implemented very succinctly, at various security levels,
+and with realistic timings. All known optimizations used.
+Many example schemes from P1363.3 implemented.
+
+Version 5.5.1
+
+Improved high-level pairing interface. More options
+
+Version 5.5.2
+
+Support for Analog Devices Blackfin processor
+
+Version 5.5.3
+
+Improved high level interface for pairing-based protocols, with new features.
+
+Version 5.5.4
+
+More example pairings protocols - Attribute-Based, Predicate Based, HIBE
+See pairings.txt. Support for Microchip PIC32, see pic32.txt
+
+Version 5.6
+
+Some minor bug fixes. New licensing terms.
+
+Version 5.6.1
+
+New MIRACL module mrzzn4.c
+
+
+Version 7.0.0
+
+New support for Format Preserving Encryption. See fpe.pdf and new module mrfpe.c
+New support for SHA3 hash function (Keccak). See mrsha3.c
+New Macros for MIPS - see mips.mcs
+
+Version 7.0.1
+
+New advice om Texas DSP C6713 processor - see texasdsp.txt
+New Typical Thread-Safe No-Heap API example code for ECC - see testecc.c

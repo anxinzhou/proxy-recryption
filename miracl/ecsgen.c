@@ -15,8 +15,6 @@
  *   a point of order q, p is the prime modulus, and q is the order of the 
  *   point (x,y). In fact normally q is the prime number of points counted
  *   on the curve. 
- * 
- *   Copyright (c) 1997-2005 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -31,7 +29,8 @@ int main()
     big a,b,p,q,x,y,d;
     long seed;
     miracl *mip;
-    
+   
+#ifndef MR_EDWARDS	
     fp=fopen("common.ecs","rt");
     if (fp==NULL)
     {
@@ -39,7 +38,15 @@ int main()
         return 0;
     }
     fscanf(fp,"%d\n",&bits); 
-
+#else
+    fp=fopen("edwards.ecs","rt");
+    if (fp==NULL)
+    {
+        printf("file edwards.ecs does not exist\n");
+        return 0;
+    }
+    fscanf(fp,"%d\n",&bits); 
+#endif
     mip=mirsys(bits/4,16);  /* Use Hex internally */
     a=mirvar(0);
     b=mirvar(0);
@@ -71,14 +78,14 @@ int main()
 
     if (!epoint_set(x,y,0,g)) /* initialise point of order q */
     {
-        printf("Problem - point (x,y) is not on the curve\n");
+        printf("1. Problem - point (x,y) is not on the curve\n");
         exit(0);
     }
 
     ecurve_mult(q,g,w);
     if (!point_at_infinity(w))
     {
-        printf("Problem - point (x,y) is not of order q\n");
+        printf("2. Problem - point (x,y) is not of order q\n");
         exit(0);
     }
 

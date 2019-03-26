@@ -7,8 +7,6 @@
  *              Brickell et al's method for fast exponentiation with 
  *              precomputation - elliptic curve version GF(2^m)
  *    NOTE    : Must be used in conjunction with big.cpp
- *                
- *    Copyright (c) 2000 Shamus Software Ltd.
  */
 
 #ifndef EBRICK2_H

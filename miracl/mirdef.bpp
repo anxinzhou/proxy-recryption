@@ -1,8 +1,6 @@
 /*
  *   MIRACL compiler/hardware definitions - mirdef.h
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
-
 
 #define MIRACL 32
 #define MR_LITTLE_ENDIAN      

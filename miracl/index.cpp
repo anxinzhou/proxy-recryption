@@ -6,8 +6,6 @@
  *   by J.M. Pollard in Math. Comp. Vol. 32 1978 pp 918-924
  *
  *   Requires: big.cpp crt.cpp
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <iostream>
@@ -124,4 +122,3 @@ int main()
     cout << w << endl;
     return 0;
 }
-

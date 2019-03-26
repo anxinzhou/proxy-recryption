@@ -1,5 +1,5 @@
 /* Solving cubic x^3+AX+B using Cardano's formula */
-/* cl /O2 /GX cardona.cpp zzn2.cpp zzn.cpp big.cpp ms32.lib */
+/* cl /O2 /GX cardona.cpp zzn2.cpp zzn.cpp big.cpp miracl.lib */
 
 #include <iostream>
 #include <ctime>

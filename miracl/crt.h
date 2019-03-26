@@ -6,8 +6,6 @@
  *    PURPOSE : Definition of class Crt  (Chinese Remainder Thereom)
  *    NOTE    : Must be used in conjunction with big.cpp
  *              Can be used with either Big or utype moduli
- *                
- *    Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #ifndef CRT_H

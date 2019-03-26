@@ -3,7 +3,6 @@
  *   See "An Improved Monte Carlo Factorization Algorithm"
  *   by Richard Brent in BIT Vol. 20 1980 pp 176-184
  *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -21,7 +20,7 @@ int main()
     big x,y,z,n,q,ys,c3;
 #ifndef MR_STATIC
     miracl *mip=mirsys(16,0);         /* if allocating from the heap, specify size of bigs here */        
-    char *mem=memalloc(7);            /* allocate and clear memory from the heap for 7 bigs     */
+    char *mem=(char *)memalloc(7);            /* allocate and clear memory from the heap for 7 bigs     */
 #else
     miracl *mip=mirsys(MR_STATIC,0);  /* If allocating from the stack, size of bigs is pre-defined */
     char mem[MR_BIG_RESERVE(7)];      /* reserve space on the stack for 7 bigs ...  */
@@ -74,7 +73,7 @@ int main()
             } while (k<r && size(z)==1);
             r*=2;
         } while (size(z)==1);
-        if (compare(z,n)==0) do 
+        if (mr_compare(z,n)==0) do 
         { /* back-track */
             mad(ys,ys,c3,n,n,ys);
             subtract(ys,x,z);
@@ -83,7 +82,7 @@ int main()
              printf("\ncomposite factor ");
         else printf("\nprime factor     ");
         cotnum(z,stdout);
-        if (compare(z,n)==0) return 0;
+        if (mr_compare(z,n)==0) return 0;
         divide(n,z,n);
         divide(y,n,n);
     } while (!isprime(n));

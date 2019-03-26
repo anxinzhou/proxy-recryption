@@ -9,7 +9,6 @@
  *
  *   Requires: big.cpp
  *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <iostream>
@@ -23,7 +22,7 @@ Miracl precision=50;
 #define LEAPS 10000      /* = square root of LIMIT */ 
 #define ALPHA 16         /* primitive root */
 
-static char *modulus=
+static char *Modulus=(char *)
 "295NZNjq8kIndq5Df0NDrA3qk4wxKpbXX4G5bC11A2lRKxcbnap2XDgE4X286glvmxDN66uSaeTjRMrelTY5WfLn";
 
 int main()
@@ -39,8 +38,8 @@ int main()
         s*=2;     
         if ((2*s/m)>(LEAPS/4)) break;
     }
-    mip->IOBASE=60;    /* get large modulus */
-    n=modulus;
+    mip->IOBASE=60;    /* get large Modulus */
+    n=Modulus;
     mip->IOBASE=10;
     cout << "solve discrete logarithm problem - using Pollard's kangaroos\n";
     cout << "finds x in y=" << ALPHA << "^x mod n, given y, for fixed n and small x\n";

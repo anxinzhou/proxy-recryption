@@ -1,8 +1,40 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL I/O routines 1. 
  *   mrio1.c
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include "miracl.h"
@@ -12,8 +44,9 @@
 int instr(_MIPD_ flash x,char *string)
 {  /*  input a big number       *
     *  returns length in digits */
-    int i,ipt,n,s,e;
-    int ch;
+    int i,ipt,n,s,e,pads;
+	BOOL first_after_pad;
+    int ch,lc;
 #ifdef MR_FLASH
     BOOL frac;
 #endif
@@ -37,6 +70,7 @@ int instr(_MIPD_ flash x,char *string)
         MR_OUT
         return 0;
     }
+
     zero(x);
     if (mr_mip->fin) string=mr_mip->IOBUFF;
     if (mr_mip->INPLEN==0)
@@ -62,7 +96,6 @@ int instr(_MIPD_ flash x,char *string)
             } while (ch!='\n' && ch!='\0'); 
             string[i]='\0';
         }
-
 
 #endif
         forever
@@ -122,6 +155,8 @@ int instr(_MIPD_ flash x,char *string)
         }
         if (string[e]=='+') e++;
     }
+
+	pads=0; first_after_pad=TRUE;
     for (i=mr_mip->INPLEN-1;i>=e;i--)
     {
         ch=(unsigned char)string[i];
@@ -156,7 +191,7 @@ int instr(_MIPD_ flash x,char *string)
                 if (ch>127 && ch<138) ch-=76;
                 if (ch==123) ch=62;
                 if (ch==127) ch=63;
-                if (ch==141) continue; /* ignore pads '=' */
+                if (ch==141) {pads++; continue;} /* pads '=' */
             }
             else
             {
@@ -173,15 +208,34 @@ int instr(_MIPD_ flash x,char *string)
             }
         }
          
-        if ((mr_small)ch>=mr_mip->apbase)
+        if ((mr_small)ch>=mr_mip->apbase || pads>2)
         {
             mr_berror(_MIPP_ MR_ERR_BAD_FORMAT);
             MR_OUT
             return 0;
         }
-        n++;
+       
+		if (pads && first_after_pad)
+		{ /* there was padding, so adjust */
+			lc=ch>>(2*pads);
+			first_after_pad=FALSE;
+			continue;
+		}
+
+		n++;
+		if (pads)
+		{
+			putdig(_MIPP_ 0x3f&((ch<<(6-2*pads))|lc),x,n);
+			lc=(ch>>(2*pads));
+			continue;
+		}
+		
         putdig(_MIPP_ ch,x,n);
     }
+
+	if (pads && lc>0)
+		putdig(_MIPP_ lc,x,++n);
+	
     ipt=mr_mip->INPLEN;
     mr_mip->INPLEN=0;
     insign(s,x);
@@ -197,6 +251,7 @@ int instr(_MIPD_ flash x,char *string)
 int otstr(_MIPD_ flash x,char *string)
 {  /*  output a big number  */
     int s,i,n,ch,rp,nd,m;
+    BOOL check;
 #ifdef MR_FLASH
     int nw,dw;
 #endif
@@ -208,7 +263,6 @@ int otstr(_MIPD_ flash x,char *string)
     if (mr_mip->ERNUM) return 0;
 
     MR_IN(75)
-
     if (mr_mip->apbase==0 || mr_mip->apbase>256)
     {
         mr_berror(_MIPP_ MR_ERR_BASE_TOO_BIG);
@@ -272,6 +326,7 @@ int otstr(_MIPD_ flash x,char *string)
             nw=(int)(lx&MR_MSK);
             dw=(int)((lx>>MR_BTS)&MR_MSK);
             if (nw==0) nw++;
+            check=mr_mip->check;
             mr_mip->check=OFF;
             if (nw>dw) mr_shift(_MIPP_ mr_mip->w5,nw-dw,mr_mip->w5);
             if (dw>nw) mr_shift(_MIPP_ mr_mip->w6,dw-nw,mr_mip->w6);
@@ -281,7 +336,7 @@ int otstr(_MIPD_ flash x,char *string)
             if (((int)mr_mip->w0->len+nd)>2*mr_mip->nib) nd=2*mr_mip->nib-(int)mr_mip->w0->len;
             mr_shift(_MIPP_ mr_mip->w0,nd,mr_mip->w0);
             divide(_MIPP_ mr_mip->w0,mr_mip->w5,mr_mip->w6);
-            mr_mip->check=ON;
+            mr_mip->check=check;
             rp=mr_mip->pack*(nd+dw-nw);
         }
     }
@@ -294,6 +349,10 @@ int otstr(_MIPD_ flash x,char *string)
     {
         nd=numdig(_MIPP_ mr_mip->w6);
         m=nd;
+		if (mr_mip->apbase==64)
+		{ /* add leading zeros to base64 */
+			while (m%4!=0) m++;
+		}
         if (rp>m) m=rp;
         for (i=m;i>0;i--)
         { 
@@ -315,13 +374,15 @@ int otstr(_MIPD_ flash x,char *string)
                 n++;
             }
 #endif
-            if (i>nd) ch='0';
+            if (i>nd && mr_mip->apbase!=64) ch='0';
             else
             {
                 ch=getdig(_MIPP_ mr_mip->w6,i);
+                check=mr_mip->check;
                 mr_mip->check=OFF;
                 putdig(_MIPP_ 0,mr_mip->w6,i);
-                mr_mip->check=ON;
+              /*  mr_mip->check=mr_mip->check; Nasty stupid bug! */
+				mr_mip->check=check;
                 if (mr_mip->apbase<=60)
                 { /* convert number to character */
                     ch+=48;
@@ -364,8 +425,9 @@ int otstr(_MIPD_ flash x,char *string)
         done=TRUE;
 #endif
     }
+/*
     if (mr_mip->apbase==64)
-    { /* base64 padding */
+    {  
         while (n%3!=0) 
         {
 #ifndef MR_NO_FILE_IO
@@ -376,7 +438,9 @@ int otstr(_MIPD_ flash x,char *string)
 #endif
             n++;
         }
+
     }
+*/
 /* Append a trailing 0 - it may be printable ascii text */    
 
 #ifndef MR_NO_FILE_IO
@@ -430,6 +494,40 @@ int otnum(_MIPD_ flash x,FILE *filep)
     return n;
 }
 
+#endif
+
+#else
+
+#ifndef MR_FLASH
+#ifndef MR_NO_STANDARD_IO
+#ifndef MR_FP
+
+int otnum(_MIPD_ flash x,FILE *filep)
+{ /* support crude hex output only */
+    int i,j,ch,n;
+    BOOL leading=TRUE;
+    mr_small w;
+    n=0;
+    if (size(x)<0) fputc('-',filep);
+    for (i=(x->len&MR_OBITS)-1;i>=0;i--)
+    {
+        w=x->w[i];
+        for (j=MIRACL-4;j>=0;j-=4)
+        {
+            ch=48+((w>>j)&0xF);
+            if (ch==48 && leading) continue;
+            leading=FALSE;
+            if (ch>=58) ch+=7;
+            fputc(MR_TOBYTE(ch),filep);
+            n++;
+        }
+    }
+    fputc('\n',filep);
+    return n;
+}
+
+#endif
+#endif
 #endif
 
 #endif

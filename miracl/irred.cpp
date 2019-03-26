@@ -1,5 +1,5 @@
 /* program to find smallest irreducible polynomial */
-/* cl /O2 /GX irred.cpp polymod.cpp poly.cpp big.cpp zzn.cpp ms32.lib 
+/* cl /O2 /GX irred.cpp polymod.cpp poly.cpp big.cpp zzn.cpp miracl.lib 
  */
 
 #include <iostream>
@@ -9,7 +9,7 @@
 
 using namespace std;
 
-Miracl precision=100;
+Miracl precision=200;
 
 // Code to parse formula in command line
 // This code isn't mine, but its public domain
@@ -18,8 +18,13 @@ Miracl precision=100;
 // NOTE: It may be necessary on some platforms to change the operators * and #
 //
 
+#if defined(unix)
+#define TIMES '.'
+#define RAISE '^'
+#else
 #define TIMES '*'
 #define RAISE '#'
+#endif
 
 Big tt;
 static char *ss;
@@ -174,7 +179,11 @@ int main(int argc,char ** argv)
         cout << "To insist on a binomial, use -b" << endl;
         cout << "To input P in Hex, precede with -h" << endl;
         cout << "To output to a file, use flag -o <filename>" << endl;
+#if defined(unix)
+        cout << "e.g. irred -f 2^192-2^64-1 6 -o zzn6.dat" << endl;
+#else
         cout << "e.g. irred -f 2#192-2#64-1 6 -o zzn6.dat" << endl;
+#endif
         return 0;
     }
 
@@ -261,7 +270,7 @@ int main(int argc,char ** argv)
         cout << "This number is not prime!" << endl;
         exit(0);
     }
-    if (M>16)
+    if (M>36)
     {
         cout << "M is too big!" << endl;
         exit(0);
@@ -282,6 +291,8 @@ int main(int argc,char ** argv)
     i=1; 
     j=2; m=1; first=FALSE;
     if (M==12) j=4;
+
+	//j=2; m=-1;
    
     forever
     {
@@ -326,6 +337,9 @@ cout << "h= " << h << endl;
 */
 
         ir=TRUE;
+
+// Ben-Or irreducibility test
+
         for (k=1;k<=M/2;k++)
         {
             g=pow(g,p);
@@ -339,8 +353,8 @@ cout << "h= " << h << endl;
         if (ir) 
         {
                cout << "\nirreducible polynomial P(x) = " << f ; 
-                ns++;
-                if (ns>10) break;
+               ns++;
+               if (ns==10) break;
            
          //   break;
         }
@@ -365,6 +379,8 @@ cout << "h= " << h << endl;
             continue;
         }
 
+//cout << "\ni= " << i << endl;
+
         if (i>0) i=(-i); 
         else { i=(-i); i++; }
     }
@@ -372,7 +388,7 @@ cout << "h= " << h << endl;
 //cout << "p= " << p;
 //cout << " irreducible polynomial P(x) = " << f << endl; 
 
-    cout << "\nirreducible polynomial P(x) = " << f << endl << endl; 
+//    cout << "\nirreducible polynomial P(x) = " << f << endl << endl; 
 
     if (fout) 
     {

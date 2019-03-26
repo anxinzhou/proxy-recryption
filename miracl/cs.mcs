@@ -137,6 +137,29 @@ ENDM
 MACRO ADD_END
 ENDM
 ;
+; DOUBLE_START macro
+;
+MACRO DOUBLE_START
+  a[0]+=a[0];
+  carry=(a[0]>>mr_mip->lg2b);
+  a[0]&=mr_mip->base_mask;
+ENDM
+;
+; DOUBLE macro
+;
+MACRO DOUBLE
+  su=a[%d];
+  su+=su;
+  su+=carry;
+  a[%d]=su&mr_mip->base_mask;
+  carry=(su>>mr_mip->lg2b);
+ENDM
+;
+; DOUBLE_END
+;
+MACRO DOUBLE_END
+ENDM
+;
 ; INC_START macro. Do first one.
 ;
 MACRO INC_START

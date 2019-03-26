@@ -1,10 +1,9 @@
 /*
  *   Program to factor numbers using brute force.
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "miracl.h"
 #define LIMIT 15000
 

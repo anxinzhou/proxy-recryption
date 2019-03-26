@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *    MIRACL  C++ Implementation file zzn8.cpp
  *
@@ -9,62 +43,59 @@
  * the MIRACL library. It is not complete, and may not work in other 
  * applications
  *
- *    Note: This code assumes that -2 is a Quadratic Non-Residue,
- *          so modulus p=5 mod 8
- *
- *    Copyright (c) 2004 Shamus Software Ltd.
  */
 
 #include "zzn8.h"
 
 using namespace std;
 
-ZZn8& ZZn8::powq(const ZZn4& w)
+// This will now work with p=1 mod 4 or p=3 mod 4
+// In the later case an adjustment is needed
+
+ZZn8& ZZn8::powq(const ZZn2& X)
 { // Fr is "Frobenius root"
-    ZZn4 t=w*w;   // square it to get Frobenius constant for ZZn4
-    ZZn2 Fr;
-
-    t.get(Fr);
-    a.powq(Fr);
-    b.powq(Fr);
-
-    b*=w;
-
+    ZZn2 XX=X*X;   // square it to get Frobenius constant for ZZn4
+	if ((get_mip()->pmod8)%4==3) XX=txx(XX);
+    a.powq(XX);
+    b.powq(XX);
+	b*=X;
+	if ((get_mip()->pmod8)%4==3) b=tx(b);
     return *this;
 }
 
-void ZZn8::get(ZZn4& x,ZZn4& y)  
+void ZZn8::get(ZZn4& x,ZZn4& y)  const
 {x=a; y=b;} 
 
-void ZZn8::get(ZZn4& x) 
+void ZZn8::get(ZZn4& x) const
 {x=a; }
 
 ZZn8& ZZn8::operator*=(const ZZn8& x)
 { // optimized to reduce constructor/destructor calls
  if (&x==this)
  {
-    ZZn4 t=a;
-    t+=b;
-    a*=a; 
-    b*=b;
-    t*=t;
-    t-=a;
-    t-=b; 
-    a+=tx(b);
-    b=t;
-
-/* Colm O'hEigeartaigh spotted this possible improvement - thanks Colm
-
-    ZZn4 t=a; t+=b;
-    ZZn4 t2=a; t2+=tx(b);
-    t*=t2;
-    b*=a;
-    t-=b;
-    t-=tx(b);
-    b+=b;
-    a=t;
-*/
-
+/* See Stam & Lenstra, "Efficient subgroup exponentiation in Quadratic .. Extensions", CHES 2002 */
+    if (unitary)
+    {
+        ZZn4 t=b; t*=t;
+        b+=a; b*=b;
+        b-=t;
+        a=tx(t);
+        b-=a;
+        a+=a; a+=one();
+        b-=one();
+    //    cout << "in here" << endl;
+    }
+    else 
+    {
+        ZZn4 t=a; t+=b;
+        ZZn4 t2=a; t2+=tx(b);
+        t*=t2;
+        b*=a;
+        t-=b;
+        t-=tx(b);
+        b+=b;
+        a=t;
+    }
  }
  else
  {
@@ -73,6 +104,8 @@ ZZn8& ZZn8::operator*=(const ZZn8& x)
     ZZn4 t=x.a; t+=x.b;
     b+=a; b*=t; b-=ac; b-=bd;
     a=ac; a+=tx(bd);
+
+    if (!x.unitary) unitary=FALSE;
  }
  return *this;
 }
@@ -80,6 +113,7 @@ ZZn8& ZZn8::operator*=(const ZZn8& x)
 ZZn8& ZZn8::operator/=(const ZZn4& x)
 {
     *this*=inverse(x);
+    unitary=FALSE;
     return *this;
 }
 
@@ -88,6 +122,7 @@ ZZn8& ZZn8::operator/=(const ZZn& x)
     ZZn t=(ZZn)1/x;
     a*=t;
     b*=t;
+    unitary=FALSE;
     return *this;
 }
 
@@ -96,18 +131,21 @@ ZZn8& ZZn8::operator/=(int i)
     ZZn t=(ZZn)1/i;
     a*=t;
     b*=t;
+    unitary=FALSE;
     return *this;
 }
 
 ZZn8& ZZn8::operator/=(const ZZn8& x)
 {
  *this*=inverse(x);
+ if (!x.unitary) unitary=FALSE;
  return *this;
 }
 
 ZZn8 inverse(const ZZn8& w)
 {
     ZZn8 y=conj(w);
+    if (w.unitary) return y;
     ZZn4 u=w.a;
     ZZn4 v=w.b;
     u*=u;
@@ -119,25 +157,25 @@ ZZn8 inverse(const ZZn8& w)
 }
 
 ZZn8 operator+(const ZZn8& x,const ZZn8& y) 
-{ZZn8 w=x; w.a+=y.a; w.b+=y.b; return w; } 
+{ZZn8 w=x; w+=y; return w; } 
 
 ZZn8 operator+(const ZZn8& x,const ZZn4& y) 
-{ZZn8 w=x; w.a+=y; return w; } 
+{ZZn8 w=x; w+=y; return w; } 
 
 ZZn8 operator+(const ZZn8& x,const ZZn& y) 
-{ZZn8 w=x; w.a+=y; return w; } 
+{ZZn8 w=x; w+=y; return w; } 
 
 ZZn8 operator-(const ZZn8& x,const ZZn8& y) 
-{ZZn8 w=x; w.a-=y.a; w.b-=y.b; return w; } 
+{ZZn8 w=x; w-=y; return w; } 
 
 ZZn8 operator-(const ZZn8& x,const ZZn4& y) 
-{ZZn8 w=x; w.a-=y; return w; } 
+{ZZn8 w=x; w-=y; return w; } 
 
 ZZn8 operator-(const ZZn8& x,const ZZn& y) 
-{ZZn8 w=x; w.a-=y; return w; } 
+{ZZn8 w=x; w-=y; return w; } 
 
 ZZn8 operator-(const ZZn8& x) 
-{ZZn8 w; w.a=-x.a; w.b=-x.b; return w; } 
+{ZZn8 w; w.a=-x.a; w.b=-x.b; w.unitary=FALSE; return w; } 
 
 ZZn8 operator*(const ZZn8& x,const ZZn8& y)
 {
@@ -178,7 +216,7 @@ ZZn8 operator/(const ZZn8& x,int i)
 {ZZn8 w=x; w/=i; return w;}
 #ifndef MR_NO_RAND
 ZZn8 randn8(void)
-{ZZn8 w; w.a=randn4(); w.b=randn4(); return w;}
+{ZZn8 w; w.a=randn4(); w.b=randn4(); w.unitary=FALSE; return w;}
 #endif
 BOOL qr(const ZZn8& x)
 {
@@ -208,14 +246,15 @@ ZZn8 sqrt(const ZZn8& x)
 
     if (x.b.iszero())
     {
-        if (qr(x.a))
+		a=x.a;
+        if (qr(a))
         {
-            s=sqrt(x.a);
+            s=sqrt(a);
             w.a=s; w.b=0;
         }
         else
         {
-            s=sqrt(txd(x.a));
+            s=sqrt(txd(a));
             w.a=0; w.b=s;
         }
         return w;   
@@ -255,6 +294,12 @@ ZZn8 tx(const ZZn8& x)
     ZZn4 t=tx(x.b);
     ZZn8 u(t,x.a);
     return u;
+}
+
+ZZn8 tx2(const ZZn8& x)
+{
+	ZZn8 u(tx(x.a),tx(x.b));
+	return u;	
 }
 
 // regular ZZn8 powering - but see powl function in zzn4.h

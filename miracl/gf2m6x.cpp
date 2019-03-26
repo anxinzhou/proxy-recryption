@@ -12,7 +12,7 @@
  *
  */
 
-#include "GF2m6x.h"
+#include "gf2m6x.h"
 
 using namespace std;
 

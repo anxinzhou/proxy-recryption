@@ -10,4 +10,3 @@
 #define MR_NO_STANDARD_IO
 #define MR_KCM 16
 #define MAXBASE ((mr_utype)1<<(MIRACL-1))
-

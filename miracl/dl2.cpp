@@ -1,5 +1,5 @@
 /* Even Faster Duursma-Lee char 2 Tate pairing based on eta_T pairing */
-/* cl /O2 /GX dl2.cpp ec2.cpp gf2m4x.cpp gf2m.cpp big.cpp ms32.lib  */
+/* cl /O2 /GX dl2.cpp ec2.cpp gf2m4x.cpp gf2m.cpp big.cpp miracl.lib  */
 /* Half sized loop so nearly twice as fast! */
 /* 14th March 2005 */
 
@@ -15,19 +15,13 @@
 
 // some example curves to play with
 
-//#define M 313
-//#define T 121
-//#define U 0
-//#define V 0
-//#define B 1
-//#define TYPE 2
-
 //#define M 283
 //#define T 249
 //#define U 219
 //#define V 27
 //#define B 1
 //#define TYPE 1
+//#define CF 1
 
 //#define M 367
 //#define T 21
@@ -35,6 +29,7 @@
 //#define V 0
 //#define B 1
 //#define TYPE 2
+//#define CF 1
 
 //#define M 379
 //#define T 317
@@ -42,20 +37,31 @@
 //#define V 283
 //#define B 1
 //#define TYPE 1
-
-//#define M 101
-//#define T 35
-//#define U 31
-//#define V 3
-//#define B 1
-//#define TYPE 1
+//#define CF 1
 
 #define M 1223
 #define T 255
 #define U 0
 #define V 0
-#define B 1
-#define TYPE 2
+#define B 0
+#define TYPE 1
+#define CF 5
+
+//#define M 271
+//#define T 207
+//#define U 175
+//#define V 111
+//#define B 0
+//#define TYPE 1
+//#define CF 487805
+
+//#define M 353 
+//#define B 1
+//#define T 215
+//#define U 0
+//#define V 0
+//#define TYPE 2
+//#define CF 1
 
 //#define M 271
 //#define U 0
@@ -63,6 +69,7 @@
 //#define T 201
 //#define B 0
 //#define TYPE 1
+//#define CF 487805
 
 #define IMOD4 ((M+1)/2)%4
 
@@ -114,7 +121,7 @@ GF2m4x tate(EC2& P,EC2& Q)
 
 
     miller=1;
-    for (i=0;i<(m-1)/2;i+=2)
+    for (i=0;i<(m-3)/2;i+=2)
     {
 
         t=xp+1; xp=sqrt(xp); yp=sqrt(yp);                 // 1            (X)
@@ -144,7 +151,7 @@ GF2m4x tate(EC2& P,EC2& Q)
     f.set(t*(xq+xp+1)+yq+yp+B,t+xq+1,t+xq,0);             // 0            (Y)
     miller=1;
   
-    for (i=0;i<(m+1)/2;i+=2)  
+    for (i=0;i<(m-1)/2;i+=2)  
     {
 // loop is unrolled x 2 
         t=xp; xp=sqrt(xp); yp=sqrt(yp);                   // 0            (X)
@@ -166,7 +173,7 @@ GF2m4x tate(EC2& P,EC2& Q)
     t=xp+1;                                               // 1            (X+1)
     f.set(t*(xq+xp+1)+yq+yp+B+1,t+xq+1,t+xq,0);           // 1            (Y)
     miller=1;
-    for (i=0;i<(m+1)/2;i+=2)
+    for (i=0;i<(m-1)/2;i+=2)
     {
 
         t=xp;  xp=sqrt(xp); yp=sqrt(yp);                 // 0            (X)
@@ -184,13 +191,12 @@ GF2m4x tate(EC2& P,EC2& Q)
 #endif
 
 #if IMOD4 == 3
-                                                          //              (X=1)
-                                                          //              (Y=1)
+                                                          //              (X=1)                                                        //              (Y=1)
     t=xp;                                                 // 0            (X+1)
     f.set(t*(xq+xp+1)+yq+yp+B+1,t+xq+1,t+xq,0);           // 1            (Y)
 
     miller=1;
-    for (i=0;i<(m-1)/2;i+=2)
+    for (i=0;i<(m-3)/2;i+=2)
     {
 
         t=xp+1; xp=sqrt(xp); yp=sqrt(yp);                 // 1            (X)
@@ -215,7 +221,8 @@ GF2m4x tate(EC2& P,EC2& Q)
 
     miller*=f;
 
-// raising to the power (2^m-2^[m+1)/2]+1)(2^[(m+1)/2]+1)(2^(2m)-1) or (2^m+2^[(m+1)/2]+1)(2^[(m+1)/2]-1)(2^(2m)-1)
+// raising to the power (2^m-2^[m+1)/2]+1)(2^[(m+1)/2]+1)(2^(2m)-1) (TYPE 2)
+// or (2^m+2^[(m+1)/2]+1)(2^[(m+1)/2]-1)(2^(2m)-1) (TYPE 1)
 // 6 Frobenius, 4 big field muls...
 
     u=v=w=miller;
@@ -258,7 +265,7 @@ GF2m4x tate(EC2& P,EC2& Q)
 int main()
 {
     EC2 P,Q,W;
-    Big bx,s,r;
+    Big bx,s,r,x,y,order;
     GF2m4x res; 
     time_t seed;
 	int i;
@@ -275,6 +282,9 @@ int main()
 
 // Curve order = 2^M+2^[(M+1)/2]+1 or 2^M-2^[(M+1)/2]+1 is nearly prime     
 
+    cout << "IMOD4= " << IMOD4 << endl;
+    cout << "M%8= " << M%8 << endl; 
+
     forever 
     {
         bx=rand(M,2);
@@ -289,10 +299,100 @@ int main()
 
    /*  for (int i=0;i<10000;i++)  */
 
-    P*=5;  // cofactor multiplication
-    Q*=5;
-//cout << "P= " << P << endl;
-//cout << "Q= " << Q << endl;
+    P*=CF;  // cofactor multiplication
+    Q*=CF;
+
+//	order=pow((Big)2,M)-pow((Big)2,(M+1)/2)+1;
+//	P*=order;
+//	cout << "P= " << P << endl;
+//	exit(0);
+/*
+mip->IOBASE=16;
+cout << "P= " << P << endl;
+cout << "Q= " << Q << endl;
+
+Big ddd=pow((Big)2,32);
+Big sx,sy;
+
+
+P.get(x,y);
+sx=x;
+sy=y;
+
+while (x>0)
+{
+    cout << "0x" << hex << x%ddd << ",";
+    x/=ddd;
+}
+cout << endl;
+
+while (y>0)
+{
+    cout << "0x" << hex << y%ddd << ",";
+    y/=ddd;
+}
+cout << endl;
+
+ddd=256;
+x=sx;
+y=sy;
+
+while (x>0)
+{
+    cout << "0x" << hex << x%ddd << ",";
+    x/=ddd;
+}
+cout << endl;
+
+while (y>0)
+{
+    cout << "0x" << hex << y%ddd << ",";
+    y/=ddd;
+}
+cout << endl;
+
+
+Q.get(x,y);
+sx=x;
+sy=y;
+ddd=pow((Big)2,32);
+
+while (x>0)
+{
+    cout << "0x" << hex << x%ddd << ",";
+    x/=ddd;
+}
+cout << endl;
+
+while (y>0)
+{
+    cout << "0x" << hex << y%ddd << ",";
+    y/=ddd;
+}
+cout << endl;
+
+ddd=256;
+x=sx;
+y=sy;
+
+while (x>0)
+{
+    cout << "0x" << hex << x%ddd << ",";
+    x/=ddd;
+}
+cout << endl;
+
+while (y>0)
+{
+    cout << "0x" << hex << y%ddd << ",";
+    y/=ddd;
+}
+cout << endl;
+
+
+
+exit(0);
+*/
 //for (i=0;i<1000;i++)
     res=tate(P,Q);
 
@@ -305,7 +405,7 @@ int main()
     P*=s;
     Q*=r;
 
-    res=tate(P,Q);
+    res=tate(Q,P);
 
     cout << "e(sP,rQ)=  " << res << endl;
 

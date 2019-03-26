@@ -17,8 +17,6 @@
  *   on the curve. 
  *
  *   Requires: big.cpp ecn.cpp
- *
- *   Copyright (c) 1997-2003 Shamus Software Ltd.
  */
 
 #include <iostream>
@@ -76,6 +74,7 @@ int main()
 /* generate public/private keys */
 
     d=rand(q);
+ //   for (int i=0;i<=10000;i++)
     G*=d;
     ep=G.get(x);
     cout << "public key = " << ep << " " << x << endl;

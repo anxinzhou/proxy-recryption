@@ -1,4 +1,37 @@
 /*
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+*/
+/*
  *   MIRACL Comba's method for ultimate speed modular multiplication
  *   mrcomba.tpl 
  *
@@ -35,18 +68,9 @@
  *
  *  **** This code does not like -fomit-frame-pointer using GCC  ***********
  *
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #include "miracl.h"    
-#ifdef MR_SSE2_INTRINSICS
-  #ifdef __GNUC__
-    #include <xmmintrin.h>
-  #else
-    #include <emmintrin.h>
-  #endif
-#endif
-
 
 #ifdef MR_COMBA
 #if INLINE_ASM == 1    
@@ -96,13 +120,13 @@
   
 /* NOTE! z must be distinct from x and y */
 
-void comba_mult(_MIPD_ big x,big y,big z) 
+void comba_mult(big x,big y,big z) 
 { /* comba multiplier */
     int i;
     mr_small *a,*b,*c;
    
-#ifdef MR_SSE2_INTRINSICS
-    __m128i xmm0,xmm1,xmm2,xmm3,xmm4,xmm7;
+#ifdef MR_WIN64
+    mr_small lo,hi,sumlo,sumhi,extra; 
 #endif
 #ifdef MR_ITANIUM
     register mr_small lo1,hi1,lo2,hi2,sumlo,sumhi,extra,ma,mb;
@@ -117,9 +141,6 @@ void comba_mult(_MIPD_ big x,big y,big z)
  #endif
 #endif
 #endif
-#ifdef MR_OS_THREADS
-    miracl *mr_mip=get_mip();
-#endif
    
     for (i=2*MR_COMBA;i<(int)(z->len&MR_OBITS);i++) z->w[i]=0;
   
@@ -131,14 +152,17 @@ void comba_mult(_MIPD_ big x,big y,big z)
  
 /* NOTE! z and x must be distinct */
 
-void comba_square(_MIPD_ big x,big z)  
+void comba_square(big x,big z)  
 { /* super comba squarer */
     int i;
     mr_small *a,*c;
   
+#ifdef MR_WIN64
+    mr_small lo,hi,sumlo,sumhi,extra,cy; 
+#endif
 #ifdef MR_ITANIUM
     register mr_small lo1,hi1,lo2,hi2,sumlo,sumhi,extra,ma,mb;
-#else
+#endif
 #ifdef MR_NOASM
  #ifdef mr_qltype
     mr_large pp1;
@@ -148,11 +172,7 @@ void comba_square(_MIPD_ big x,big z)
     mr_large pp1,pp2,sum;
  #endif
 #endif
-#endif
-#ifdef MR_OS_THREADS
-    miracl *mr_mip=get_mip();
-#endif
- 
+
     for (i=2*MR_COMBA;i<(int)(z->len&MR_OBITS);i++) z->w[i]=0;  
  
     z->len=2*MR_COMBA;
@@ -168,7 +188,10 @@ void comba_redc(_MIPD_ big t,big z)
     mr_small carry,su;
 #ifdef MR_ITANIUM
     register mr_small lo1,hi1,lo2,hi2,sumlo,sumhi,extra,ma,mb,sp,u;
-#else
+#endif
+#ifdef MR_WIN64
+    mr_small lo,hi,sumlo,sumhi,extra,ma,mb,u; 
+#endif
 #ifdef MR_NOASM
     mr_large u;
 #ifndef MR_SPECIAL
@@ -182,7 +205,7 @@ void comba_redc(_MIPD_ big t,big z)
  #endif
 #endif
 #endif
-#endif
+
     unsigned int i;
     big w,modulus;
     mr_small *a,*b;
@@ -207,19 +230,119 @@ void comba_redc(_MIPD_ big t,big z)
    The generated code can be manually optimised further.....
 */
     int overshoot;
-    mr_small k[MR_COMBA],sn;
+    mr_small k[MR_COMBA],sn,tt,v;
+#ifdef MR_PSEUDO_MERSENNE_142
+    mr_small sh,sl;
+#endif
     mr_small *c;
+
     modulus=mr_mip->modulus;     
     for (i=MR_COMBA;i<(int)(z->len&MR_OBITS);i++) z->w[i]=0;
  /*      zero(z);   */
     z->len=MR_COMBA;
+
+#ifdef MR_PSEUDO_MERSENNE_142
+
+#if MIRACL==32
+
+/* special code for 2^142-111 */
+
+    sn=111;
+    sh=t->w[4]>>14;
+    t->w[4]&=0x3FFF;
+    sl=t->w[5]>>14;
+    t->w[5]<<=18; t->w[5]|=sh;
+    sh=t->w[6]>>14;
+    t->w[6]<<=18; t->w[6]|=sl;
+    sl=t->w[7]>>14;
+    t->w[7]<<=18; t->w[7]|=sh;
+    sh=t->w[8]>>14;
+    t->w[8]<<=18; t->w[8]|=sl;
+    t->w[9]=sh;
+
+    a=&(t->w[5]);
+    b=k;
+    c=z->w;
+
+/*** PMULT ***/
+
+    a=c;
+    k[0]=(c[4]>>14)*111;
+    c[4]&=0x3FFF;
+
+/*** INCREMENT ***/
+    b=t->w;
+
+/*** INCREMENT ***/
+    b=modulus->w;
+
+    while (z->w[4]>>14)
+    {
+/*** DECREMENT ***/	
+    }
+
+    if (z->w[MR_COMBA-1]>=modulus->w[MR_COMBA-1])
+    {
+        if (mr_compare(z,modulus)>=0)
+        {
+/*** DECREMENT ***/
+        }
+    }
+    if (z->w[MR_COMBA-1]==0) mr_lzero(z);
+
+#endif
+
+#if MIRACL==64
+
+    sn=111;
+    sh=t->w[2]>>14;
+    t->w[2]&=0x3FFF;
+    sl=t->w[3]>>14;
+    t->w[3]<<=50; t->w[3]|=sh;
+    sh=t->w[4]>>14;
+    t->w[4]<<=50; t->w[4]|=sl;
+    t->w[5]=sh;
+
+    a=&(t->w[3]);
+    b=k;
+    c=z->w;
+
+/*** PMULT ***/
+
+    a=c;
+    k[0]=(c[2]>>14)*111;
+    c[2]&=0x3FFF;
+
+/*** INCREMENT ***/
+    b=t->w;
+
+/*** INCREMENT ***/
+    b=modulus->w;
+
+    while (z->w[2]>>14)
+    {
+/*** DECREMENT ***/	
+    }
+
+    if (z->w[MR_COMBA-1]>=modulus->w[MR_COMBA-1])
+    {
+        if (mr_compare(z,modulus)>=0)
+        {
+/*** DECREMENT ***/
+        }
+    }
+    if (z->w[MR_COMBA-1]==0) mr_lzero(z);
+
+
+#endif
+
+#endif
 
 #ifdef MR_PSEUDO_MERSENNE
 
     sn=(mr_small)0-modulus->w[0];  /* Modulus is 2^{MIRACL*MR_COMBA}-c. Here we calculate c */
 
 /* .. where c MUST be a word sized ... */
-
 
     a=&(t->w[MR_COMBA]);
     b=k;
@@ -251,7 +374,9 @@ void comba_redc(_MIPD_ big t,big z)
     }
     if (z->w[MR_COMBA-1]==0) mr_lzero(z);
 
-#else
+#endif
+
+#ifdef MR_GENERALIZED_MERSENNE
 
 #if MIRACL==64
 
@@ -288,10 +413,245 @@ void comba_redc(_MIPD_ big t,big z)
     if (z->w[MR_COMBA-1]==0) mr_lzero(z);
 
    #endif
+
+   #if MR_COMBA == 2
+/* Special code for 2^127-1 - for 64-bit processor */
+
+  a=t->w;	
+  k[0]=a[2]; k[1]=a[3];
+  a=b=k;
+
+/*** INCREMENT ***/
+
+  a=t->w;
+  k[0]+=(a[1]>>63); k[1]|=(a[1]&0x8000000000000000);
+
+  c=z->w;
+
+/*** ADDITION ***/
+
+  a=z->w;
+  b=modulus->w;
+
+  if (z->w[1]>=modulus->w[1])
+  {
+      if (mr_compare(z,modulus)>=0)
+      {
+/*** DECREMENT ***/
+      }
+  }
+  if (z->w[MR_COMBA-1]==0) mr_lzero(z);
+
+   #endif
+
+   #if MR_COMBA == 9
+
+/* Special Code for 2^521-1 - assuming 64-bit processor */
+
+/* split t into 521-bit halves, low half in a, high half in b */
+
+     a=t->w; b=k; c=z->w;
+
+     for (i=0;i<=8;i++)
+         b[i]=(a[i+8]>>9)|(a[i+9]<<55);
+
+     b[8]|=(-(a[8]>>9)<<9); /* clever stuff! Set top part of b[8] to minus  *
+                             * top part of a[8]. When added they cancel out */
+
+/*** ADDITION ***/
+                              /* ignore carry=1 */
+     a=z->w;
+     b=modulus->w;
+
+     if (z->w[MR_COMBA-1]>=modulus->w[MR_COMBA-1])
+     {
+         if (mr_compare(z,modulus)>=0)
+         {
+/*** DECREMENT ***/
+         }
+     }
+     if (z->w[MR_COMBA-1]==0) mr_lzero(z);
+   #endif
+
+
 #endif
 
 
 #if MIRACL==8
+
+  #if MR_COMBA==32
+
+    a=t->w; b=k; c=z->w;
+    k[0]=k[1]=k[2]=k[3]=k[4]=k[5]=k[6]=k[7]=k[8]=k[9]=k[10]=k[11]=0;
+    k[12]=a[44]; k[13]=a[45]; k[14]=a[46]; k[15]=a[47];
+    k[16]=a[48]; k[17]=a[49]; k[18]=a[50]; k[19]=a[51];
+    k[20]=a[52]; k[21]=a[53]; k[22]=a[54]; k[23]=a[55]; 
+    k[24]=a[56]; k[25]=a[57]; k[26]=a[58]; k[27]=a[59]; 
+    k[28]=a[60]; k[29]=a[61]; k[30]=a[62]; k[31]=a[63]; 
+
+/*** ADDITION ***/
+    overshoot=carry;
+    a=c; c=t->w;
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+    
+    k[0]=k[1]=k[2]=k[3]=k[4]=k[5]=k[6]=k[7]=k[8]=k[9]=k[10]=k[11]=0;
+    k[12]=c[48]; k[13]=c[49]; k[14]=c[50]; k[15]=c[51];
+    k[16]=c[52]; k[17]=c[53]; k[18]=c[54]; k[19]=c[55];
+    k[20]=c[56]; k[21]=c[57]; k[22]=c[58]; k[23]=c[59]; 
+    k[24]=c[60]; k[25]=c[61]; k[26]=c[62]; k[27]=c[63];
+    k[28]=k[29]=k[30]=k[31]=0;
+
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+    k[0]=c[32]; k[1]=c[33]; k[2]=c[34]; k[3]=c[35];
+    k[4]=c[36]; k[5]=c[37]; k[6]=c[38]; k[7]=c[39];
+    k[8]=c[40]; k[9]=c[41]; k[10]=c[42]; k[11]=c[43];
+    k[12]=k[13]=k[14]=k[15]=k[16]=k[17]=k[18]=k[19]=k[20]=k[21]=k[22]=k[23]=0;
+    k[24]=c[56]; k[25]=c[57]; k[26]=c[58]; k[27]=c[59]; 
+    k[28]=c[60]; k[29]=c[61]; k[30]=c[62]; k[31]=c[63]; 
+
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+    k[0]=c[36]; k[1]=c[37]; k[2]=c[38]; k[3]=c[39];
+    k[4]=c[40]; k[5]=c[41]; k[6]=c[42]; k[7]=c[43];
+    k[8]=c[44]; k[9]=c[45]; k[10]=c[46]; k[11]=c[47];
+    k[12]=c[52]; k[13]=c[53]; k[14]=c[54]; k[15]=c[55];
+    k[16]=c[56]; k[17]=c[57]; k[18]=c[58]; k[19]=c[59];
+    k[20]=c[60]; k[21]=c[61]; k[22]=c[62]; k[23]=c[63]; 
+    k[24]=c[52]; k[25]=c[53]; k[26]=c[54]; k[27]=c[55];
+    k[28]=c[32]; k[29]=c[33]; k[30]=c[34]; k[31]=c[35];    
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+    k[0]=c[44]; k[1]=c[45]; k[2]=c[46]; k[3]=c[47];
+    k[4]=c[48]; k[5]=c[49]; k[6]=c[50]; k[7]=c[51];
+    k[8]=c[52]; k[9]=c[53]; k[10]=c[54]; k[11]=c[55];
+    k[12]=k[13]=k[14]=k[15]=k[16]=k[17]=k[18]=k[19]=k[20]=k[21]=k[22]=k[23]=0;
+    k[24]=c[32]; k[25]=c[33]; k[26]=c[34]; k[27]=c[35];
+    k[28]=c[40]; k[29]=c[41]; k[30]=c[42]; k[31]=c[43];   
+
+
+/*** DECREMENT ***/
+    overshoot-=carry;
+
+    k[0]=c[48]; k[1]=c[49]; k[2]=c[50]; k[3]=c[51];
+    k[4]=c[52]; k[5]=c[53]; k[6]=c[54]; k[7]=c[55];
+    k[8]=c[56]; k[9]=c[57]; k[10]=c[58]; k[11]=c[59];
+    k[12]=c[60]; k[13]=c[61]; k[14]=c[62]; k[15]=c[63];
+    k[16]=k[17]=k[18]=k[19]=k[20]=k[21]=k[22]=k[23]=0;
+    k[24]=c[36]; k[25]=c[37]; k[26]=c[38]; k[27]=c[39];
+    k[28]=c[44]; k[29]=c[45]; k[30]=c[46]; k[31]=c[47];    
+
+
+/*** DECREMENT ***/
+    overshoot-=carry;
+
+    k[0]=c[52]; k[1]=c[53]; k[2]=c[54]; k[3]=c[55];
+    k[4]=c[56]; k[5]=c[57]; k[6]=c[58]; k[7]=c[59];
+    k[8]=c[60]; k[9]=c[61]; k[10]=c[62]; k[11]=c[63];
+    k[12]=c[32]; k[13]=c[33]; k[14]=c[34]; k[15]=c[35];
+    k[16]=c[36]; k[17]=c[37]; k[18]=c[38]; k[19]=c[39];
+    k[20]=c[40]; k[21]=c[41]; k[22]=c[42]; k[23]=c[43]; 
+    k[24]=k[25]=k[26]=k[27]=0;
+    k[28]=c[48]; k[29]=c[49]; k[30]=c[50]; k[31]=c[51];  
+
+
+/*** DECREMENT ***/
+    overshoot-=carry;
+
+    k[0]=c[56]; k[1]=c[57]; k[2]=c[58]; k[3]=c[59];
+    k[4]=c[60]; k[5]=c[61]; k[6]=c[62]; k[7]=c[63];
+    k[8]=k[9]=k[10]=k[11]=0;
+    k[12]=c[36]; k[13]=c[37]; k[14]=c[38]; k[15]=c[39];
+    k[16]=c[40]; k[17]=c[41]; k[18]=c[42]; k[19]=c[43];
+    k[20]=c[44]; k[21]=c[45]; k[22]=c[46]; k[23]=c[47]; 
+    k[24]=k[25]=k[26]=k[27]=0;
+    k[28]=c[52]; k[29]=c[53]; k[30]=c[54]; k[31]=c[55];  
+
+
+/*** DECREMENT ***/
+    overshoot-=carry;
+
+    b=modulus->w;
+    while (overshoot>0)
+    {
+/*** DECREMENT ***/
+        overshoot-=carry;
+    }
+    while (overshoot<0)
+    {
+/*** INCREMENT ***/
+        overshoot+=carry;
+    }
+    if (z->w[MR_COMBA-1]>=modulus->w[MR_COMBA-1])
+    {
+        if (mr_compare(z,modulus)>=0)
+        {
+/*** DECREMENT ***/
+        }
+    }
+    if (z->w[MR_COMBA-1]==0) mr_lzero(z);
+
+  #endif
+
+  #if MR_COMBA == 16
+
+/* Special code for 2^127-1 - for 8-bit processor */
+
+  a=t->w;	
+  k[0]=a[16]; k[1]=a[17]; k[2]=a[18]; k[3]=a[19];
+  k[4]=a[20]; k[5]=a[21]; k[6]=a[22]; k[7]=a[23];
+  k[8]=a[24]; k[9]=a[25]; k[10]=a[26]; k[11]=a[27];
+  k[12]=a[28]; k[13]=a[29]; k[14]=a[30]; k[15]=a[31];
+
+  a=b=k;
+
+/*** DOUBLEIT ***/
+
+  a=t->w;
+  k[0]+=(a[15]>>7); k[15]|=(a[15]&0x80);
+
+  c=z->w;
+
+/*** ADDITION ***/
+
+  a=z->w;
+  b=modulus->w;
+
+/* if MSB is 1, try and deal with it here */
+
+  tt=(mr_small)(z->w[15]>>M1);
+  v=z->w[0]+tt;
+  if (v>=z->w[0])
+  {
+      z->w[15]-=(mr_small)(tt<<M1);
+      z->w[0]=v;
+  }
+
+/* This is probably not going to happen now... */
+
+  if (z->w[15]>=modulus->w[15])
+  {
+      if (mr_compare(z,modulus)>=0)
+      {
+/*** DECREMENT ***/
+      }
+  }
+  if (z->w[MR_COMBA-1]==0) mr_lzero(z);
+
+  #endif
+
    #if MR_COMBA==20
 
    /* 2^160-2^112+2^64+1 */
@@ -423,6 +783,37 @@ comba_sub(z,w,z);
 
 #endif
 #endif
+
+  #if MR_COMBA == 4
+
+/* Special code for 2^127-1 - for 32-bit processor */
+
+  a=t->w;	
+  k[0]=a[4]; k[1]=a[5]; k[2]=a[6]; k[3]=a[7];
+  a=b=k;
+
+/*** DOUBLEIT ***/
+
+  a=t->w;
+  k[0]+=(a[3]>>31); k[3]|=(a[3]&0x80000000);
+
+  c=z->w;
+
+/*** ADDITION ***/
+
+  a=z->w;
+  b=modulus->w;
+
+  if (z->w[3]>=modulus->w[3])
+  {
+      if (mr_compare(z,modulus)>=0)
+      {
+/*** DECREMENT ***/
+      }
+  }
+  if (z->w[MR_COMBA-1]==0) mr_lzero(z);
+
+  #endif
 
   #if MR_COMBA == 6
 
@@ -566,7 +957,7 @@ comba_sub(z,w,z);
     }
     if (z->w[MR_COMBA-1]>=modulus->w[MR_COMBA-1])
     {
-        if (compare(z,modulus)>=0)
+        if (mr_compare(z,modulus)>=0)
         {
 /*** DECREMENT ***/
         }
@@ -575,6 +966,85 @@ comba_sub(z,w,z);
 
     #endif
   #endif
+
+  #if MR_COMBA == 12
+    #ifndef MR_NOFULLWIDTH
+
+/* NIST P-384 curve */
+
+    a=t->w; b=k; c=z->w;
+    k[0]=k[1]=k[2]=k[3]=0; k[4]=a[21]; k[5]=a[22]; k[6]=a[23]; k[7]=k[8]=k[9]=k[10]=k[11]=0;
+
+/*** ADDITION ***/
+    overshoot=carry;
+    a=c; c=t->w;
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+    k[0]=c[12]; k[1]=c[13]; k[2]=c[14]; k[3]=c[15]; k[4]=c[16]; k[5]=c[17]; k[6]=c[18]; k[7]=c[19]; k[8]=c[20]; k[9]=c[21]; k[10]=c[22]; k[11]=c[23];
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+    k[0]=c[21]; k[1]=c[22]; k[2]=c[23]; k[3]=c[12]; k[4]=c[13]; k[5]=c[14]; k[6]=c[15]; k[7]=c[16]; k[8]=c[17]; k[9]=c[18]; k[10]=c[19]; k[11]=c[20];
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+    k[0]=k[2]=0; k[1]=c[23]; k[3]=c[20]; k[4]=c[12]; k[5]=c[13]; k[6]=c[14]; k[7]=c[15]; k[8]=c[16]; k[9]=c[17]; k[10]=c[18]; k[11]=c[19];
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+    k[0]=k[1]=k[2]=k[3]=0; k[4]=c[20]; k[5]=c[21]; k[6]=c[22]; k[7]=c[23]; k[8]=k[9]=k[10]=k[11]=0; 
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+    k[0]=c[20]; k[1]=k[2]=0; k[3]=c[21]; k[4]=c[22]; k[5]=c[23]; k[6]=k[7]=k[8]=k[9]=k[10]=k[11]=0; 
+
+/*** INCREMENT ***/
+    overshoot+=carry;
+
+    k[0]=c[23]; k[1]=c[12]; k[2]=c[13]; k[3]=c[14]; k[4]=c[15]; k[5]=c[16]; k[6]=c[17]; k[7]=c[18]; k[8]=c[19]; k[9]=c[20]; k[10]=c[21]; k[11]=c[22];
+
+/*** DECREMENT ***/
+    overshoot-=carry;
+
+    k[0]=0; k[1]=c[20]; k[2]=c[21]; k[3]=c[22]; k[4]=c[23]; k[5]=k[6]=k[7]=k[8]=k[9]=k[10]=k[11]=0; 
+
+/*** DECREMENT ***/
+    overshoot-=carry;
+
+    k[0]=k[1]=k[2]=0; k[3]=k[4]=c[23]; k[5]=k[6]=k[7]=k[8]=k[9]=k[10]=k[11]=0; 
+
+/*** DECREMENT ***/
+    overshoot-=carry;
+
+    b=modulus->w;
+    while (overshoot>0)
+    {
+/*** DECREMENT ***/
+        overshoot-=carry;
+    }
+    while (overshoot<0)
+    {
+/*** INCREMENT ***/
+        overshoot+=carry;
+    }
+    if (z->w[MR_COMBA-1]>=modulus->w[MR_COMBA-1])
+    {
+        if (mr_compare(z,modulus)>=0)
+        {
+/*** DECREMENT ***/
+        }
+    }
+    if (z->w[MR_COMBA-1]==0) mr_lzero(z);
+
+    #endif
+  #endif
+
 
   #if MR_COMBA == 17
 
@@ -615,7 +1085,7 @@ comba_sub(z,w,z);
     a=w->w; b=modulus->w;
 
 /*** REDC ***/      /* reduces a mod b */
-    
+
     for (i=MR_COMBA;i<(int)(z->len&MR_OBITS);i++) z->w[i]=0;
    
     z->len=MR_COMBA;
@@ -654,19 +1124,42 @@ comba_sub(z,w,z);
 #endif
 } 
 
-void comba_add(_MIPD_ big x,big y,big w)
+#ifdef MR_SPECIAL
+#ifdef MR_GENERALIZED_MERSENNE
+#if MIRACL*MR_COMBA == 128
+#define MR_FAST_MOD_ADD 2
+#endif
+#endif
+#endif
+
+#ifdef MR_SPECIAL
+#ifdef MR_PSEUDO_MERSENNE
+#define MR_FAST_MOD_ADD 1
+#define MR_OP(c) ( ((mr_utype)((c)<<M1)) >>M1)
+#endif
+#endif
+
+void comba_modadd(_MIPD_ big x,big y,big w)
 { /* fast modular addition */
     unsigned int i;
     big modulus;
     BOOL dodec;
     mr_small *a,*b,*c;
-    mr_small carry,su;  
+    mr_small carry,su; 
+#ifdef MR_WIN64
+    mr_small ma,mb,u;
+#endif
 #ifdef MR_ITANIUM
-    mr_small ma,u;
+    mr_small ma,mb,u;
 #endif
 #ifdef MR_NOASM
     mr_large u;
 #endif
+
+#ifdef MR_FAST_MOD_ADD
+    mr_small sc,t,v;
+#endif
+
 #ifdef MR_OS_THREADS
     miracl *mr_mip=get_mip();
 #endif
@@ -680,6 +1173,36 @@ void comba_add(_MIPD_ big x,big y,big w)
     a=x->w; b=y->w; c=w->w;
 /*** ADDITION ***/        /* add a and b, result in c */
     w->len=MR_COMBA;
+
+#ifdef MR_FAST_MOD_ADD
+
+#if MR_FAST_MOD_ADD == 1
+
+    sc=(mr_small)0-modulus->w[0];  /* Modulus is 2^{MIRACL*MR_COMBA}-c. Here we calculate c */
+    t=MR_OP(carry)&sc;
+    v=w->w[0]+t;
+    if (v>=w->w[0])
+    {
+	w->w[0]=v;
+	carry=0;
+    }
+
+#endif
+
+#if MR_FAST_MOD_ADD == 2
+
+    t=(mr_small)(w->w[MR_COMBA-1]>>M1);
+    v=w->w[0]+t;
+    if (v>=w->w[0])
+    {
+        w->w[MR_COMBA-1]-=(mr_small)(t<<M1);
+	w->w[0]=v;
+	carry=0;
+    }
+
+#endif
+
+#endif
 
 /* if sum is greater than modulus a decrement will be required */
 
@@ -702,19 +1225,150 @@ void comba_add(_MIPD_ big x,big y,big w)
         a=w->w; b=modulus->w;
 /*** DECREMENT ***/        /* decrement b from a */
     }
+    
     if (w->w[MR_COMBA-1]==0) mr_lzero(w);   
 
 }
 
+void comba_add(big x,big y,big w)
+{ /* fast addition */
+    unsigned int i;
+    mr_small *a,*b,*c;
+    mr_small carry,su; 
+#ifdef MR_WIN64
+    mr_small ma,mb,u;
+#endif
+#ifdef MR_ITANIUM
+    mr_small ma,mb,u;
+#endif
+#ifdef MR_NOASM
+    mr_large u;
+#endif
+    
+    if (w!=x && w!=y) 
+    {
+        for (i=MR_COMBA;i<(w->len&MR_OBITS);i++) w->w[i]=0;
+        /* zero(w); */
+    }
+    
+    a=x->w; b=y->w; c=w->w;
+/*** ADDITION ***/        /* add a and b, result in c */
+
+    w->len=MR_COMBA;
+    if (w->w[MR_COMBA-1]==0) mr_lzero(w);   
+}
+
+void comba_modsub(_MIPD_ big x,big y,big w)
+{ /* fast modular subtraction */
+    unsigned int i;
+    big modulus;
+    mr_small *a,*b,*c;
+    mr_small carry,su;  
+#ifdef MR_WIN64
+    mr_small ma,mb,u;
+#endif
+#ifdef MR_ITANIUM
+    mr_small ma,u;
+#endif
+#ifdef MR_NOASM
+    mr_large u;
+#endif
+#ifdef MR_FAST_MOD_ADD
+    mr_small sc,t,v;
+#endif
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+    modulus=mr_mip->modulus;
+    if (x!=w && y!=w) 
+    {
+        for (i=MR_COMBA;i<(w->len&MR_OBITS);i++) w->w[i]=0;   
+        /* zero(w); */
+    }
+
+    a=x->w; b=y->w; c=w->w;
+/*** SUBTRACTION ***/
+
+#ifdef MR_FAST_MOD_ADD
+
+#if MR_FAST_MOD_ADD == 1
+
+    sc=(mr_small)0-modulus->w[0];  /* Modulus is 2^{MIRACL*MR_COMBA}-c. Here we calculate c */
+    t=MR_OP(carry)&sc;
+    v=w->w[0]-t;
+    if (v<=w->w[0])
+    {
+	w->w[0]=v;
+	carry=0;
+    }
+
+#endif
+
+#if MR_FAST_MOD_ADD == 2
+
+    t=(w->w[MR_COMBA-1]>>M1);
+    v=w->w[0]-t;
+    if (v<=w->w[0])
+    {
+        w->w[MR_COMBA-1]-=(t<<M1);
+	w->w[0]=v;
+	carry=0;
+    }
+
+#endif
+
+#endif
+
+    if (carry)
+    {
+        a=w->w; b=modulus->w; 
+/*** INCREMENT ***/        /* add a and b, result in c */
+    
+    }
+    w->len=MR_COMBA;
+    if (w->w[MR_COMBA-1]==0) mr_lzero(w); 
+}
+
+void comba_sub(big x,big y,big w)
+{ /* fast subtraction */
+    unsigned int i;
+    mr_small *a,*b,*c;
+    mr_small carry,su;  
+#ifdef MR_WIN64
+    mr_small ma,mb,u;
+#endif
+#ifdef MR_ITANIUM
+    mr_small ma,u;
+#endif
+#ifdef MR_NOASM
+    mr_large u;
+#endif
+
+    if (x!=w && y!=w) 
+    {
+        for (i=MR_COMBA;i<(w->len&MR_OBITS);i++) w->w[i]=0;   
+        /* zero(w); */
+    }
+
+    a=x->w; b=y->w; c=w->w;
+/*** SUBTRACTION ***/
+
+    w->len=MR_COMBA;
+    if (w->w[MR_COMBA-1]==0) mr_lzero(w); 
+}
+
 #ifndef MR_NO_LAZY_REDUCTION
 
-void comba_double_add(_MIPD_ big x,big y,big w)
+void comba_double_modadd(_MIPD_ big x,big y,big w)
 { /* fast modular addition */
     unsigned int i;
     big modulus;
     BOOL dodec;
     mr_small *a,*b,*c;
-    mr_small carry,su;  
+    mr_small carry,su; 
+#ifdef MR_WIN64
+    mr_small ma,mb,u;
+#endif    
 #ifdef MR_ITANIUM
     mr_small ma,u;
 #endif
@@ -760,14 +1414,14 @@ void comba_double_add(_MIPD_ big x,big y,big w)
 
 }
 
-#endif
-
-void comba_sub(_MIPD_ big x,big y,big w)
-{ /* fast modular subtraction */
+void comba_double_add(big x,big y,big w)
+{ /* fast modular addition */
     unsigned int i;
-    big modulus;
     mr_small *a,*b,*c;
-    mr_small carry,su;  
+    mr_small carry,su; 
+#ifdef MR_WIN64
+    mr_small ma,mb,u;
+#endif    
 #ifdef MR_ITANIUM
     mr_small ma,u;
 #endif
@@ -775,37 +1429,29 @@ void comba_sub(_MIPD_ big x,big y,big w)
     mr_large u;
 #endif
 
-#ifdef MR_OS_THREADS
-    miracl *mr_mip=get_mip();
-#endif
-    modulus=mr_mip->modulus;
-    if (x!=w && y!=w) 
+    if (w!=x && w!=y) 
     {
-        for (i=MR_COMBA;i<(w->len&MR_OBITS);i++) w->w[i]=0;   
+        for (i=2*MR_COMBA;i<(w->len&MR_OBITS);i++) w->w[i]=0;
         /* zero(w); */
     }
-
-    a=x->w; b=y->w; c=w->w;
-/*** SUBTRACTION ***/
-
-    if (carry)
-    {
-        a=w->w; b=modulus->w; 
-/*** INCREMENT ***/        /* add a and b, result in c */
     
-    }
-    w->len=MR_COMBA;
-    if (w->w[MR_COMBA-1]==0) mr_lzero(w); 
+    a=x->w; b=y->w; c=w->w;
+/*** ADDITION2 ***/        /* add a and b, result in c */
+    w->len=2*MR_COMBA;
+
+    if (w->w[2*MR_COMBA-1]==0) mr_lzero(w);   
+
 }
 
-#ifndef MR_NO_LAZY_REDUCTION
-
-void comba_double_sub(_MIPD_ big x,big y,big w)
+void comba_double_modsub(_MIPD_ big x,big y,big w)
 { /* fast modular subtraction */
     unsigned int i;
     big modulus;
     mr_small *a,*b,*c;
     mr_small carry,su;  
+#ifdef MR_WIN64
+    mr_small ma,mb,u;
+#endif
 #ifdef MR_ITANIUM
     mr_small ma,u;
 #endif
@@ -836,6 +1482,34 @@ void comba_double_sub(_MIPD_ big x,big y,big w)
     if (w->w[2*MR_COMBA-1]==0) mr_lzero(w); 
 }
 
+void comba_double_sub(big x,big y,big w)
+{ /* fast modular subtraction */
+    unsigned int i;
+    mr_small *a,*b,*c;
+    mr_small carry,su;  
+#ifdef MR_WIN64
+    mr_small ma,mb,u;
+#endif
+#ifdef MR_ITANIUM
+    mr_small ma,u;
+#endif
+#ifdef MR_NOASM
+    mr_large u;
+#endif
+
+    if (x!=w && y!=w) 
+    {
+        for (i=2*MR_COMBA;i<(w->len&MR_OBITS);i++) w->w[i]=0;   
+        /* zero(w); */
+    }
+
+    a=x->w; b=y->w; c=w->w;
+/*** SUBTRACTION2 ***/
+
+    w->len=2*MR_COMBA;
+    if (w->w[2*MR_COMBA-1]==0) mr_lzero(w); 
+}
+
 #endif
 
 void comba_negate(_MIPD_ big x,big w)
@@ -844,6 +1518,9 @@ void comba_negate(_MIPD_ big x,big w)
     big modulus;
     mr_small *a,*b,*c;
     mr_small carry,su;  
+#ifdef MR_WIN64
+    mr_small ma,mb,u;
+#endif
 #ifdef MR_ITANIUM
     mr_small ma,u;
 #endif

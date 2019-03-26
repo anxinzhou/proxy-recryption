@@ -1,5 +1,20 @@
 ; Comba/KCM Macros for TI msp430
 ;
+; The latest version of the IAR Workbench C compiler seems to have forgotten how to 
+; handle local variables in inline assembly language, so you might have to go and 
+; change a, b, c and carry in mrcomba.c to the actual registers assigned by the 
+; compiler. Look at the assembler .s output file to figure this. 
+;
+; Alternatively replace a, b, c and carry with globals g_a, g_b, g_c and g_carry, as 
+; the compiler inline assembly does seem to recognise global variables. So at file 
+; scope of mrcomba.c place
+;
+; static mr_small *g_a,*g_b,*g_c,g_carry;
+;
+; and modify all references to a, b, c and carry in mrcomba.c to g_a,g_b,g_c and g_carry
+;
+; See ecdhp16.c for an example that uses this file
+;
 ; Triple register is r8|r7|r6
 ;
 ; See makemcs.txt for more information about this file
@@ -12,13 +27,14 @@ MACRO MUL_START
   "PUSH r10\n"
   "PUSH r11\n"
   "PUSH r12\n"
+  "MOV &a,r10\n"
+  "MOV &b,r11\n"
+  "MOV &c,r12\n"
   "PUSH r8\n"
   "PUSH r7\n"
   "PUSH r6\n"
   "PUSH r5\n"
-  "MOV &a,r10\n"
-  "MOV &b,r11\n"
-  "MOV &c,r12\n"
+
   "CLR r8\n"
   "CLR r7\n"
   "CLR r6\n"
@@ -76,12 +92,12 @@ MACRO SQR_START
   __asm (
   "PUSH r10\n"
   "PUSH r12\n"
+  "MOV &a,r10\n"
+  "MOV &c,r12\n"
   "PUSH r8\n"
   "PUSH r7\n"
   "PUSH r6\n"
   "PUSH r5\n"
-  "MOV &a,r10\n"
-  "MOV &c,r12\n"
   "CLR r8\n"
   "CLR r7\n"
   "CLR r6\n"
@@ -143,13 +159,13 @@ MACRO REDC_START
   "PUSH r10\n"
   "PUSH r11\n"
   "PUSH r12\n"
+  "MOV &a,r10\n"
+  "MOV &b,r11\n"
+  "MOV &ndash,r12\n"
   "PUSH r8\n"
   "PUSH r7\n"
   "PUSH r6\n"
   "PUSH r5\n"
-  "MOV &a,r10\n"
-  "MOV &b,r11\n"
-  "MOV &ndash,r12\n"
   "CLR r8\n"
   "CLR r7\n"
   "MOV r10,r6\n"

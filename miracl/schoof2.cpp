@@ -64,8 +64,6 @@
 // However this program may be used (unmodified) to generate curves for 
 // commercial use.
 //
-// 32-bit build only
-//
 // Revision history 
 //
 // Timings for test curve Y^2+XY=X^3+X^2+52 mod 2^191
@@ -85,7 +83,6 @@
 // GF(2^251)  - 4   hours
 // GF(2^283)  - 12.3 hours
 //
-// Copyright Shamus Software Ltd. 2000
 //
 
 #include <iostream>
@@ -501,10 +498,9 @@ int main(int argc,char **argv)
         cout << "To input A and B in Hex, precede with -h" << endl;
         cout << "To output to a file, use flag -o <filename>" << endl;
         cout << "To search for NP a near-prime, incrementing B, use flag -s" << endl;
-        cout << "\nFreeware from Shamus Software, Dublin, Ireland" << endl;
+        cout << "\nFreeware from Certivox, Dublin, Ireland" << endl;
         cout << "Full C++ source code and MIRACL multiprecision library available" << endl;
-        cout << "http://indigo.ie/~mscott for details" << endl;
-        cout << "or email mscott@indigo.ie" << endl;
+        cout << "email mscott@indigo.ie" << endl;
         return 0;
     }
 

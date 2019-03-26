@@ -5,7 +5,6 @@
  *
  *   See "Handbook of Applied Cryptography"
  *
- *   Copyright (c) 1988-2006 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -26,10 +25,12 @@ int main()
     x=mirvar(0);
     y=mirvar(0);
     r=mirvar(0);
-
+#ifndef MR_EDWARDS
     fp=fopen("common.ecs","rt");
-    fscanf(fp,"%d\n",&bits);
-
+#else
+    fp=fopen("edwards.ecs","rt");
+#endif
+	fscanf(fp,"%d\n",&bits);
     mip->IOBASE=16;
     cinnum(n,fp);
     cinnum(a,fp);

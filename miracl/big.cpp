@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *    MIRACL  C++ functions big.cpp
  *
@@ -5,8 +39,6 @@
  *                 Modified by M.Scott
  *             
  *    PURPOSE :    Implementation of class Big functions
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include "big.h"
@@ -75,12 +107,15 @@ Big operator>>(const Big& b, int i)
 #ifndef MR_FP
 Big land(const Big& x,const Big& y)
 {Big z; mr_and(x.fn,y.fn,z.fn); return z;}
+Big lxor(const Big& x,const Big& y) 
+{Big z; mr_xor(x.fn,y.fn,z.fn); return z;}
+
 #endif
 
 Big from_binary(int len,char *ptr)
 {Big z; bytes_to_big(len,ptr,z.fn); return z;}
-int to_binary(const Big& b,int max,char *ptr,BOOL justify)
-{ return big_to_bytes(max,b.fn,ptr,justify);}
+//int to_binary(const Big& b,int max,char *ptr,BOOL justify)
+//{ return big_to_bytes(max,b.fn,ptr,justify);}
 
 Big modmult(const Big& b1,const Big& b2,const Big& m)
 {Big z; mad(b1.fn,b2.fn,b2.fn,m.fn,m.fn,z.fn); return z;}
@@ -139,19 +174,23 @@ Big pow(int n,Big *a,Big *b,Big p)
 
 #endif
 
-Big luc(const Big& b1,const Big& b2,const Big& b3,Big *b4)
-{Big z; if (b4!=NULL) lucas(b1.fn,b2.fn,b3.fn,b4->fn,z.fn); 
-        else          lucas(b1.fn,b2.fn,b3.fn,z.fn,z.fn);
-return z;}
+//Big luc(const Big& b1,const Big& b2,const Big& b3,Big *b4)
+//{Big z; if (b4!=NULL) lucas(b1.fn,b2.fn,b3.fn,b4->fn,z.fn); 
+//        else          lucas(b1.fn,b2.fn,b3.fn,z.fn,z.fn);
+//return z;}
 
 
 Big inverse(const Big& b1, const Big& b2)
 {Big z; xgcd(b1.fn,b2.fn,z.fn,z.fn,z.fn);return z;}
 
+Big moddiv(const Big& b1,const Big& b2,const Big& m)
+{Big z; xgcd(b2.fn,m.fn,z.fn,z.fn,z.fn); mad(b1.fn,z.fn,z.fn,m.fn,m.fn,z.fn); return z;}
+
 #ifndef MR_NO_RAND
 
 Big rand(const Big& b) {Big z; bigrand(b.fn,z.fn); return z;}
 Big rand(int n,int b) {Big z; bigdig(n,b,z.fn);  return z;}
+Big randbits(int n) {Big z; bigbits(n,z.fn); return z;}
 
 Big strong_rand(csprng *rng,const Big& b) {Big z; strong_bigrand(rng,b.fn,z.fn); return z;}
 Big strong_rand(csprng *rng,int n,int b) {Big z; strong_bigdig(rng,n,b,z.fn);  return z;}
@@ -256,64 +295,85 @@ int length(const Big& b)
  * included in the text, unlike C I/O which does include CR. */
 
 #ifndef MR_NO_STANDARD_IO
+#ifndef MR_SIMPLE_IO
 
 istream& operator>>(istream& s, Big& x)
 { 
   miracl *mip=get_mip();
+#ifndef MR_SIMPLE_BASE
+
   if (mip->IOBASE>60) 
   {
      s.sync(); 
      s.getline(mip->IOBUFF,mip->IOBSIZ);
   }
-  else s >> mip->IOBUFF;
+  else
+#endif
+	  s >> mip->IOBUFF;
   if (s.eof() || s.bad()) 
   {   
       zero(x.fn); 
       return s; 
   }
+#ifdef MR_SIMPLE_BASE
+  instr(x.fn,mip->IOBUFF); 
+#else
   cinstr(x.fn,mip->IOBUFF); 
+#endif
   return s;
 }
 
 #endif
+#endif
 
 // Note new parameter of window_size. Default to 5, but reduce to 4 (or even 3) to save RAM
 
-int window(const Big& x,int i,int *nbs,int *nzs,int window_size)
-{ /* returns sliding window value, max. of 5 bits,         *
-   * starting at i-th bit of big x. nbs is number of bits  *
-   * processed, nzs is the number of additional trailing   *
-   * zeros detected. Returns valid bit pattern 1x..x1 with *
-   * no two adjacent 0's. So 10101 will return 21 with     *
-   * nbs=5, nzs=0. 11001 will return 3, with nbs=2, nzs=2, *
-   * having stopped after the first 11..  */
+//int window(const Big& x,int i,int *nbs,int *nzs,int window_size)
+//{ /* returns sliding window value, max. of 5 bits,         *
+//   * starting at i-th bit of big x. nbs is number of bits  *
+//   * processed, nzs is the number of additional trailing   *
+//   * zeros detected. Returns valid bit pattern 1x..x1 with *
+ //  * no two adjacent 0's. So 10101 will return 21 with     *
+//   * nbs=5, nzs=0. 11001 will return 3, with nbs=2, nzs=2, *
+ //  * having stopped after the first 11..  */
 
-    return mr_window(x.fn,i,nbs,nzs,window_size);
+ //   return mr_window(x.fn,i,nbs,nzs,window_size);
+//}
+
+//int naf_window(const Big& x,const Big& x3,int i,int *nbs,int *nzs,int store)
+//{ /* returns sliding window value, max of 5 bits           *
+//   * starting at i-th bit of x. nbs is number of bits      *
+//   * processed. nzs is number of additional trailing       *    
+//   * zeros detected. x and x3 (which is 3*x) are           *
+//   * combined to produce the NAF (non-adjacent form)       *
+//   * So if x=11011(27) and x3 is 1010001, the LSB is       *
+//   * ignored and the value 100T0T (32-4-1=27) processed,   *
+//   * where T is -1. Note x.P = (3x-x)/2.P. This value will *
+//   * return +7, with nbs=4 and nzs=1, having stopped after *
+//   * the first 4 bits. Note in an NAF non-zero elements    *
+//   * are never side by side, so 10T10T won't happen        */
+
+
+//    return mr_naf_window(x.fn,x3.fn,i,nbs,nzs,store);
+//}
+
+#ifndef MR_NO_ECC_MULTIADD
+void jsf(const Big& k0,const Big& k1,Big& u0p,Big& u0m,Big& u1p,Big& u1m)
+{
+    mr_jsf(k0.fn,k1.fn,u0p.fn,u0m.fn,u1p.fn,u1m.fn);
 }
-
-int naf_window(const Big& x,const Big& x3,int i,int *nbs,int *nzs,int window_size)
-{ /* returns sliding window value, max of 5 bits           *
-   * starting at i-th bit of x. nbs is number of bits      *
-   * processed. nzs is number of additional trailing       *    
-   * zeros detected. x and x3 (which is 3*x) are           *
-   * combined to produce the NAF (non-adjacent form)       *
-   * So if x=11011(27) and x3 is 1010001, the LSB is       *
-   * ignored and the value 100T0T (32-4-1=27) processed,   *
-   * where T is -1. Note x.P = (3x-x)/2.P. This value will *
-   * return +7, with nbs=4 and nzs=1, having stopped after *
-   * the first 4 bits. Note in an NAF non-zero elements    *
-   * are never side by side, so 10T10T won't happen        */
-
-
-    return mr_naf_window(x.fn,x3.fn,i,nbs,nzs,window_size);
-}
+#endif
 
 #ifndef MR_NO_STANDARD_IO
 
 ostream& operator<<(ostream& s, const Big& x)
 {
     miracl *mip=get_mip();
-    cotstr(x.fn,mip->IOBUFF); 
+#if defined(MR_SIMPLE_BASE) || defined(MR_SIMPLE_IO)
+    otstr(x.fn,mip->IOBUFF);
+#else
+	cotstr(x.fn,mip->IOBUFF);
+#endif
     s << mip->IOBUFF; 
     return s;
 }
@@ -341,14 +401,21 @@ ostream& otfloat(ostream& s,const Big& m,int e)
             mr_shift(mip->w9,-e,mip->w9);
             fdiv(mip->w8,mip->w9,mip->w8);
         }
-     
+#if defined(MR_SIMPLE_BASE) || defined(MR_SIMPLE_IO)
+		otstr(mip->w8,mip->IOBUFF);
+#else	
         cotstr(mip->w8,mip->IOBUFF);
+#endif
         s << mip->IOBUFF;
     }
     else
     {
+#if defined(MR_SIMPLE_BASE) || defined(MR_SIMPLE_IO)
+		otstr(mip->w8,mip->IOBUFF);
+#else
         cotstr(mip->w8,mip->IOBUFF);
-        s << mip->IOBUFF;
+#endif
+		s << mip->IOBUFF;
         s << ".2^" << e*MIRACL; 
     }
 
@@ -362,8 +429,21 @@ ostream& otfloat(ostream& s,const Big& m,int e)
 char* operator<<(char *s,const Big& x)
 {
     miracl *mip=get_mip();
-    int i,n=cotstr(x.fn,mip->IOBUFF);
+    int i,n;
+#if defined(MR_SIMPLE_BASE) || defined(MR_SIMPLE_IO)
+	n=otstr(x.fn,mip->IOBUFF);
+#else
+	n=cotstr(x.fn,mip->IOBUFF);
+#endif
     if (s!=mip->IOBUFF) for (i=0;i<=n;i++) s[i]=mip->IOBUFF[i];
     return s;
 }
+
+void ecurve(const Big& a,const Big& b,const Big& p,int t)
+{
+    ecurve_init(a.fn,b.fn,p.fn,t);
+}
+
+BOOL ecurve2(int m,int a,int b,int c,const Big& a2,const Big& a6,BOOL check,int t)
+{ return ecurve2_init(m,a,b,c,a2.fn,a6.fn,check,t);}
 

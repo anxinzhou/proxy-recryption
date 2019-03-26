@@ -1,3 +1,37 @@
+
+/*
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+*/
 /*
  *   MIRACL Comba's method for ultimate speed binary polynomial
  *   mrcomba2.tpl 
@@ -20,19 +54,25 @@
  *   modulus to be used. This *must* be determined at compile time. 
  *
  *   Note that this module can generate a *lot* of code for large values 
- *   of MR_COMBA2. This should have a maximum value of 8-16.
+ *   of MR_COMBA2. This should have a maximum value of 8-20.
  *
  *   Note that on some processors it is *VITAL* that arrays be aligned on 
  *   4-byte boundaries
  *
  * *  **** This code does not like -fomit-frame-pointer using GCC  ***********
  *
- *   Copyright (c) 2006 Shamus Software Ltd.
  */
 
 #include "miracl.h"    
 
 #ifdef MR_COMBA2
+
+#ifdef MR_WIN64
+#if _MSC_VER>=1500
+#define MR_PCLMULQDQ
+#include <wmmintrin.h>
+#endif
+#endif
 
 /* NOTE! z must be distinct from x and y */
 
@@ -41,7 +81,9 @@ void comba_mult2(_MIPD_ big x,big y,big z)
     int i;
     mr_small *a,*b,*c;
     big w;
-
+#ifdef MR_PCLMULQDQ
+    __m128i m1,m2,sum;
+#endif
 #ifdef MR_OS_THREADS
     miracl *mr_mip=get_mip();
 #endif

@@ -114,7 +114,7 @@ int Ps_ZZn::max()
     term_ps_zzn *ptr=start;
     while (ptr!=NULL)
     {
-        b=bits(ptr->an);
+        b=bits((Big)ptr->an);
         if (b>m) m=b;
         ptr=ptr->next;
     }

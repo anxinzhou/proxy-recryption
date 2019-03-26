@@ -6,7 +6,6 @@
  *
  *   See "Handbook of Applied Cryptography"
  *
- *   Copyright (c) 2000-2006 Shamus Software Ltd.
  */
 
 #include <stdio.h>

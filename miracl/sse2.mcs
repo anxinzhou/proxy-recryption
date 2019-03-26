@@ -272,6 +272,31 @@ MACRO ADD_END
   }
 ENDM
 ;
+; DOUBLE_START macro
+;
+MACRO DOUBLE_START
+  ASM {
+  mov PBX,a
+  mov DAX,[PBX]
+  add [PBX],DAX
+ENDM
+;
+; DOUBLE macro
+;
+MACRO DOUBLE
+  mov DAX,[PBX+N*%d]
+  adc [PBX+N*%d],DAX
+ENDM
+;
+; DOUBLE_END
+;
+MACRO DOUBLE_END
+  mov DAX,0
+  adc DAX,DAX
+  mov carry,DAX
+  }
+ENDM
+;
 ; INC_START macro - initialise for increment/decrement. Do first one.
 ;
 MACRO INC_START

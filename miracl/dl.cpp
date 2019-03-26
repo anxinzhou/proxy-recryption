@@ -1,6 +1,6 @@
 /* Fast Duursma-Lee char 2 Tate pairing */
 /* See paper by Barreto, Galbraith O'hEigeartaigh and Scott - http://eprint.iacr.org/2004/375 */
-/* cl /O2 /GX /DGF2MS=10 dl.cpp ec2.cpp gf2m4x.cpp gf2m.cpp big.cpp ms32.lib  */
+/* cl /O2 /GX /DGF2MS=10 dl.cpp ec2.cpp gf2m4x.cpp gf2m.cpp big.cpp miracl.lib  */
 
 #include <iostream>
 #include <ctime>

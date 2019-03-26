@@ -1757,7 +1757,7 @@ unsigned int muldvd(unsigned int a, unsigned int b, unsigned int c,
 
 /*  Now ... just to confuse you even more ....
 
-    Blakley/Sloan 'portable' method for Modular multiplication IEEE Trans 
+    Blakeley/Sloan 'portable' method for Modular multiplication IEEE Trans 
     Computers C-34 March 1985 pp 290-292 eliminates need for double length 
     product - but will be slow. Might suit some RISC computers with no 
     multiply/divide instructions. To speed up try completely unravelling for() 
@@ -2495,7 +2495,7 @@ mr_small *c,*rp;
 
         .file   "mrmuldv.s"
 .text
-.globl  muldiv
+	.globl  muldiv
 muldiv:
 
         pushq   %rbx
@@ -2512,7 +2512,7 @@ muldiv:
 
         ret
 
-        .global muldvm
+        .globl muldvm
 muldvm:
    
         pushq   %rbx
@@ -2544,7 +2544,7 @@ muldvd:
 
         ret
 
-        .global muldvd2
+        .globl muldvd2
 muldvd2:
 
         pushq   %rbx
@@ -2645,5 +2645,135 @@ muldvd2 ENDP
 	
 	end
 
+
+/* Win64 C version of mrmuldv.c, for 64-bit Visual Studio apps */
+
+#include "miracl.h"
+
+mr_small muldiv(mr_small a,mr_small b,mr_small c,mr_small m,mr_small *rp)
+{
+    int i;
+    mr_small d,q=0,r=0;
+    d=m-a;
+    for (i=MIRACL/4;i>0;i--)
+    { /* do it bit by bit */
+        r<<=1;
+        if ((mr_utype)c<0) r++;
+        c<<=1;
+        q<<=1;
+        if ((mr_utype)b<0)
+        {
+            if (r>=m) { r-=d; q++; }
+            else        r+=a;
+        }
+        if (r>=m) { r-=m; q++; }
+        b<<=1;
+        r<<=1;
+        if ((mr_utype)c<0) r++;
+        c<<=1;
+        q<<=1;
+        if ((mr_utype)b<0)
+        {
+            if (r>=m) { r-=d; q++; }
+            else        r+=a;
+        }
+        if (r>=m) { r-=m; q++; }
+        b<<=1;
+        r<<=1;
+        if ((mr_utype)c<0) r++;
+        c<<=1;
+        q<<=1;
+        if ((mr_utype)b<0)
+        {
+            if (r>=m) { r-=d; q++; }
+            else        r+=a;
+        }
+        if (r>=m) { r-=m; q++; }
+        b<<=1;
+        r<<=1;
+        if ((mr_utype)c<0) r++;
+        c<<=1;
+        q<<=1;
+        if ((mr_utype)b<0)
+        {
+            if (r>=m) { r-=d; q++; }
+            else        r+=a;
+        }
+        if (r>=m) { r-=m; q++; }
+        b<<=1;
+    }
+    *rp=r;
+    return q;
+}
+
+mr_small muldvm(mr_small a,mr_small c,mr_small m,mr_small *rp)
+{ /* modified Blakely-Sloan */
+    register int i,carry;
+    register mr_small q=0,r=0;
+    r=a;
+    for (i=MIRACL/4;i>0;i--)
+    { /* do it bit by bit */
+        carry=0;
+        if ((mr_utype)r<0) carry=1;
+        r<<=1;
+        if ((mr_utype)c<0) r++;
+        c<<=1;
+        q<<=1;
+        if (carry || r>=m) { r-=m; q++; }
+        carry=0;
+        if ((mr_utype)r<0) carry=1;
+        r<<=1;
+        if ((mr_utype)c<0) r++;
+        c<<=1;
+        q<<=1;
+        if (carry || r>=m) { r-=m; q++; }
+        carry=0;
+        if ((mr_utype)r<0) carry=1;
+        r<<=1;
+        if ((mr_utype)c<0) r++;
+        c<<=1;
+        q<<=1;
+        if (carry || r>=m) { r-=m; q++; }
+        carry=0;
+        if ((mr_utype)r<0) carry=1;
+        r<<=1;
+        if ((mr_utype)c<0) r++;
+        c<<=1;
+        q<<=1;
+        if (carry || r>=m) { r-=m; q++; }
+    }
+    *rp=r;
+    return q;
+}
+
+#ifndef MR_NOFULLWIDTH
+
+/* These are now in-lined - see miracl.h */
+
+/*
+
+mr_small muldvd(mr_small a,mr_small b,mr_small c,mr_small *rp)
+{
+    mr_small q,r;
+    r=_umul128(a,b,&q);
+    r+=c;
+    q+=(r<c);
+    *rp=r;
+    return q;
+}
+
+void muldvd2(mr_small a,mr_small b,mr_small *c,mr_small *rp)
+{
+    mr_small q,r;
+    r=_umul128(a,b,&q);
+    r+=*c;
+    q+=(r<*c);
+    r+=*rp;
+    q+=(r<*rp);
+    *rp=r;
+    *c=q;
+}
+*/
+#endif
 
 

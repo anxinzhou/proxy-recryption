@@ -11,7 +11,7 @@
  *
  */
 
-#include "SF2m12x.h"
+#include "sf2m12x.h"
 
 using namespace std;
 

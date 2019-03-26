@@ -1,7 +1,7 @@
 /*
 
 Example GF(2^m) Elliptic Curve Diffie-Hellman program for constrained environments. Uses point compression.
-Stack-only memory allocation
+Stack-only memory allocation. 32-bit processor
 
 Use with this mirdef.h header (for a PC using MS C)
 
@@ -11,8 +11,8 @@ Use with this mirdef.h header (for a PC using MS C)
 #define MR_IBITS 32
 #define MR_LBITS 32
 #define mr_unsign32 unsigned int
-#define mr_dltype __int64
-#define mr_unsign64 unsigned __int64
+#define mr_dltype long long
+#define mr_unsign64 unsigned long long
 #define MR_STATIC 6
 #define MR_ALWAYS_BINARY
 #define MR_NOASM
@@ -20,7 +20,27 @@ Use with this mirdef.h header (for a PC using MS C)
 #define MR_GENERIC_MT
 #define MAXBASE ((mr_small)1<<(MIRACL-1))
 #define MR_BITSINCHAR 8
-#define MR_SHORT_OF_MEMORY
+#define MR_NOKOBLITZ
+#define MR_NO_SS
+#define MR_SIMPLE_BASE
+#define MR_SIMPLE_IO
+
+and also possibly
+
+#define MR_NO_FILE_IO
+#define MR_NO_STANDARD_IO
+
+To reduce size further consider using your own random number generator
+
+#define MR_NO_RAND
+
+On some older Microsoft compilers it may be necessary to substitute __int64 for
+long long
+
+Also consider NOT using precomputation (use ecurve2_mult(.) instead of mul2_brick(.)), and
+go through each of the modules below and carefully delete unused functions..
+
+And do not use point compression??
 
 Build the library from these modules (Example using MS C compiler)
 
@@ -51,6 +71,12 @@ cl /O2 ecdh2m.c miracl.lib
 #include <string.h>
 #include "miracl.h"
 
+#define HEXDIGS (MIRACL/4)
+
+/* !!!!!! THIS CODE AND THESE ROMS ARE NOW CREATED AUTOMATICALLY USING THE ROMAKER2.C APPLICATION !!!!!!!! */
+/* !!!!!! READ COMMENTS IN ROMAKER2.C !!!!!! */
+
+
 #define CURVE_M 163
 #define CURVE_A 7
 #define CURVE_B 6
@@ -68,7 +94,7 @@ static const mr_small rom[]=
 #define WINDOW 4
 
 /* 2^4 =16 precomputed points based on fixed generator G(x,y) */
-/* (created using ebrick2.c program with window size of 4)    */
+/* (created using romaker2.c program with window size of 4)   */
 
 static const mr_small prom[]=
 {0x0,0x0,0x0,0x0,0x0,0x0,
@@ -116,7 +142,7 @@ static const mr_small prom[]=
 
 int main()
 {
-    int ia,ib,promptr;
+    int promptr;
     epoint *PA,*PB;
     big A,B,a,b,q,pa,pb,key,x,y;
     ebrick2 binst;
@@ -124,7 +150,7 @@ int main()
 
 /* Specify base 16 here so that HEX can be read in directly without a base-change */
 
-    miracl *mip=mirsys(&instance,WORDS*8,16); /* size of bigs is fixed */
+    miracl *mip=mirsys(&instance,WORDS*HEXDIGS,16); /* size of bigs is fixed */
     char mem_big[MR_BIG_RESERVE(9)];          /* we need 9 bigs... */
     char mem_ecp[MR_ECP_RESERVE(2)];          /* ..and two elliptic curve points */
  	memset(mem_big, 0, MR_BIG_RESERVE(9));    /* clear the memory */
@@ -144,9 +170,8 @@ int main()
     PB=epoint_init_mem(mip, mem_ecp, 1);
 
     irand(mip, 3L);                      /* change parameter for different random numbers */
-
     promptr=0;
-    init_big_from_rom(B,WORDS,rom,24,&promptr);  /* Read in curve parameter B from ROM */
+    init_big_from_rom(B,WORDS,rom,WORDS*4,&promptr);  /* Read in curve parameter B from ROM */
                                                  /* don't need q or G(x,y) (we have precomputed table from it) */
 
     convert(mip,1,A);                            /* set A=1 */
@@ -158,28 +183,34 @@ int main()
 /* offline calculations */
 
     bigbits(mip,CURVE_M,a);  /* A's random number */
-    ia=mul2_brick(mip,&binst,a,pa,pa);    /* a*G =(pa,ya), ia is sign of ya */
+    mul2_brick(mip,&binst,a,pa,pa);    /* a*G =(pa,ya) */
 
     bigbits(mip,CURVE_M,b);  /* B's random number */
-    ib=mul2_brick(mip,&binst,b,pb,pb);    /* b*G =(pb,yb), ib is sign of yb */
+    mul2_brick(mip,&binst,b,pb,pb);    /* b*G =(pb,yb) */
+
+/* Swap X values */
 
 /* online calculations */
     ecurve2_init(mip,CURVE_M,CURVE_A,CURVE_B,CURVE_C,A,B,FALSE,MR_PROJECTIVE);
-    epoint2_set(mip,pb,pb,ib,PB); /* decompress PB */
+    epoint2_set(mip,pb,pb,0,PB); /* decompress PB */
     ecurve2_mult(mip,a,PB,PB);
     epoint2_get(mip,PB,key,key);
 
 /* since internal base is HEX, can use otnum instead of cotnum - avoiding a base change */
 
+#ifndef MR_NO_STANDARD_IO
 printf("Alice's Key= ");
 otnum(mip,key,stdout);
+#endif
 
-    epoint2_set(mip,pa,pa,ia,PB); /* decompress PA */
+    epoint2_set(mip,pa,pa,0,PB); /* decompress PA */
     ecurve2_mult(mip,b,PB,PB);
     epoint2_get(mip,PB,key,key);
 
+#ifndef MR_NO_STANDARD_IO
 printf("Bob's Key=   ");
 otnum(mip,key,stdout);
+#endif
 
 /* clear the memory */
 

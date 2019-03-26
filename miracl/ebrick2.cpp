@@ -9,7 +9,6 @@
  *
  *   Requires: big.cpp ec2.cpp
  *
- *   Copyright (c) 2000-2006 Shamus Software Ltd.
  */
 
 #include <iostream>

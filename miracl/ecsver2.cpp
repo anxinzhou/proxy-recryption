@@ -20,7 +20,6 @@
  * 
  *   Requires: big.cpp ec2.cpp
  *
- *   Copyright (c) 2000-2003 Shamus Software Ltd.
  */
 
 #include <iostream>
@@ -43,7 +42,7 @@ void strip(char *name)
     }
 }
 
-static Big hash(ifstream &fp)
+static Big Hash(ifstream &fp)
 { /* compute hash function */
     char ch,s[20];
     Big h;
@@ -69,7 +68,7 @@ int main()
     EC2 G,Pub;
     int ep,m,a,b,c;
     Big a2,a6,q,x,y,v,u1,u2,r,s,h;
-    char ifname[13],ofname[13];
+    char ifname[50],ofname[50];
     miracl *mip=&precision;
 
 /* get public data */
@@ -98,7 +97,7 @@ int main()
         cout << "Unable to open file " << ifname << "\n";
         return 0;
     }
-    h=hash(message);
+    h=Hash(message);
 
     mip->IOBASE=10;
     signature.open(ofname,ios::in);

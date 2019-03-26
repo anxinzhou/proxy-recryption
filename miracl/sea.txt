@@ -75,6 +75,8 @@ or
 modpol -f 65112*2#144-1 0 120 -o test160.pol
 sea -3 49 -i test160.pol
 
+(In Unix, use . and ^ instead of * and #)
+
 When using the "sea" program, the -s option is particularly useful
 and allows automatic search for an "ideal" curve. If a curve order is
 exactly divisible by a small prime, that curve is immediately abandoned, 

@@ -1,8 +1,40 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL methods for modular exponentiation
  *   mrpower.c 
- *
- *   Copyright (c) 1988-1999 Shamus Software Ltd.
  */
 
 #include <stdlib.h>
@@ -27,15 +59,13 @@ void nres_powltr(_MIPD_ int x,big y,big w)
     {
         if (size(mr_mip->w1)==0) 
         { /* 0^0 = 1 */
-            convert(_MIPP_ 1,w);
-            nres(_MIPP_ w,w);
+            copy(mr_mip->one,w);
         }
         MR_OUT
         return;
     }
 
-    convert(_MIPP_ 1,w);
-    nres(_MIPP_ w,w);
+    copy(mr_mip->one,w);
     if (size(mr_mip->w1)==0) 
     {
         MR_OUT
@@ -88,6 +118,7 @@ void nres_powltr(_MIPD_ int x,big y,big w)
         }
     }
 #endif
+    if (size(w)<0) add(_MIPP_ w,mr_mip->modulus,w);
     MR_OUT
     return;
 }
@@ -126,8 +157,7 @@ void nres_powmodn(_MIPD_ int n,big *x,big *y,big w)
     for (j=0;j<n;j++) 
         if ((k=logb2(_MIPP_ y[j]))>nb) nb=k;
 
-    convert(_MIPP_ 1,w);
-    nres(_MIPP_ w,w);
+    copy(mr_mip->one,w);
 
 #ifndef MR_ALWAYS_BINARY 
 
@@ -198,8 +228,7 @@ void nres_powmod2(_MIPD_ big x,big y,big a,big b,big w)
 
     MR_IN(99)
 
-    convert(_MIPP_ 1,w);
-    nres(_MIPP_ w,w);
+    copy(mr_mip->one,w);
     if (size(mr_mip->w1)==0 && size(mr_mip->w3)==0) 
     {
         MR_OUT
@@ -507,15 +536,13 @@ void nres_powmod(_MIPD_ big x,big y,big w)
     {
        if (size(mr_mip->w1)==0)
        { /* 0^0 = 1 */
-           convert(_MIPP_ 1,w);
-           nres(_MIPP_ w,w);
+           copy(mr_mip->one,w);
        } 
        MR_OUT
        return;
     }
 
-    convert(_MIPP_ 1,w);
-    nres(_MIPP_ w,w);
+    copy(mr_mip->one,w);
     if (size(mr_mip->w1)==0) 
     {
         MR_OUT

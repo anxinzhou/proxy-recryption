@@ -4,8 +4,6 @@
  *    AUTHOR  :    M. Scott
  *             
  *    PURPOSE :    Implementation of Class Float functions
- *
- *    Copyright (c) 2003 Shamus Software Ltd.
  */
 
 #include <iostream>

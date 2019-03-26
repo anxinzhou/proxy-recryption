@@ -7,10 +7,9 @@
 // Cryptography, edited by Blake, Seroussi and  Smart, Cambridge University 
 // Press (published January 2005)
 //
-// cl /O2 /GX folklore.cpp big.cpp ms32.lib
+// cl /O2 /GX folklore.cpp big.cpp miracl.lib
 //
 // if k=2 prime p = 3 mod 4
-// else   prime p = 5 mod 8
 //
 // Creates batch file c.bat to generate curve using CM
 // You MUST make sure that the CM utility builds the curve with the right 
@@ -91,6 +90,8 @@ int main(int argc,char **argv)
         return 0;
     }
 
+	cout << "If this freezes, just kill the program and try again.." << endl;
+
     D=rand(16,2);                  // D is random 16-bit number
     if (k==2)
     {
@@ -123,8 +124,8 @@ int main(int argc,char **argv)
     }
     else
     {
-        if (D%2==0) D+=1;          // D must be odd
-        for (;;D+=2)
+      //  if (D%2==0) D+=1;          // D must be odd
+        for (;;D+=1)
         {
             if (!sqr_free(D)) continue;
             if (jacobi(r-D,r)!=1) continue;
@@ -141,8 +142,11 @@ int main(int argc,char **argv)
 
             a=((g+1)*inverse((Big)2,r))%r;
             if (gcd(a,D)!=1) continue;
-            if (a%4==0 && D%8!=5) continue; // conditions for p=5 mod 8
-            if (a%4==2 && D%8!=1) continue;
+			if (a%2==0 && D%2==0) continue;
+		//	if (a%4==0 && D%8==1) continue;
+		//	if (a%4==2 && D%8==5) continue;
+        //    if (a%4==0 && D%8!=5) continue; // conditions for p=5 mod 8
+        //    if (a%4==2 && D%8!=1) continue;
             break;
         }
 
@@ -154,7 +158,10 @@ int main(int argc,char **argv)
         for (j=s;;j+=1)
         {
             p=a*a+D*(b0+j*r)*(b0+j*r);
-            if (p%8!=5) continue;
+			//cout << p%8 << " a%4= " << a%4 << " D%8= " << D%8 << endl;
+            if (p%8==1) continue;
+			
+			if (p%8==7 && ((p%5==1) || (p%5==4))) continue;
             if (prime(p)) break;
         }
         n=(p+1-2*a);               // Number of points on curve

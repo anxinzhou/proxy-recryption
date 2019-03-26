@@ -1,8 +1,40 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL Extended Greatest Common Divisor module.
  *   mrxgcd.c
- *
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #include "miracl.h"
@@ -10,6 +42,12 @@
 #ifdef MR_FP
 #include <math.h>
 #endif
+
+#ifdef MR_COUNT_OPS
+extern int fpx; 
+#endif
+
+#ifndef MR_USE_BINARY_XGCD
 
 #ifdef mr_dltype
 
@@ -85,10 +123,15 @@ int xgcd(_MIPD_ big x,big y,big xd,big yd,big z)
 #ifdef MR_OS_THREADS
     miracl *mr_mip=get_mip();
 #endif
+
     if (mr_mip->ERNUM) return 0;
 
     MR_IN(30)
 
+#ifdef MR_COUNT_OPS
+    fpx++; 
+#endif
+  
     copy(x,mr_mip->w1);
     copy(y,mr_mip->w2);
     s=exsign(mr_mip->w1);
@@ -104,12 +147,14 @@ int xgcd(_MIPD_ big x,big y,big xd,big yd,big z)
     {
         if (b==0)
         { /* update mr_mip->w1 and mr_mip->w2 */
+
             divide(_MIPP_ mr_mip->w1,mr_mip->w2,mr_mip->w5);
             t=mr_mip->w1,mr_mip->w1=mr_mip->w2,mr_mip->w2=t;    /* swap(mr_mip->w1,mr_mip->w2) */
             multiply(_MIPP_ mr_mip->w4,mr_mip->w5,mr_mip->w0);
             add(_MIPP_ mr_mip->w3,mr_mip->w0,mr_mip->w3);
             t=mr_mip->w3,mr_mip->w3=mr_mip->w4,mr_mip->w4=t;    /* swap(xd,yd) */
             iter++;
+
         }
         else
         {
@@ -175,6 +220,7 @@ int xgcd(_MIPD_ big x,big y,big xd,big yd,big z)
                     vv.h[MR_BOT]=mr_mip->w2->w[n-2];
                     if (n==2) last=TRUE;
                 }
+
                 u=uu.d;
                 v=vv.d;
 #else
@@ -231,14 +277,17 @@ int xgcd(_MIPD_ big x,big y,big xd,big yd,big z)
             {
                 if (dplus)
                 { 
-                    if (v-c==0 || v+d==0) break;
+                    if ((mr_small)(v-c)==0 || (mr_small)(v+d)==0) break;
+
                     q=qdiv(u+a,v-c);
+
                     if (q==0) break;
+
                     if (q!=qdiv(u-b,v+d)) break;
                 }
                 else 
                 {
-                    if (v+c==0 || v-d==0) break;
+                    if ((mr_small)(v+c)==0 || (mr_small)(v-d)==0) break;
                     q=qdiv(u-a,v+c);
                     if (q==0) break;
                     if (q!=qdiv(u+b,v-d)) break;
@@ -247,7 +296,7 @@ int xgcd(_MIPD_ big x,big y,big xd,big yd,big z)
 
             if (q==1)
             {
-                if (b+d >= MAXBASE) break; 
+                if ((mr_small)(b+d) >= MAXBASE) break; 
                 r=a+c;  a=c; c=r;
                 r=b+d;  b=d; d=r;
                 lr=u-v; u=v; v=lr;      
@@ -263,6 +312,7 @@ int xgcd(_MIPD_ big x,big y,big xd,big yd,big z)
             dplus=!dplus;
         }
         iter%=2;
+
     }
 
     if (s==MINUS) iter++;
@@ -280,6 +330,77 @@ int xgcd(_MIPD_ big x,big y,big xd,big yd,big z)
     MR_OUT
     return (size(mr_mip->w1));
 }
+
+int invmodp(_MIPD_ big x,big y,big z)
+{
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+    int gcd;
+
+    MR_IN(213);
+    gcd=xgcd(_MIPP_ x,y,z,z,z);
+    MR_OUT
+    return gcd;
+}
+
+#else
+
+/* much  smaller, much slower binary inversion algorithm */
+/* fails silently if a is not co-prime to p   */
+
+/* experimental! At least 3 times slower than standard method.. */
+
+int invmodp(_MIPD_ big a,big p,big z)
+{
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+    big u,v,x1,x2;
+
+    MR_IN(213);
+
+    u=mr_mip->w1; v=mr_mip->w2; x1=mr_mip->w3; x2=mr_mip->w4;
+    copy(a,u);    
+    copy(p,v);    
+    convert(_MIPP_ 1,x1); 
+    zero(x2);      
+   
+    while (size(u)!=1 && size(v)!=1)
+    {
+        while (remain(_MIPP_ u,2)==0)
+        {
+            subdiv(_MIPP_ u,2,u);
+            if (remain(_MIPP_ x1,2)!=0) add(_MIPP_ x1,p,x1);
+            subdiv(_MIPP_ x1,2,x1);
+        }
+        while (remain(_MIPP_ v,2)==0)
+        {
+            subdiv(_MIPP_ v,2,v);
+            if (remain(_MIPP_ x2,2)!=0) add(_MIPP_ x2,p,x2);
+            subdiv(_MIPP_ x2,2,x2);
+        }
+        if (mr_compare(u,v)>=0)
+        {
+            mr_psub(_MIPP_ u,v,u);
+            subtract(_MIPP_ x1,x2,x1);
+        }
+        else
+        {
+            mr_psub(_MIPP_ v,u,v);
+            subtract(_MIPP_ x2,x1,x2);
+        }
+    }
+    if (size(u)==1) copy(x1,z);
+    else            copy(x2,z);
+
+    if (size(z)<0) add(_MIPP_ z,p,z);
+
+    MR_OUT
+    return 1; /* note - no checking that gcd=1 */
+}
+
+#endif
 
 #ifndef MR_STATIC
 
@@ -301,7 +422,7 @@ BOOL double_inverse(_MIPD_ big n,big x,big y,big w,big z)
         MR_OUT
         return FALSE;
     }
-    xgcd(_MIPP_ mr_mip->w6,n,mr_mip->w6,mr_mip->w6,mr_mip->w6);
+    invmodp(_MIPP_ mr_mip->w6,n,mr_mip->w6);
 
     mad(_MIPP_ w,mr_mip->w6,w,n,n,y);
     mad(_MIPP_ x,mr_mip->w6,x,n,n,z);
@@ -330,7 +451,7 @@ BOOL multi_inverse(_MIPD_ int m,big *x,big n,big *w)
     }
     if (m==1)
     {
-        xgcd(_MIPP_ x[0],n,w[0],w[0],w[0]);
+        invmodp(_MIPP_ x[0],n,w[0]);
         MR_OUT
         return TRUE;
     }
@@ -348,7 +469,7 @@ BOOL multi_inverse(_MIPD_ int m,big *x,big n,big *w)
         return FALSE;
     }
 
-    xgcd(_MIPP_ mr_mip->w6,n,mr_mip->w6,mr_mip->w6,mr_mip->w6);
+    invmodp(_MIPP_ mr_mip->w6,n,mr_mip->w6);
 
 /* Now y=1/y */
 

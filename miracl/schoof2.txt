@@ -9,6 +9,11 @@ So for Borland C++ (although MS C++ is a fair bit quicker)
 bcc32 schoof2.cpp poly2.cpp poly2mod.cpp ec2.cpp big.cpp gf2m.cpp crt.cpp
 miracl.lib
 
+For MS C
+
+cl /O2 /GX schoof2.cpp poly2.cpp poly2mod.cpp ec2.cpp big.cpp gf2m.cpp crt.cpp
+miracl.lib
+
 On UNIX using g++, something like
 
 g++ -I. -c poly2.cpp

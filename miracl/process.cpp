@@ -6,7 +6,6 @@
 // <modulus>,<prime>,<1st coef.>,<1st power of X>,<1st power of Y>,<2nd coeff>..
 // Each polynomial ends with zero powers of X and Y
 //
-// Copyright Shamus Software Ltd., 1999
 //
 
 #include <iostream>
@@ -26,8 +25,13 @@ Miracl precision=1000;
 // NOTE: It may be necessary on some platforms to change the operators * and #
 //
 
+#if defined(unix)
+#define TIMES '.'
+#define RAISE '^'
+#else
 #define TIMES '*'
 #define RAISE '#'
+#endif
 
 Big tt;
 static char *ss;
@@ -181,16 +185,19 @@ int main(int argc, char **argv)
         cout << "process <prime modulus P> <-i input> <-o output>" << endl;
         cout << "OR" << endl;
         cout << "process <formula for P>   <-i input> <-o output> " << endl;
+#if defined(unix)
+        cout << "e.g. process -f 2^192-2^64-1 -i mueller.raw -o p192.pol" << endl;
+#else
         cout << "e.g. process -f 2#192-2#64-1 -i mueller.raw -o p192.pol" << endl;
+#endif
         cout << "processes the file mueller.raw to p192.pol for the given modulus" << endl;
         cout << "To input P in Hex, precede with -h" << endl;
         cout << "To search downwards for a prime, use flag -d" << endl;
         cout << "Use flag -m <max> to limit polynomials processed to those" << endl;
         cout << "associated with primes less than or equal to <max>" << endl;
-        cout << "\nFreeware from Shamus Software, Dublin, Ireland" << endl;
+        cout << "\nFreeware from Certivox, Dublin, Ireland" << endl;
         cout << "Full C++ source code and MIRACL multiprecision library available" << endl;
-        cout << "http://indigo.ie/~mscott for details" << endl;
-        cout << "or email mscott@indigo.ie" << endl;
+        cout << "email mscott@indigo.ie" << endl;
         return 0;
     }
 

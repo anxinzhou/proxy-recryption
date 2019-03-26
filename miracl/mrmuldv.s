@@ -1,7 +1,3 @@
-/
-/ GNU C for Linux (and other 386 based Linux/Unix??) 
-/
-/
 
         .file   "mrmuldv.s"
         .text

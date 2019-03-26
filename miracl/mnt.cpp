@@ -191,7 +191,7 @@ void results(BOOL fout,ofstream& ofile,int d,Big p,Big nrp,Big ord,BOOL prime_or
 
     cout << "*** Found one - " << bits(p) << " bits" << endl;
     cout << " D= " << d << endl;
-    cout << " p= " << p << endl;
+    cout << " p= " << p << " p%24= " << p%24 << endl;
     cout << "NP= " << nrp << endl;
     if (cf>1) cout << "  = " << cf << "*" << ord << endl;
     if (prime_ord) 
@@ -208,7 +208,7 @@ void results(BOOL fout,ofstream& ofile,int d,Big p,Big nrp,Big ord,BOOL prime_or
     {
         ofile << "*** Found one - " << bits(p) << " bits" << endl;
         ofile << " D= " << d << endl;
-        ofile << " p= " << p << endl;
+        ofile << " p= " << p << " p%24= " << p%24 << endl;
         ofile << "NP= " << nrp << endl;
         if (cf>1) ofile << "  = " << cf << "*" << ord << endl;
         if (prime_ord) 
@@ -451,14 +451,14 @@ int main(int argc,char **argv)
                                             results(fout,ofile,d,p,nrp,ord,TRUE);
                                         }
                                     }
-                                    else
-                                    { // ord has at least a 16-bit factor...
-                                        if (bits(ord)>=MIN_P+16) 
-                                        {
-                                            mnt++;
-                                            results(fout,ofile,d,p,nrp,ord,FALSE);
-                                        }
-                                    }
+                                //    else
+                                //    { // ord has at least a 16-bit factor...
+                                //        if (bits(ord)>=MIN_P+16) 
+                                //        {
+                                //            mnt++;
+                                //            results(fout,ofile,d,p,nrp,ord,FALSE);
+                                //        }
+                                //    }
                                 }
                             }
                         }
@@ -484,14 +484,14 @@ int main(int argc,char **argv)
                                             mnt++;
                                         }
                                     }
-                                    else
-                                    {
-                                        if (bits(ord)>=MIN_P+16) 
-                                        {
-                                            results(fout,ofile,d,p,nrp,ord,FALSE);
-                                            mnt++;
-                                        }
-                                    }
+                                 //   else
+                                 //   {
+                                 //       if (bits(ord)>=MIN_P+16) 
+                                 //       {
+                                 //           results(fout,ofile,d,p,nrp,ord,FALSE);
+                                 //           mnt++;
+                                 //       }
+                                 //   }
                                 }
                             }
                         }

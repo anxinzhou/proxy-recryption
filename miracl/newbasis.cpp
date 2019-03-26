@@ -5,8 +5,6 @@
 // representation to another
 //
 //
-// Copyright Shamus Software Ltd. 2007
-//
 
 #include <iostream>
 #include "poly2.h"
@@ -53,7 +51,7 @@ int main(int argc,char **argv)
     c2=atoi(argv[ip+7]);
 
     prepare_basis(m,a2,b2,c2,TRUE);              // convert to this basis..
-    g=pow(x,m)+pow(x,a1)+pow(x,b1)+pow(x,c1)+1;  // from this basis
+    g=pow2(x,m)+pow2(x,a1)+pow2(x,b1)+pow2(x,c1)+1;  // from this basis
  
 // IEEE-1363 Algorithm A5.6, find a Root in GF (2m) of the Irreducible Binary Polynomial
 
@@ -89,7 +87,7 @@ int main(int argc,char **argv)
         t[n]=0;
         for (i=m-1;i>=0;i--)
         {
-             b=bit(w[i],n);
+             b=bit((Big)w[i],n);
              t[n]=(t[n]<<1)+b;
         }
     }
@@ -107,9 +105,9 @@ int main(int argc,char **argv)
 
     f=d;
 
-    cout << f << " decimal" << endl;
+    cout << (Big)f << " decimal" << endl;
     mip->IOBASE=16;
-    cout << f << " hex" << endl;
+    cout << (Big)f << " hex" << endl;
 
 	return 0;
 }

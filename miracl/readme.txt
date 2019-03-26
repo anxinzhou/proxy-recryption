@@ -1,4 +1,6 @@
-IMPORTANT! See UPDATE.DOC for latest changes
+IMPORTANT! See UPDATE.TXT for latest changes
+
+Then read FIRST.TXT
 
 The distribution media contains the following files
 
@@ -8,12 +10,18 @@ The distribution media contains the following files
   VC2005.TXT      -    Microsoft Visual C++ V8.0 quick-start instructions
   BORLAND.TXT     -    Borland C quick-start instructions
   ARM.TXT         -    ARM processor advice
-  SPARC.TXT       -    SPARC processor advise
-  ITANIUM.TXT     -    ITANIUM processor advise
-  AMD64.TXT       -    AMD64 processor advise
-  SSE2.TXT        -    SSE2 extensions advise
+  SPARC.TXT       -    SPARC processor advice
+  ITANIUM.TXT     -    ITANIUM processor advice
+  FASTGF2M.TXT    -    How to speed up methods based on the field GF(2^m)
+  WIN64.TXT       -    64-bit Windows advice
+  DEVCPP.TXT      -    DEV-CPP quick-start instructions
+  TEXASDSP.TXT    -    Texas C6713 DSP advice
+  AMD64.TXT       -    AMD64 processor advice
+  SSE2.TXT        -    SSE2 extensions advice
+  PIC32.TXT       -    PIC32 processor advice
   POWERPC.TXT     -    POWERPC processor advice
   LINUX.TXT       -    Some advice for Linux users 
+  CYGWIN.TXT      -    How to install MIRACL using Cygwin
   MANUAL.DOC      -    The Manual - read it!
   PROBLEMS.TXT    -    Known problems with MIRACL
   UPDATE.TXT      -    MIRACL Update History
@@ -21,8 +29,14 @@ The distribution media contains the following files
   MAKEMCS.TXT     -    How to create your own .mcs file
   DOUBLE.TXT      -    Using a double underlying type
   FLOAT.TXT       -    Multiprecision floating-point
+  DOUBIG.TXT      -    How to allow "Double Precision" big types
+  EDWARDS.TXT     -    How to use Edwards curves for Elliptic curve crypto over Fp
+  MANAGED.TXT     -    How to build a "managed code" version of MIRACL for .NET applications
+  AESGCM.TXT      -    New support for AES-GCM mode of operation
+  BLACKFIN.TXT    -    For information on Analog devices Blackfin processors
   CONFIG.C        -    Program to automatically generate a mirdef.h file 
   MEX.C           -    Program to insert fast macros into mrcomba.c/mrkcm.c 
+  FPE.PDF         -    Paper on Format Preserving Encryption
 
 In the subdirectory SOURCE
 
@@ -30,24 +44,36 @@ In the subdirectory SOURCE
                     muldvd and muldvd2
   MRMULDV.S    -    Version of the above for Linux i386 GCC
   MRMULDV.S64  -    Version of the above for Linux x86_64 GCC
+  MRMULDV.W64  -    Version of the above for Windows x86-64 Visual Studio
+  MRMULDV.GCC  -    GCC version of above - 32-bit
+  MRMULDV.G64  -    GCC version of above - 64-bit
   MRMULDV.C    -    Version of the above for Win32
   MRMULDV.CCC  -    Standard C version
   MRMULDV.GPP  -    Version of the above for DJGPP GCC
   MR*.C        -    MIRACL library source files
   MRCOMBA.TPL  -    Template file for fast Comba method
+  MRCOMBA2.TPL -    Template file for fast Comba method for GF2 arithmetic
   MRKCM.TPL    -    Template file for fast KCM method
   C.MCS        -    C macros for use with above
   C1.MCS       -    Alternate C macros
+  C2.MCS       -    Alternate C macros
+  CS.MCS       -    Alternate C macros
+  CLMUL.MCS    -    MSC Intrinsic macros to use PCLMULQDQ instruction
+  GCCLMUL.MCS  -    GCC assembly language to support PCLMULQDQ instruction 
+  SMARTMIP.MCS -    Macros for Smartmips smart-card processor
+  MIPS.MCS     -    Macros for 32-bit Mips processor
   MS86.MCS     -    Microsoft/Borland 80*86/Pentium macros for use with above
   GCC386.MCS   -    GCC compiler compatible Pentium macros
   ARM.MCS      -    ARM processor macros
   GCCARM.MCS   -    GCC compatable version of the above
   AVR.MCS      -    Atmel Atmega128 processor macros
   MSP430.MCS   -    TI msp430 support (uses hardware multiplier)
+  BLACKFIN.MCS -    Analog Devices Blackfin processor support
   GCCMSP430.MCS -   GCC compatable version of the above
   SPARC32.MCS  -    32-bit Sparc processor macros
   SPARC64.MCS  -    64-bit Sparc processor macros
   ITANIUM.MCS  -    64-bit Itanium processor macros
+  WIN64.MCS    -    64-bit x86-64 Windows macros
   AMD64.MCS    -    64-bit AMD64 procesor macros
   SSE2.MCS     -    Pentium 4 SSE2 instructions for Microsoft compiler
   GCCPPC.MCS   -    PowerPC processor macros
@@ -86,13 +112,15 @@ In the subdirectory SOURCE
   DSSGEN.C     -    Digital Signature Standard key generator program
   DSSIGN.C     -    Digital Signature Standard signature program
   DSSVER.C     -    Digital Signature Standard verification program
-  ECDH2M.C     -    Example EC Diffie-Hellman program for constrained environments (static stack-only)
+  ECDH2M.C     -    Example EC Diffie-Hellman program for 32-bit constrained environments (static stack-only)
   ECDH2M16.C   -    16-bit version of the above
   ECDH2M8.c    -    8-bit version of the above
+  ROMAKER2.C   -    Program to automatically generate ROMS for above programs
   ECDHP.C      -       ditto, over GF(p) - 32-bit
-  ECDHP32.c    -       ditto, over GF(p) - Nice ARM example (32-bits)
+  ECDHP32.C    -       ditto, over GF(p) - Nice ARM example (32-bits)
   ECDHP8.C     -       ditto, over GF(p), 8-bit version
   ECDHP16.C    -       ditto, over GF(p), 16-bit version
+  ROMAKER.C    -    Program to automatically generate ROMS for above programs
   ECSGEN.C     -    DSS (Elliptic Curve GF(p) variation) key generator program
   ECSIGN.C     -    DSS (Elliptic Curve GF(p) variation) signature program
   ECSVER.C     -    DSS (Elliptic Curve GF(p) variation) verification program
@@ -111,6 +139,7 @@ In the subdirectory SOURCE
   BIG.CPP      -    Big function implementations
   ZZN.CPP      -    ZZn function implementations
   ECN.CPP      -    ECn function implementations
+  ECNZZN.CPP   -    ECn <-> ZZn functions
   EC2.CPP      -    EC2 function implementations
   GF2M.CPP     -    GF(2^m) function implementations
   CRT.CPP      -    Crt function implementations
@@ -162,10 +191,16 @@ In the subdirectory SOURCE
   HILBERT.CPP  -            "                "
   FSAMPLE.CPP  -    Example C++ source (uses FLOATING.H)
   CARDANO.CPP  -    Example C++ source (uses ZZn2.H)
+  BP160.ECS    -    Brainpool 160-bit GF(p) curve
+  BPT160.ECS   -    Brainpool 160-bit GF(p) twisted curve
+  SECP160/192/224/256/521.ecs - Parameter files for some standard GF(p) elliptic curves
+  NIST163/233/283/571.ecs  -    Parameter files for standard GF(2^m) elliptic curves
+  KOB163/233/283/571.ecs   -    Parameter files for GF(2^m) Koblitz curves
+  EDWARDS.ECS              - Parameter file for an Edwards GF(p) elliptic curve
 
   Note how readable the C++ versions of the example programs look.
 
-  In the subdirectory SOURCE/CURVE
+  In the subdirectory SOURCE\CURVE
 
   CM.CPP       -  Complex Multiplication - creates elliptic curves
   VARIABLE.H   -  Dummy Variable class
@@ -200,6 +235,7 @@ In the subdirectory SOURCE
   SEA.CPP      -  Schoof-Elkies-Atkin-Mueller algorithm
   SEA.TXT      -  How to build the MUELLER/PROCESS/SEA applications
   WEIL.CPP     -  Calculates number of points on curve over extension field
+  GLV.CPP      -  Calculates a GLV decomposition
 
   In the subdirectory SOURCE\P1363
 
@@ -207,24 +243,30 @@ In the subdirectory SOURCE
   P1363.C      - P1363 implementation file
   TEST1363.c   - test driver for P1363 implementation
   RSA.C        - quick start RSA application
+  OCTET.C      - OCTET string handler
+  OCTET.H      - OCTET header
+  ECDH.C       - Elliptic Curve Code
+  ECDH.H       - Elliptic Curve Header
+  TESTECC.C    - Typical MIRACL Elliptic Curve API Implementation - thread-safe - no heap
 
-  In the subdirectory SOURCE\IBE
+  In the subdirectory SOURCE\CURVE\PAIRING
 
-  IBE.TXT      - Read this first
-  IBE_SET.CPP  - Create IBE paramters, and master key
-  IBE_EXT.CPP  - Extract a private key from the Identity
-  IBE_ENC.CPP  - Encrypt a file using identity
-  IBE_DEC.CPP  - Decrypt a file using the private key
-  IBE_DECP.CPP - Decrypt using precomputation
-  IBE_DECB.CPP - Decrypt using batching
-  IBE_ENCP.CPP - Demonstrate Encryption using precomputation
-  BLS_GEN.CPP  - Boneh-Lynn-Shacham Short Signature key generation
   BLS_SIGN.CPP - Boneh-Lynn-Shacham signature
   BLS_VER.CPP  - Boneh-Lynn-Shacham signature verification
+  GF2M4X.H     - GF(2^4m) arithmetic - Header file
+  GF2M4X.CPP   - GF(2^4m) arithmetic - Implementation file
+  GF2M6X.H     - GF(2^6m) arithmetic - Header file
+  GF2M6X.CPP   - GF(2^6m) arithmetic - Implementation file
+  GF2M12X.H    - GF(2^12m) arithmetic - Header file
+  GF2M12X.CPP  - GF(2^12m) arithmetic - Implementation file
+  SF2M12X.H    - GF(2^12m) special extension arithmetic - Header file
+  SF2M12X.CPP  - GF(2^12m) special extension arithmetic - Implementation file
   ECN2.H       - Elliptic curves over Fp2 - Header file
   ECN2.CPP     - Elliptic curves over Fp2 - Implementation file
   ECN4.H       - Elliptic curves over Fp4 - Header file
   ECN4.CPP     - Elliptic curves over Fp4 - Implementation file
+  ECN6.H       - Elliptic curves over Fp6 - Header file
+  ECN6.CPP     - Elliptic curves over Fp6 - Implementation file
   ZZN2.H       - Fp2 arithmetic - Header file
   ZZN2.CPP     - Fp2 arithmetic - Implementation file
   ZZN3.H       - Fp3 arithmetic - Header file
@@ -237,43 +279,97 @@ In the subdirectory SOURCE
   ZZN6.H/.CPP  - Fp6 arithmetic - 2 over 3
   ZZN6a.H/.CPP - Fp6 arithmetic - 3 over 2
   ZZN12.H/.CPP - Fp12 arithmetic - 2 over 3 over 2
+  ZZN12a.H/.CPP- Fp12 arithmetic - 3 over 2 over 2
+  ZZN12b.H/.CPP- Fp12 arithmetic - 2 over 2 over 3
+  ZZN18.H/.CPP - Fp18 arithmetic - 3 over 2 over 3
+  ZZN24.H/.CPP - Fp24 arithmetic - 3 over 2 over 2 over 2
+  ZZN36.H/.CPP - Fp36 arithmetic - 3 over 2 over 2 over 3
   MNT.CPP      - Program to generate MNT elliptic curves
   MNT.ECS      - Non-supersingular curve, k=6, created by CM from MNT output
   FREEMAN.CPP  - Program to generate k=10 Freeman curves
   FOLKLORE.CPP - program to create pairing-friendly non-SS curves
   IRRED.CPP    - Finds irreducible polynomial - Experimental!
   AKE.TXT      - Some explanation for these programs. 
-  AKE6.CPP     - Authenticated Key Exchange, k=6  - Experimental!
-  AKE6T.CPP    - Authenticated Key Exchange, k=6, Ate pairing, sextic twist!
-  BN.CPP       - Program to generate BN curves
-  AKE12.CPP    - Authenticated Key Exchange, k=12, BN curve  - Experimental!
-  AKE12T.CPP   - Authenticated Key Exchange, k=12, BN curve, Ate pairing, sextic twist!
-  AKE2.CPP     - Same as above, but ZZn2 based
-  AKE2SS.CPP   - Same as above, but uses a supersingular curve
-  AKE4.CPP     - Same as above, but ZZn4 based
+  AKE6MNTT.CPP - Authenticated Key Exchange, MNT k=6 curve - Experimental! 1-3-6 tower
+  AKE6MNTX.CPP - Authenticated Key Exchange, MNT k=6 curve - Experimental! Uses "compositum" tower.
+  AKE6MNTA.CPP - Authenticated Key Exchange, MNT k=6 curve - Experimental! Uses "compositum" tower.
+  AKE6MNTT.C   - Partial C version of the above
+  AKE4MNTT.CPP - Authenticated Key Exchange, k=4  - Experimental!
+  AKE4MNTT.C   - Partial C version of the above
+  AKE4MNTA.CPP - Authenticated Key Exchange, k=4  - Experimental! - Ate pairing
+  AKE4MNTT.C   - Partial C version of the above
+  AKE6FSTA.CPP - Authenticated Key Exchange, k=6, Ate pairing, sextic twist!
+  BN.CPP       - Program to generate BN k=12 curves
+  KSS8.CPP     - Program to generate KSS k=8 curves
+  KSS18.CPP    - Program to generate KSS k=18 curves
+  BLS12.CPP    - Program to generate BLS k=12 curves
+  BLS24.CPP    - Program to generate BLS k=24 curves
+  AKE12BNE.CPP - Authenticated Key Exchange, k=12, BN curve  - Experimental!
+  AKE12BNA.CPP - Authenticated Key Exchange, k=12, BN curve, Ate pairing, sextic twist!
+  AKE12BNR.CPP - Authenticated Key Exchange, k=12, BN curve, R-ate pairing, sextic twist! 1-2-6-12 tower
+  AKE12BNX.CPP - Authenticated Key Exchange, k=12, BN curve, R-ate pairing, sextic twist! 1-2-4-12 tower
+  AKE12BLSA.CPP - Authenticated Key Exchange, k=12, BLS curve, ate pairing, sextic twist!
+  AKE18KSSX.CPP - Authenticated Key Exchange, k=18, KSS curve, R-ate pairing, sextic twist!
+  AKE24BLSA.CPP - Authenticated Key Exchange, k=18, BLS curve, ate pairing, sextic twist!
+  AKE2CPT.CPP  - Same as above, but k=2 Cocks-Pinch curve
+  AKE2SST.CPP  - Same as above, but uses a supersingular curve
+  AKE4CPT.CPP  - Same as above, but k=4
   AKEW4.CPP    - Variation on the above
-  AKE8.CPP     - Same as above, but ZZn8 based
-  AKEW8.CPP    - Variation on the above
+  AKE8CPT.CPP  - Same as above, but k=8 based
+  AKE8BWT.CPP  - Variation on the above - uses Brezing-Weng curve
   K2.ECS       - Non-supersingular curve, k=2 
   K2SS.ECS     - Supersingular curve, k=2
   K4.ECS       - Non-supersingular curve, k=4 
+  K4MNT.ECS    - MNT k=4 curve
   K8.ECS       - Non-supersingular curve, k=8 
   WENG.ECS     - Non-supersingular curve, k=8
   DL.CPP       - Duursma-Lee Char 2 pairings
-  DL2.CPP      - Trucnated-loop Barreto-Galbraith-O'hEigearaigh-Scott faster char 2 pairings
+  DL2.CPP      - Truncnated-loop eta_T char 2 pairings
+  ETAT271.c    - C version of eta_T pairing
   BANDW.CPP    - Brezing & Weng curves
-  NSS3.CPP     - Faster k=2 key exchange program
-  NEWWEIL.CPP  - Uses New Weil pairing
+  AKE2NSST.CPP - Faster k=2 key exchange program - Not Superingular Curves
+  AKE2CPW.CPP  - Uses New Weil pairing, k=2
+  AKE1KMT.CPP  - Key Exchange program, for k=1 Koblitz-Menezes curve
+  MAKE_K1.CPP  - Creates curves for the above
+  XK1.ECS      - k=1 curve details
   PAIRINGS.TXT - Details of pairing-based resources
+  PAIRING_1.H  - High level type 1 pairings interface header
+  PAIRING_3.H  - High level type 3 pairings interface header
+  AKE.CPP      - Pairing-based Authentiated Key Exchange
+  BLS.CPP      - Pairing-based Short Signature Scheme
+  DAA.CPP      - Pairing-based Direct Anonymous Attestation
+  BMC.CPP      - Pairing-based Signcryption scheme
+  BLMQ.CPP     - Another pairing-based signcryption scheme
+  BB1.CPP      - Boneh & Boyen BB1 IBE
+  FUZZY.CPP    - Sahai & Waters Fuzzy IBE
+  PEKS.CPP     - PKE with keyword search
+  HIBE.CPP     - Hierarchical IBE (Lewko & Waters)
+  SK_1.CPP     - Sakai-Kasahara IBE - type 1 pairing
+  SK_3.CPP     - Sakai-Kasahara IBE - type 3 pairing
+  CPABE.CPP    - Waters Attribute Based Cryptography
+  SOK.CPP      - Sakai-Ohgishi-Kasahara key exchange (Type 1 pairing)
+  BGW.CPP      - Boneh-Gentry-Waters Broadcast encryption
+  IPE.CPP      - Inner Product Predicate Encryption
+  WANG.CPP     - Key Exchange Protocol
+  CP_PAIR      - AES-80 security from a Cocks-Pinch k=2 curve
+  MNT_PAIR.CPP  - AES-80 security from an MNT k=6 curve
+  BN_PAIR.CPP   - AES-128 security from a BN k=12 curve
+  KSS_PAIR.CPP  - AES-192 security from a KSS k=18 curve
+  BLS_PAIR.CPP  - AES-256 security from a BLS k=24 curve
+  SS2_PAIR.CPP  - AES-80/128 security from a Supersingular k=4 curve over GF(2^m)
+  SSP_PAIR.CPP  - AES-80/128 security from a Supersingular k=2 curve over GF(p)
 
   In the subdirectory INCLUDE
   
   MIRDEF.H16   -    Standard hardware specific header file for 16-bit computer
   MIRDEF.H32   -    Header file for full 32-bit Computer
   MIRDEF.H     -    Same as above
+  MIRDEF.H64   -    Header file for full 64-bit Computer
+  MIRDEF.W64   -    Header file for Microsoft 64-bit compiler
   MIRDEF.HPC   -    Header file for pseudo-32 bit computer
   MIRDEF.HAF   -    Header file for 16 bit use of 32 bit computer
   MIRDEF.HIO   -    Integer-Only 32-bit header file
+  MIRDEF.HPP   -    Header file for full 64-bit Computer - C++ Library Build - see linux64_cpp
   MIRACL.H     -    Main MIRACL header
   BIG.H        -    C++ header for 'big' numbers
   FLASH.H      -    C++ header for 'flash' numbers
@@ -281,6 +377,7 @@ In the subdirectory SOURCE
   ZZN.H        -    C++ header for 'big' numbers mod n
   CRT.H        -    C++ header for chinese remainder thereom
   ECN.H        -    C++ header for GF(p) Elliptic Curves
+  ECNZZN.H     -    ECn <-> ZZn functions
   EC2.H        -    C++ header for GF(2^m) Elliptic Curves 
   GF2M.H       -    C++ header for GF(2^m)
   BRICK.H      -    C++ header for Brickell's method
@@ -291,34 +388,33 @@ In the subdirectory SOURCE
 
   *DOIT.BAT    -    Batch files for constructing libraries and sample progs.
   MIRACL.MAK   -    John Kennedy's UNIX make file
-  BC32.LIB     -    Borland C++ V5.5 32 bit flat memory model MIRACL library 
-  MS32.LIB     -    Microsoft C 32 bit MIRACL library (for Win95/WinNT)
-  MIRACL.A     -    DJGPP GNU C MIRACL Library
+  LINUX        -    Linux bash script to build library - 32-bit
+  LINUX64      -    Linux bash script to build library - 64-bit - C Library Build
+  LINUX64_CPP  -    Linux bash script to build library - 64-bit - C++ Library Build
+ 
 
-  If using 16-bit Borland C++ V5.5 then use BCLDOIT.BAT to build MIRACL.LIB 
-  Then copy MIRDEF.H16 to MIRDEF.H, and you're in business. Use BCXDOIT.BAT to 
-  build a library for use with MIRDEF.HPC, to provide pseudo 32-bit performance 
-  from a 16-bit compiler. BC32.LIB is a true 32-bit flat model library for use 
-  with MIRDEF.H32. It was compiled with the Borland 32 bit compiler BCC32. 
-  Programs generated in this way require a DOS Extender program (e.g. Borland 
-  Powerpack for DOS), or Win32, or a Windows '95/98/NT environment. 
-  MS32.LIB is for use with the MicroSoft 32 bit compiler and MIRDEF.H32 
-  (for use with Windows95/98 or WinNT).
+  To build the standard library on a standard OS, dump all of the MIRACL files
+  into a single directory, and move to that directory
 
-  Older versions of these compilers may also work with these precompiled 
-  libraries (try it and see). If using another compiler then you must execute 
-  an appropriate xxDOIT.BAT file to create the MIRACL library. 
+  (1) If using Windows and the Microsoft compiler, open a command window, 
+      ensure paths are set correctly by executing the microsoft-supplied
+      vcvars32.bat or vcvars64.bat, and then execute either ms32doit.bat
+      or ms64doit.bat, depending on your system being 32-bits or 64-bits
 
-  If a pre-compiled library is not available:-
+  (2) If using Linux, open a terminal window and simply execute either 
+      "bash linux", or "bash linux64" for 64-bit systems
 
-  (1) Determine which of mirdef.h32/mirdef.h16/mirdef.haf/mirdef.hpc is 
-      suitable for you, and/or compile and run config.c to automatically 
+  Otherwise 
+
+  (1) Determine which of 
+      mirdef.h64/mirdef.w64/mirdef.h32/mirdef.h16/mirdef.haf/mirdef.hpc etc 
+      is suitable for you, and/or compile and run config.c to automatically 
       generate a suitable mirdef.h.
 
   (2) If for performance reasons a non-portable version is to be built,
       select suitable assembly language routines from mrmuldv.any, or
       write them yourself (send us a copy!). Even better - produce a
-      ,mcs file for the processor and use either the KCM or Comba method.
+      .mcs file for the processor and use either the KCM or Comba method.
 
   (3) Compile and link together the mr*.c components into an object library.
       Also assemble and link in the assemble language component from 
@@ -327,15 +423,10 @@ In the subdirectory SOURCE
   In the subdirectory EXE some precompiled example programs
 
   FACT.EXE     -    Factorial program
-  ROOTS.EXE    -    Roots program
-  PK-DEMO.EXE  -    Public Key Demo program  (32-bit)
   ENCIPH.EXE   -    Enciphering program
   DECIPH.EXE   -    Deciphering program
   PUBLIC.KEY   -    Public key for use by enciphering program
   PRIVATE.KEY  -    Private key for use by deciphering program
-  SECP160/192/224/256/521.ecs - Parameter files for some standard elliptic curves
-  NIST163/233/283/571.ecs  -    Parameter files for standard curves
-  KOB163/233/283 -  Parameter files for Koblitz curves
 
   In the sub-directory FREE some FREEWARE 32-bit IBM PC Command prompt 
   specific applications. CM.EXE is free as well, but omitted here for space
@@ -348,5 +439,5 @@ In the subdirectory SOURCE
                     and runs in a 32-bit DOS Window
 
   These files (ONLY!!) are FREEWARE, and may be freely copied 
-  and distributed, unmodified. Copyright remains with Shamus Software. 
+  and distributed, unmodified. Copyright remains with CertiVox. 
 

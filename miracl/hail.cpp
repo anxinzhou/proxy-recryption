@@ -3,8 +3,6 @@
  *   Gruenberger F. 'Computer Recreations' Scientific American. April 1984.
  *
  *   Requires: big.cpp
- *
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #include <iostream>

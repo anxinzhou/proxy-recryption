@@ -1,8 +1,8 @@
 /*
+ *
  *   Example program demonstrates 1024 bit Diffie-Hellman, El Gamal and RSA
  *   and 168 bit Elliptic Curve Diffie-Hellman 
  *
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -34,16 +34,16 @@ char *text="MIRACL - Best multi-precision library in the World!\n";
 int main()
 {
     int ia,ib;
-    unsigned long seed;
+    time_t seed;
     epoint *g,*ea,*eb;
     big a,b,p,q,n,p1,q1,phi,pa,pb,key,e,d,dp,dq,t,m,c,x,y,k,inv;
     big primes[2],pm[2];
     big_chinese ch;
     miracl *mip;
 #ifndef MR_NOFULLWIDTH   
-    mip=mirsys(500,0);
+    mip=mirsys(36,0);
 #else
-    mip=mirsys(500,MAXBASE);
+    mip=mirsys(36,MAXBASE);
 #endif
     a=mirvar(0);
     b=mirvar(0);
@@ -70,8 +70,8 @@ int main()
     k=mirvar(0);
     inv=mirvar(0);
 
-    time((time_t *)&seed);
-    irand(seed);   /* change parameter for different values */
+    time(&seed);
+    irand((unsigned long)seed);   /* change parameter for different values */
 
     printf("First Diffie-Hellman Key exchange .... \n");
 

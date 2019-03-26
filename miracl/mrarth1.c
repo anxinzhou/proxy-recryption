@@ -1,15 +1,54 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
+
 /*
+ *
  *   MIRACL arithmetic routines 1 - multiplying and dividing BIG NUMBERS by  
  *   integer numbers.
  *   mrarth1.c
  *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include "miracl.h"
 
 #ifdef MR_FP
 #include <math.h>
+#endif
+
+#ifdef MR_WIN64
+#include <intrin.h>
 #endif
 
 #ifdef MR_FP_ROUNDING
@@ -97,6 +136,9 @@ void mr_pmul(_MIPD_ big x,mr_small sn,big z)
     mr_small carry,*xg,*zg;
 
 #ifdef MR_ITANIUM
+    mr_small tm;
+#endif
+#ifdef MR_WIN64
     mr_small tm;
 #endif
 #ifdef MR_NOASM
@@ -690,16 +732,25 @@ int remain(_MIPD_ big x,int n)
     MR_IN(88);
 
     sx=(x->len&MR_MSBIT);
+
     if (n==2 && MR_REMAIN(mr_mip->base,2)==0)
     { /* fast odd/even check if base is even */
         MR_OUT
-        if (MR_REMAIN(x->w[0],2)==0) return 0;
+        if ((int)MR_REMAIN(x->w[0],2)==0) return 0;
         else
         {
             if (sx==0) return 1;
             else       return (-1);
         } 
     }
+    if (n==8 && MR_REMAIN(mr_mip->base,8)==0)
+    { /* fast check */
+        MR_OUT
+        r=(int)MR_REMAIN(x->w[0],8);
+        if (sx!=0) r=-r;
+        return r;
+    }
+    
     copy(x,mr_mip->w0);
     r=subdiv(_MIPP_ mr_mip->w0,n,mr_mip->w0);
     MR_OUT
@@ -730,7 +781,7 @@ int hamming(_MIPD_ big x)
     return h;
 }
 
-void bytes_to_big(_MIPD_ int len,char *ptr,big x)
+void bytes_to_big(_MIPD_ int len,const char *ptr,big x)
 { /* convert len bytes into a big           *
    * The first byte is the Most significant */
     int i,j,m,n,r;
@@ -751,6 +802,7 @@ void bytes_to_big(_MIPD_ int len,char *ptr,big x)
         return;
     }
 /* remove leading zeros.. */
+
     while (*ptr==0) 
     {
         ptr++; len--;
@@ -760,6 +812,7 @@ void bytes_to_big(_MIPD_ int len,char *ptr,big x)
             return;
         } 
     }
+
 #ifndef MR_SIMPLE_BASE
     if (mr_mip->base==0)
     { /* pack bytes directly into big */
@@ -767,6 +820,7 @@ void bytes_to_big(_MIPD_ int len,char *ptr,big x)
 #ifndef MR_NOFULLWIDTH
         m=MIRACL/8;  
         n=len/m;
+
         r=len%m;
 		wrd=(mr_small)0;  
         if (r!=0)
@@ -786,6 +840,7 @@ void bytes_to_big(_MIPD_ int len,char *ptr,big x)
             n--;
             x->w[n]=wrd;
         }
+
         for (i=n-1;i>=0;i--)
         {
             for (j=0;j<m;j++) { wrd<<=8; wrd|=MR_TOBYTE(*ptr++); }
@@ -815,7 +870,7 @@ void bytes_to_big(_MIPD_ int len,char *ptr,big x)
 } 
 
 int big_to_bytes(_MIPD_ int max,big x,char *ptr,BOOL justify)
-{ /* convert big into octet string */
+{ /* convert positive big into octet string */
     int i,j,r,m,n,len,start;
     unsigned int dig;
     unsigned char ch;
@@ -824,9 +879,19 @@ int big_to_bytes(_MIPD_ int max,big x,char *ptr,BOOL justify)
 #ifdef MR_OS_THREADS
     miracl *mr_mip=get_mip();
 #endif
-    if (mr_mip->ERNUM) return 0;
+    if (mr_mip->ERNUM || max<0) return 0;
 
-    if (size(x)==0 || (max<=0 && justify)) return 0; 
+	if (max==0 && justify) return 0; 
+	if (size(x)==0)
+	{
+		if (justify)
+		{
+			for (i=0;i<max;i++) ptr[i]=0;
+			return max;
+		}
+		return 0;
+	}
+     
     MR_IN(141);
 
     mr_lzero(x);        /* should not be needed.... */
@@ -919,3 +984,85 @@ int big_to_bytes(_MIPD_ int max,big x,char *ptr,BOOL justify)
     else         return len;
 }
 
+#ifndef MR_NO_ECC_MULTIADD
+
+/* Solinas's Joint Sparse Form */
+
+void mr_jsf(_MIPD_ big k0,big k1,big u0p,big u0m,big u1p,big u1m)
+{
+    int j,u0,u1,d0,d1,l0,l1;
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+    if (mr_mip->ERNUM) return;   
+
+    MR_IN(191)
+
+    d0=d1=0;
+
+    convert(_MIPP_ 1,mr_mip->w1);
+    copy(k0,mr_mip->w2);
+    copy(k1,mr_mip->w3);
+    zero(u0p); zero(u0m); zero(u1p); zero(u1m);
+
+    j=0;
+    while (!mr_mip->ERNUM)
+    {
+        if (size(mr_mip->w2)==0 && d0==0 && size(mr_mip->w3)==0 && d1==0) break;
+        l0=remain(_MIPP_ mr_mip->w2,8);
+        l0=(l0+d0)&0x7;
+        l1=remain(_MIPP_ mr_mip->w3,8);
+        l1=(l1+d1)&0x7;
+
+        if (l0%2==0) u0=0;
+        else
+        {
+            u0=2-(l0%4);
+            if ((l0==3 || l0==5) && l1%4==2) u0=-u0;
+        }
+        if (l1%2==0) u1=0;
+        else
+        {
+            u1=2-(l1%4);
+            if ((l1==3 || l1==5) && l0%4==2) u1=-u1;
+        }
+#ifndef MR_ALWAYS_BINARY
+        if (mr_mip->base==mr_mip->base2)
+        {
+#endif
+            if (u0>0) mr_addbit(_MIPP_ u0p,j);
+            if (u0<0) mr_addbit(_MIPP_ u0m,j);
+            if (u1>0) mr_addbit(_MIPP_ u1p,j);
+            if (u1<0) mr_addbit(_MIPP_ u1m,j);
+
+#ifndef MR_ALWAYS_BINARY
+        }
+        else
+        {
+            if (u0>0) add(_MIPP_ u0p,mr_mip->w1,u0p);
+            if (u0<0) add(_MIPP_ u0m,mr_mip->w1,u0m);
+            if (u1>0) add(_MIPP_ u1p,mr_mip->w1,u1p);
+            if (u1<0) add(_MIPP_ u1m,mr_mip->w1,u1m);
+        }
+#endif
+      
+        if (d0+d0==1+u0) d0=1-d0;
+        if (d1+d1==1+u1) d1=1-d1;
+
+        subdiv(_MIPP_ mr_mip->w2,2,mr_mip->w2);
+        subdiv(_MIPP_ mr_mip->w3,2,mr_mip->w3);
+
+#ifndef MR_ALWAYS_BINARY
+        if (mr_mip->base==mr_mip->base2)
+#endif
+            j++;
+#ifndef MR_ALWAYS_BINARY
+        else
+            premult(_MIPP_ mr_mip->w1,2,mr_mip->w1);
+#endif        
+    }
+    MR_OUT
+    return;
+}
+
+#endif

@@ -5,7 +5,6 @@
  *             
  *    PURPOSE :    Definition of class Float
  *
- *    Copyright (c) 2003 Shamus Software Ltd.
  */
 
 #ifndef FLOAT_H

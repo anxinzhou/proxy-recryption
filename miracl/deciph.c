@@ -5,9 +5,6 @@
  *   Define RSA to use cubing instead of squaring. This is no longer
  *   provably as difficult to break as factoring the modulus, its a bit 
  *   slower, but it is resistant to chosen ciphertext attack.
- *
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>

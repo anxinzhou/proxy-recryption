@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *    MIRACL  C++ Implementation file ecn4.cpp
  *
@@ -9,7 +43,6 @@
  * the MIRACL library. It is not complete, and may not work in other 
  * applications
  *
- *    Copyright (c) 2001 Shamus Software Ltd.
  */
 
 
@@ -17,71 +50,38 @@
 
 using namespace std;
 
-void ECn4::get(ZZn4& a,ZZn4& b)
+void ECn4::get(ZZn4& a,ZZn4& b) const
 {a=x;b=y;}
 
-void ECn4::get(ZZn4& a)
+void ECn4::get(ZZn4& a) const
 {a=x;}
 
-//
-// Point (x,0),(0,y) on the curve E(Fp8) maps to point (i^2*x,0),(i^4*y,0) on 
-// the twist y^2=x^3+i^4.Ax +i^6.B, where i is 8-th root of qnr
-//
-// 
-// Note that the mapped point is actually on E(Fp4) !
-//
+BOOL ECn4::iszero(void) const
+{if (marker==MR_EPOINT_INFINITY) return TRUE; return FALSE;}
 
 BOOL ECn4::set(const ZZn4& xx,const ZZn4& yy)
 { 
-  BOOL twist=get_mip()->TWIST;
-
-  if (twist)
-  {
-      ZZn4 a4,b6;
-      ZZn2 x((ZZn)0,getA());
-      ZZn2 y((ZZn)0,getB());
-      a4.set(x,(ZZn2)0);     // A*i^4
-      b6.set((ZZn2)0,y);     // B*i^6
-
-      if (yy*yy != xx*xx*xx+a4*xx+b6) return FALSE;
-  }
-  else
-  {
-      if (yy*yy != xx*xx*xx+getA()*xx+getB()) return FALSE;
-  }
-  x=xx;
-  y=yy;
-  marker=MR_EPOINT_GENERAL;
-  return TRUE;
+	if (yy*yy!=rhs(xx)) return FALSE;
+	x=xx;
+	y=yy;
+	marker=MR_EPOINT_NORMALIZED;
+	return TRUE;
 }
 
 BOOL ECn4::set(const ZZn4& xx)
 { 
- ZZn4 s,w;
- BOOL twist=get_mip()->TWIST;
+	ZZn4 w=rhs(xx);
 
- if (twist)
- {
-      ZZn4 a4,b6;
-      ZZn2 x((ZZn)0,getA());
-      ZZn2 y((ZZn)0,getB());
-      a4.set(x,(ZZn2)0);     // A*i^4
-      b6.set((ZZn2)0,y);     // B*i^6
-      w=xx*xx*xx+a4*xx+b6;
- }
- else
- {
-     w=xx*xx*xx+getA()*xx+getB();
- }
- if (!w.iszero())
- {
-  w=sqrt(w); 
-  if (w.iszero()) return FALSE;
- }
- x=xx;
- y=w;
- marker=MR_EPOINT_GENERAL;
- return TRUE;
+	if (!w.iszero())
+	{
+		w=sqrt(w); 
+		if (w.iszero()) return FALSE;
+	}
+
+	x=xx;
+	y=w;
+	marker=MR_EPOINT_NORMALIZED;
+	return TRUE;
 }
 
 ECn4 operator-(const ECn4& a) 
@@ -126,7 +126,7 @@ ECn4& ECn4::operator*=(const Big& k)
     nb=bits(h);
     for (i=nb-2;i>=1;)
     {
-        n=naf_window(kk,h,i,&nbs,&nzs,5);
+        n=naf_window(kk,h,i,&nbs,&nzs,11);
         for (j=0;j<nbs;j++) pt+=pt;
         if (n>0) pt+=t[n/2];
         if (n<0) pt-=t[(-n)/2];
@@ -150,7 +150,7 @@ ECn4 operator*(const Big& r,const ECn4& P)
 
 #ifndef MR_NO_STANDARD_IO
 
-ostream& operator<<(ostream& s,ECn4& b)
+ostream& operator<<(ostream& s,const ECn4& b)
 {
     ZZn4 x,y;
     if (b.iszero())
@@ -183,7 +183,7 @@ ECn4& ECn4::operator+=(const ECn4& z)
 
 BOOL ECn4::add(const ECn4& z,ZZn4& lam)
 {
-    BOOL twist=get_mip()->TWIST;
+    int twist=get_mip()->TWIST;
 
     if (marker==MR_EPOINT_INFINITY)
     {
@@ -221,12 +221,13 @@ BOOL ECn4::add(const ECn4& z,ZZn4& lam)
         lam=x;
         lam*=lam;
         lam*=3;
-        if (twist)
+        if (twist==MR_QUADRATIC)
         {
-            ZZn4 a4;
-            ZZn2 x((ZZn)0,getA());
-            a4.set(x,(ZZn2)0);     // A*i^4
-            lam+=a4;
+        //    ZZn4 a4;
+        //    ZZn2 x((ZZn)0,getA());
+        //    a4.set(x,(ZZn2)0);     // A*i^4
+			lam+=txx(  (ZZn2)getA() );
+        //    lam+=a4;
         }
         else  lam+=getA();
         lam/=(y+y);       
@@ -246,3 +247,48 @@ BOOL ECn4::add(const ECn4& z,ZZn4& lam)
     return TRUE;
 }
 
+#ifndef MR_NO_ECC_MULTIADD
+#ifndef MR_STATIC
+
+ECn4 mul(int n,ECn4* P,const Big* b)
+{
+    int k,j,i,m,nb,ea;
+    ECn4 *G;
+    ECn4 R;
+    m=1<<n;
+    G=new ECn4[m];
+
+ // precomputation
+    
+    for (i=0,k=1;i<n;i++)
+    {
+        for (j=0; j < (1<<i) ;j++)
+        {
+            if (j==0)   G[k]=P[i];
+            else        G[k]=G[j]+P[i];      
+            k++;
+        }
+    }
+
+    nb=0;
+    for (j=0;j<n;j++) 
+        if ((k=bits(b[j]))>nb) nb=k;
+
+    for (i=nb-1;i>=0;i--) 
+    {
+        ea=0;
+        k=1;
+        for (j=0;j<n;j++)
+        {
+            if (bit(b[j],i)) ea+=k;
+            k<<=1;
+        }
+        R+=R;;
+        if (ea!=0) R+=G[ea];
+    }
+    delete [] G;
+    return R;
+}
+
+#endif
+#endif

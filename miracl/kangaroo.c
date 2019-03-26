@@ -6,11 +6,10 @@
  *
  *   See "Monte Carlo Methods for Index Computation"
  *   by J.M. Pollard in Math. Comp. Vol. 32 1978 pp 918-924
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "miracl.h"
 
 #define LIMIT 100000000L
@@ -76,7 +75,7 @@ int main()
             i=subdiv(x,m,t);
             mad(x,table[i],x,n,n,x);
             dm+=distance[i];
-            if (compare(x,trap)==0 || dm>LIMIT+dn) break;
+            if (mr_compare(x,trap)==0 || dm>LIMIT+dn) break;
         }
         if (dm>LIMIT+dn)
         { /* trap stepped over */

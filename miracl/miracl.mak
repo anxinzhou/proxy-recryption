@@ -53,9 +53,9 @@ lenstra pk-demo factor
 
 
 MIRACL = mrflsh4 mrflsh3 mrflsh2 mrpi mrflsh1 mrio2 mrio1 mrdouble mrflash \
-mrrand mrprime mrcrt mrcurve mrshs mrshs256 mraes mrstrong mrbrick mrebrick mrgf2m mrec2m \
+mrrand mrprime mrcrt mrcurve mrshs mrshs256 mrshs512 mrsha3 mrfpe mraes mrgcm mrstrong mrbrick mrebrick mrgf2m mrec2m \
 mrscrt mrfast mrjack mrfrnd mrxgcd mrgcd mrround mrbuild mrarth3 mrbits mrarth2 \
-mrlucas mrzzn2 mrmonty mrpower mrsroot mralloc mrarth1 mrarth0 mrsmall mrcore mrmuldv
+mrlucas mrzzn2 mrzzn2b mrzzn3 mrecn2 mrmonty mrpower mrsroot mralloc mrarth1 mrarth0 mrsmall mrcore mrmuldv
 
 # Try one of these two ....
 
@@ -65,9 +65,9 @@ LIBS = miracl.a  /usr/lib/libm.a
 
 MIROBJS = mrflsh4.o mrflsh3.o mrflsh2.o mrpi.o mrflsh1.o mrio2.o mrio1.o \
 mrdouble.o mrflash.o mrrand.o mrprime.o mrcrt.o mrscrt.o mrfast.o mrjack.o \
-mrfrnd.o mrxgcd.o mrgcd.o mrstrong.o mrbrick.o mrebrick.o mrcurve.o mrshs256.o mrshs.o \
-mraes.o mrround.o mrbuild.o mrarth3.o mrbits.o mrarth2.o mrpower.o mrsroot.o mrec2m.o mrgf2m.o \
-mrlucas.o mrzzn2.o mrmonty.o mralloc.o mrarth1.o mrarth0.o mrsmall.o mrcore.o \
+mrfrnd.o mrxgcd.o mrgcd.o mrstrong.o mrbrick.o mrebrick.o mrcurve.o mrshs256.o mrshs512.o mrfpe.o mrsha3.o mrshs.o \
+mraes.o mrgcm.o mrround.o mrbuild.o mrarth3.o mrbits.o mrarth2.o mrpower.o mrsroot.o mrec2m.o mrgf2m.o \
+mrlucas.o mrzzn2.o mrzzn2b.o mrzzn3.o mrecn2.o mrmonty.o mralloc.o mrarth1.o mrarth0.o mrsmall.o mrcore.o \
 mrmuldv.o 
 
 # NOTE: THE ASSEMBLY SOURCE SHOULD BE PLACED IN 'mrmuldv.s'.  
@@ -111,6 +111,9 @@ mrpower.o: mrpower.c miracl.h
 mrsroot.o: mrsroot.c miracl.h
 mrlucas.o: mrlucas.c miracl.h
 mrzzn2.o: mrzzn2.c miracl.h
+mrzzn2b.o: mrzzn2b.c miracl.h
+mrzzn3.o: mrzzn3.c miracl.h
+mrecn2.o: mrecn2.c miracl.h
 mrsmall.o: mrsmall.c miracl.h
 mrround.o: mrround.c miracl.h
 mrio1.o: mrio1.c miracl.h
@@ -125,8 +128,12 @@ mrprime.o: mrprime.c miracl.h
 mrcrt.o: mrcrt.c miracl.h
 mrscrt.o: mrscrt.c miracl.h
 mrshs.o: mrshs.c miracl.h
-mrshs256: mrshs256.c miracl.h
+mrshs256.o: mrshs256.c miracl.h
+mrshs512.o: mrshs512.c miracl.h
+mrsha3.o: mrsha3.c miracl.h
+mrfpe.o: mrfpe.c miracl.h
 mraes.o: mraes.c miracl.h
+mrgcm.o: mrgcm.c miracl.h
 mrstrong.o: mrstrong.c miracl.h
 mrbrick.o: mrbrick.c miracl.h
 mrebrick.o: mrebrick.c miracl.h

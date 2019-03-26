@@ -1,5 +1,5 @@
 /*
- *   Proposed Digital Signature Standard (DSS)
+ *   Digital Signature Standard (DSS)
  *
  *   Elliptic Curve variation GF(2^m) - See Dr. Dobbs Journal, April 1997
  *
@@ -20,13 +20,16 @@
  *   (x,y) point, itself a large prime. The number of points on the curve is 
  *   cf.q where cf is the "co-factor", normally 2 or 4.
  * 
- *   Copyright (c) 2000-2003 Shamus Software Ltd.
  */
 
 #include <stdio.h>
 #include "miracl.h"
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef MR_COUNT_OPS
+int fpm2,fpi2,fpc,fpa,fpx;
+#endif
 
 void strip(char *name)
 { /* strip off filename extension */
@@ -106,7 +109,14 @@ int main()
 /* calculate r - this can be done offline, 
    and hence amortized to almost nothing   */
     bigrand(q,k);
+
+#ifdef MR_COUNT_OPS
+fpm2=fpi2=fpc=fpa=fpx=0;
+#endif
     ecurve2_mult(k,g,g);      /* see ebrick2.c for method to speed this up */
+#ifdef MR_COUNT_OPS
+printf("Number of modmuls= %d, inverses= %d\n",fpm2,fpi2);
+#endif
     epoint2_get(g,r,r);
     divide(r,q,q);
 

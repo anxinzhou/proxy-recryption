@@ -1,7 +1,5 @@
 /*
  *   MIRACL Chinese Remainder Thereom routines (for use with crt.h) 
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include "crt.h"

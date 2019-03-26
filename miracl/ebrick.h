@@ -8,7 +8,6 @@
  *              precomputation - elliptic curve version GF(p)
  *    NOTE    : Must be used in conjunction with big.cpp
  *                
- *    Copyright (c) 1988-1999 Shamus Software Ltd.
  */
 
 #ifndef EBRICK_H

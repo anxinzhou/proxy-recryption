@@ -13,7 +13,6 @@
  *   simple relationship between a pair of messages can be exploited in a
  *   similar way. 
  *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>

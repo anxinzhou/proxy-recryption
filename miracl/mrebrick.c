@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   Module to implement Comb method for fast
  *   computation of x*G mod n, for fixed G and n, using precomputation. 
@@ -8,8 +42,6 @@
  *   of the Digital Signature Standard (ECS) for example.
  *
  *   See "Handbook of Applied Cryptography"
- *
- *   Copyright (c) 1988-2006 Shamus Software Ltd.
  */
 
 #include <stdlib.h> 
@@ -26,7 +58,7 @@ BOOL ebrick_init(_MIPD_ ebrick *B,big x,big y,big a,big b,big n,int window,int n
    * a,b and n are parameters and modulus of the curve  *
    * window is the window size in bits and              *
    * nb is the maximum number of bits in the multiplier */
-    int i,j,k,t,bp,len,bptr;
+    int i,j,k,t,bp,len,bptr,is;
     epoint **table;
     epoint *w;
 
@@ -51,7 +83,7 @@ BOOL ebrick_init(_MIPD_ ebrick *B,big x,big y,big a,big b,big n,int window,int n
 
     B->window=window;
     B->max=nb;
-    table=mr_alloc(_MIPP_ (1<<window),sizeof(epoint *));
+    table=(epoint **)mr_alloc(_MIPP_ (1<<window),sizeof(epoint *));
     if (table==NULL)
     {
         mr_berror(_MIPP_ MR_ERR_OUT_OF_MEMORY);   
@@ -65,7 +97,7 @@ BOOL ebrick_init(_MIPD_ ebrick *B,big x,big y,big a,big b,big n,int window,int n
     copy(b,B->b);
     copy(n,B->n);
 
-    ecurve_init(_MIPP_ a,b,n,MR_AFFINE);
+    ecurve_init(_MIPP_ a,b,n,MR_BEST);
     w=epoint_init(_MIPPO_ );
     epoint_set(_MIPP_ x,y,0,w);
     table[0]=epoint_init(_MIPPO_ );
@@ -73,7 +105,6 @@ BOOL ebrick_init(_MIPD_ ebrick *B,big x,big y,big a,big b,big n,int window,int n
     epoint_copy(w,table[1]);
     for (j=0;j<t;j++)
         ecurve_double(_MIPP_ w);
-
     k=1;
     for (i=2;i<(1<<window);i++)
     {
@@ -81,6 +112,7 @@ BOOL ebrick_init(_MIPD_ ebrick *B,big x,big y,big a,big b,big n,int window,int n
         if (i==(1<<k))
         {
             k++;
+			epoint_norm(_MIPP_ w);
             epoint_copy(w,table[i]);
             
             for (j=0;j<t;j++)
@@ -91,9 +123,13 @@ BOOL ebrick_init(_MIPD_ ebrick *B,big x,big y,big a,big b,big n,int window,int n
         for (j=0;j<k;j++)
         {
             if (i&bp)
-                ecurve_add(_MIPP_ table[1<<j],table[i]);
+			{
+				is=1<<j;
+                ecurve_add(_MIPP_ table[is],table[i]);
+			}
             bp<<=1;
         }
+        epoint_norm(_MIPP_ table[i]);
     }
     epoint_free(w);
 
@@ -101,7 +137,7 @@ BOOL ebrick_init(_MIPD_ ebrick *B,big x,big y,big a,big b,big n,int window,int n
 
     len=n->len;
     bptr=0;
-    B->table=mr_alloc(_MIPP_ 2*len*(1<<window),sizeof(mr_small));
+    B->table=(mr_small *)mr_alloc(_MIPP_ 2*len*(1<<window),sizeof(mr_small));
 
     for (i=0;i<(1<<window);i++)
     {
@@ -133,7 +169,7 @@ void ebrick_end(ebrick *B)
 
 #else
 
-/* use precomputated table in ROM - see ebrick2.c for example of how to create the table, and ecdh.c 
+/* use precomputated table in ROM - see romaker.c to create the table, and ecdhp.c 
    for an example of use */
 
 void ebrick_init(ebrick *B,const mr_small* rom,big a,big b,big n,int window,int nb)
@@ -187,7 +223,7 @@ int mul_brick(_MIPD_ ebrick *B,big e,big x,big y)
 #ifdef MR_STATIC
     memset(mem,0,MR_ECP_RESERVE(2));
 #else
-    mem=ecp_memalloc(_MIPP_ 2);
+    mem=(char *)ecp_memalloc(_MIPP_ 2);
 #endif
     w=epoint_init_mem(_MIPP_ mem,0);
     z=epoint_init_mem(_MIPP_ mem,1);
@@ -201,12 +237,10 @@ int mul_brick(_MIPD_ ebrick *B,big e,big x,big y)
         promptr=2*j*len;
         init_point_from_rom(w,len,B->table,maxsize,&promptr);
     }
-
     for (i=t-2;i>=0;i--)
     {
         j=recode(_MIPP_ e,t,B->window,i);
         ecurve_double(_MIPP_ w);
-
         if (j>0)
         {
             promptr=2*j*len;

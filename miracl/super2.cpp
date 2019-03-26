@@ -9,7 +9,6 @@
 //
 // Requires: big.cpp ec2.cpp
 //
-// Copyright Shamus Software Ltd. 2002
 //
 
 #include <iostream>
@@ -21,7 +20,7 @@
 
 using namespace std;
 
-Miracl precision=50;            // max. 12x32 bits per big number
+Miracl precision=50;            // max. 50x32 bits per big number
 
 int main(int argc,char **argv)
 {
@@ -48,10 +47,9 @@ int main(int argc,char **argv)
         cout << "super2 <A> <B> <M> <a> <b> <c>" << endl << endl;
         cout << "e.g. super2 1 1 191 9" << endl << endl;
         cout << "To output to a file, use flag -o <filename>" << endl;
-        cout << "\nFreeware from Shamus Software, Dublin, Ireland" << endl;
+        cout << "\nFreeware from Certivox, Dublin, Ireland" << endl;
         cout << "Full C++ source code and MIRACL multiprecision library available" << endl;
-        cout << "http://indigo.ie/~mscott for details" << endl;
-        cout << "or email mscott@indigo.ie" << endl;
+        cout << "email mscott@indigo.ie" << endl;
         return 0;
     }
 
@@ -123,7 +121,7 @@ int main(int argc,char **argv)
         return 0;
     }
 
-    if (!ecurve2(-M,a,b,c,A,B,TRUE,MR_AFFINE))
+    if (!ecurve2(-M,a,b,c,(Big)A,(Big)B,TRUE,MR_AFFINE))
     {
         cout << "Illegal Curve Parameters" << endl;
         return 0;

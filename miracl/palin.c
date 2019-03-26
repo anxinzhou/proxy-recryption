@@ -2,7 +2,6 @@
  *   Program to investigate palindromic reversals.
  *   Gruenberger F. Computer Recreations, Scientific American. April 1984.
  *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>

@@ -26,13 +26,6 @@
  *
  * Written by Mike Scott, Dublin, Ireland. March 1998 - March 2004
  *
- * Full MIRACL source is available from 
- * ftp.computing.dcu.ie/pub/crypto/miracl.zip
- *
- * MIRACL is a shareware source code product.
- * However it is free for educational and non-profit making use
- * Queries to mike@computing.dcu.ie
- * Web page http://indigo.ie/~mscott
  */
 
 #include <iostream>
@@ -333,11 +326,11 @@ void class_poly(Complex& lam,Float *Fi2,Big A,Big B,Big C,Big D,BOOL conj,BOOL P
 // A.13.2
 // Set P1363 to False to calculate class number a la Cohen
 
-int groups(Complex& lam,Float *Fi2,unsigned int D,BOOL doit,BOOL P1363)
+int groups(Complex& lam,Float *Fi2,unsigned long D,BOOL doit,BOOL P1363)
 {
-    unsigned int s,t,A,C,B,TB,lim;
+    unsigned long s,t,A,C,B,TB,lim;
     int cn=0;
-    s=isqrt(D/3,1);
+    s=mr_lsqrt(D/3,1);
     for (B=0;B<=s;B+=1)
     {
 //  cout << "B= " << B << " s= " << s << endl;
@@ -348,7 +341,7 @@ int groups(Complex& lam,Float *Fi2,unsigned int D,BOOL doit,BOOL P1363)
             else t/=4;
         }
 // cout << "t= " << t << endl;
-        lim=isqrt(t,1);
+        lim=mr_lsqrt(t,1);
 // cout << "lim= " << lim << endl;
         if (P1363) A=2*B;
         else       A=B;
@@ -366,7 +359,7 @@ int groups(Complex& lam,Float *Fi2,unsigned int D,BOOL doit,BOOL P1363)
            
             TB=B;
             if (P1363) TB*=2;
-            if (igcd(igcd(A,TB),C)==1)
+            if (lgcd(lgcd(A,TB),C)==1)
             { // output more class group members
                 BOOL conj;
                 if (TB>0 && C>A && A>TB) 
@@ -397,9 +390,10 @@ int groups(Complex& lam,Float *Fi2,unsigned int D,BOOL doit,BOOL P1363)
 
 // check congruence conditions A14.2.1
 
-BOOL isaD(unsigned int d,int pm8,Big k)
+BOOL isaD(unsigned long d,int pm8,Big k)
 {
-    unsigned int i,dm8;
+    unsigned int dm8;
+    unsigned long i;
     BOOL sqr;
     dm8=d%8;
     if (k==1 && dm8!=3) return FALSE;
@@ -434,12 +428,12 @@ Big floor(Big N,Big D)
    return R;
 }
 
-BOOL isacm(Big p,unsigned int D,Big &W,Big &V)
+BOOL isacm(Big p,unsigned long D,Big &W,Big &V)
 {
     Big B2,A,B,C,t,X,Y,ld,delta;
-    B=sqrt(p-D,p);
+    B=sqrt(p-(Big)D,p);
     A=p;
-    C=(B*B+D)/p;
+    C=(B*B+(Big)D)/p;
     X=1;
     Y=0;
     ld=0;
@@ -505,7 +499,7 @@ BOOL isacm(Big p,unsigned int D,Big &W,Big &V)
 // Constructing a Curve (and Point if order is prime)
 // A.14.4
 
-BOOL get_curve(Complex& lam,Float *Fi2,ofstream& ofile,Big r,Big other_r,Big ord,unsigned int D,Big p,Big W,int m,BOOL always)
+BOOL get_curve(Complex& lam,Float *Fi2,ofstream& ofile,Big r,Big other_r,Big ord,unsigned long D,Big p,Big W,int m,BOOL always)
 {
     Poly polly;
     Big A0,B0,k;
@@ -671,7 +665,7 @@ BOOL get_curve(Complex& lam,Float *Fi2,ofstream& ofile,Big r,Big other_r,Big ord
                     ZZn V;
                     g=factor(spolly,1);
                     V=-g.coeff(0);
-                    V=pow(V,24/(igcd(D,3)*getk(D)));
+                    V=pow(V,24/(lgcd(D,3)*getk(D)));
                     V*=pow((ZZn)2,(4*geti(D))/getk(D));
                     if (D%2!=0) V=-V;
                     A0=(Big)((ZZn)(-3)*(V+64)*(V+16));   
@@ -817,8 +811,8 @@ BOOL get_curve(Complex& lam,Float *Fi2,ofstream& ofile,Big r,Big other_r,Big ord
                MOV=FALSE;
                if (!suppress) 
                {
-                   if (i==1 || pord) cout << "\n*** Failed MOV condition - K = " << i << endl;
-                   else              cout << "\n*** Failed MOV condition - K <= " << i << endl;
+                   if (i==1 || pord) cout << "\n*** Failed MOV condition - k = " << i << endl;
+                   else              cout << "\n*** Failed MOV condition - k <= " << i << endl;
                }
                break;
             }
@@ -863,7 +857,7 @@ BOOL get_curve(Complex& lam,Float *Fi2,ofstream& ofile,Big r,Big other_r,Big ord
         int precision=(1<<m);
         mip=mirsys(precision+2,0);     // restart with new precision
         setprecision(m);
-        gprime(65536);
+        gprime(1000000);
         mip->RPOINT=ON;
 
 
@@ -894,8 +888,13 @@ BOOL get_curve(Complex& lam,Float *Fi2,ofstream& ofile,Big r,Big other_r,Big ord
 //
 // NOTE: It may be necessary on some platforms to change the operators * and #
 
+#if defined(unix)
+#define TIMES '.'
+#define RAISE '^'
+#else
 #define TIMES '*'
 #define RAISE '#'
+#endif
 
 void eval_power (Big& oldn,Big& n,char op)
 {
@@ -1031,7 +1030,7 @@ int main(int argc,char **argv)
 {
     BOOL good,dir,always;
     int i,ip,m,precision;
-    unsigned int SD,D;
+    unsigned long SD,D;
     ofstream ofile;
 
     mip=mirsys(128,0);
@@ -1049,7 +1048,11 @@ int main(int argc,char **argv)
       cout << "cm <prime number P>" << endl;
       cout << "OR" << endl;
       cout << "cm -f <formula for P>" << endl;
+#if defined(unix)
+      cout << "e.g. cm -f 2^192-2^64-1" << endl;
+#else
       cout << "e.g. cm -f 2#192-2#64-1" << endl;
+#endif
       cout << "To suppress commentary, use flag -s. To insist on A= -3, use flag -t" << endl;
       cout << "(the commentary will make some sense to readers of IEEE 1363 Annex)" << endl;
       cout << "To search downwards for a prime, use flag -d" << endl;
@@ -1061,8 +1064,12 @@ int main(int argc,char **argv)
       cout << "To set MIRACL precision to 2^n words, use e.g. flag -Pn (default -P5)" << endl;
       cout << "If program fails, try again with n=n+1" << endl;  
       cout << "To insist on IEEE-1363 invariants, use flag -IEEE" << endl;
+#if defined(unix)
+      cout << "e.g. cm -f 2^224-2^96+1 -K12 -D4000000 -P9 -o common.ecs" << endl;
+#else
       cout << "e.g. cm -f 2#224-2#96+1 -K12 -D4000000 -P9 -o common.ecs" << endl;
-      cout << "Freeware from Shamus Software, Dublin, Ireland" << endl;
+#endif
+      cout << "Freeware from Certivox, Dublin, Ireland" << endl;
       cout << "Full C++ source code and MIRACL multiprecision library available" << endl;
       cout << "Email to mscott@indigo.ie for details" << endl;
       return 0;
@@ -1124,7 +1131,7 @@ int main(int argc,char **argv)
         }
         if (strncmp(argv[ip],"-D",2)==0)
         {
-             SD=atoi(argv[ip]+2);
+             SD=atol(argv[ip]+2);
              ip++;
              continue;
         }
@@ -1234,14 +1241,14 @@ int main(int argc,char **argv)
     {
         if (three && D==3) continue;
         if (!isaD(D,p%8,K)) continue;
-        if (jacobi(p-D,p)==-1) continue;
+        if (jacobi(p-(Big)D,p)==-1) continue;
         good=TRUE;
 
 // A.14.2.3
         for (i=1;;i++)
         {
-            int sp=mip->PRIMES[i];
-            if (D==sp || (unsigned int)sp*sp>D) break;
+            unsigned long sp=mip->PRIMES[i];
+            if (D==sp || sp*sp>D) break;
             if (D%sp==0 && jacobi(p,(Big)sp)==-1)
             {
                 good=FALSE;

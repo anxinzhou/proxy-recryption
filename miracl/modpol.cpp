@@ -47,8 +47,6 @@
 // using the first prime modulus it can find less than 2^512. This file can 
 // then be used directly with the "sea" application
 //
-// Copyright Shamus Software Ltd., 1999 
-//
 
 #include <iostream>
 #include <fstream>
@@ -73,8 +71,13 @@ ofstream mueller;
 // NOTE: It may be necessary on some platforms to change the operators * and #
 //
 
+#if defined(unix)
+#define TIMES '.'
+#define RAISE '^'
+#else
 #define TIMES '*'
 #define RAISE '#'
+#endif
 
 Big tt;
 static char *ss;
@@ -397,7 +400,7 @@ void mueller_pol(int L,int s)
             if (fout) mueller << cf << "\n" << L+1-i << "\n" << j << endl;
             if (cf==0) break;
             z-=(jlt[j]*cf);
-            if (cf>0 && (!first || !brackets)) cout << "+";
+            if (!first || !brackets) cout << "+";
             first=FALSE;
             if (cf==1) cout << "Y";
             else cout << cf << "*Y";
@@ -464,13 +467,16 @@ int main(int argc,char **argv)
         cout << "To skip \"difficult\" primes, use -s2, -s3 or -s6" << endl;
         cout << "where -s2 skips most and -s6 skips least" << endl;
         cout << "To output polynomials to a file use flag -o <filename>" << endl;
+#if defined(unix)
+        cout << "e.g. modpol -f 2^192-2^64-1 0 150 -o p192.pol" << endl;
+#else
         cout << "e.g. modpol -f 2#192-2#64-1 0 150 -o p192.pol" << endl;
+#endif
         cout << "Alternatively to append to a file use flag -a <filename>" << endl;
         cout << "See source code file for details" << endl;
-        cout << "\nFreeware from Shamus Software, Dublin, Ireland" << endl;
+        cout << "\nFreeware from Certivox, Dublin, Ireland" << endl;
         cout << "Full C++ source code and MIRACL multiprecision library available" << endl;
-        cout << "http://indigo.ie/~mscott for details" << endl;
-        cout << "or email mscott@indigo.ie" << endl;
+        cout << "email mscott@indigo.ie" << endl;
 
         return 0;
     }

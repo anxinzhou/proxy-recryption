@@ -1,5 +1,5 @@
 /*
- *   Proposed Digital Signature Standard (DSS)
+ *   Digital Signature Standard (DSS)
  *
  *   Elliptic Curve variation GF(2^m) - See Dr. Dobbs Journal, April 1997
  *
@@ -21,8 +21,6 @@
  *   cf.q where cf is the "co-factor", normally 2 or 4.
  *
  *   Requires: big.cpp ec2.cpp
- * 
- *   Copyright (c) 2000-2003 Shamus Software Ltd.
  */
 
 
@@ -46,7 +44,7 @@ void strip(char *name)
     }
 }
 
-static Big hash(ifstream &fp)
+static Big Hash(ifstream &fp)
 { /* compute hash function */
     char ch,s[20];
     Big h;
@@ -69,7 +67,7 @@ int main()
     ifstream private_key("private.ecs");
     ifstream message;
     ofstream signature;
-    char ifname[13],ofname[13];
+    char ifname[50],ofname[50];
     EC2 G;
     Big a2,a6,q,x,y,h,r,s,d,k;
     long seed;
@@ -113,7 +111,7 @@ int main()
         cout << "Unable to open file " << ifname << "\n";
         return 0;
     }
-    h=hash(message);
+    h=Hash(message);
 
 /* calculate s */
     k=inverse(k,q);

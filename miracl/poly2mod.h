@@ -65,5 +65,7 @@ public:
     ~Poly2Mod() {}
 };
 
+extern void setmod(const Poly2&);
+
 #endif
 

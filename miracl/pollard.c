@@ -5,7 +5,6 @@
  *  See "Speeding the Pollard and Elliptic Curve Methods"
  *  by Peter Montgomery, Math. Comp. Vol. 48 Jan. 1987 pp243-264
  *
- *   Copyright (c) 1988-1999 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -150,7 +149,7 @@ int main()
                 if (p>LIMIT2) break;
                 else continue;
             }
-            if (compare(t,n)==0)
+            if (mr_compare(t,n)==0)
             {
                 printf("\ndegenerate case");
                 break;

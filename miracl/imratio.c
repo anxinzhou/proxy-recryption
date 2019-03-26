@@ -1,24 +1,25 @@
 /*
- * program to calculate modSquare/Modmult, Inverse/Modmult,
- * and Jacobi/Modmult ratio
+ * program to calculate modquare/modmult, inverse/modmult,
+ * jacobi/modmult and modadd/modmult ratios
  */
 
 #include <stdio.h>
 #include "miracl.h"
 #include <time.h>
 
-#define MIN_TIME 10.0
+#define MIN_TIME 15.0
 
-int sizes[]={160,192,224,256,512,1024,2048};
+int sizes[]={160,256,512,640};
+int num_sizes=4;
 
 int main()
 {
-    unsigned long seed;
+    time_t seed;
     int i,j,k,bits;
     long iterations;
     big x,nx,y,ny,n,w;
     clock_t start;
-    double square_time,mult_time,xgcd_time,jac_time;
+    double square_time,mult_time,xgcd_time,jac_time,add_time;
 
 #ifndef MR_NOFULLWIDTH
     mirsys(80,0);
@@ -74,11 +75,11 @@ int main()
 
     printf("NOTE: times are elapsed real-times - so make sure nothing else is running!\n\n");
 
-    time((time_t *)&seed);
-    irand(seed);
-    printf("Calculating modSquare/Modmult, Inverse/Modmult and Jacobi/Modmult ratios\n");
+    time(&seed);
+    irand((unsigned long)seed);
+    printf("Calculating Modsquare/Modmult, Inverse/Modmult, Jacobi/Modmult Modadd/Modmult ratios\n");
     printf("Please Wait......\n");
-    for (j=0;j<=6;j++)
+    for (j=0;j<num_sizes;j++)
     {
         bits=sizes[j];
         bigbits(bits,n);
@@ -129,12 +130,22 @@ printf("after mult_time= %lf\n",mult_time);
             xgcd_time=(clock()-start)/(double)CLOCKS_PER_SEC;
         } while (xgcd_time<MIN_TIME);
         xgcd_time=1000.0*xgcd_time/iterations;
-        
-        printf("%d bits: modmult %.2lfuS modsqr %.2lfuS inverse %.2lfuS jacobi %.2lfuS\n",bits,mult_time,square_time,xgcd_time,jac_time);
+  
+        iterations=0;
+        start=clock();
+        do {
+            for (i=0;i<1000;i++) nres_modadd(nx,ny,w);
+            iterations++;
+            add_time=(clock()-start)/(double)CLOCKS_PER_SEC;
+        } while (add_time<MIN_TIME);
+        add_time=1000.0*add_time/iterations;
+ 		
+        printf("%d bits: modmult %.2lfuS modsqr %.2lfuS inverse %.2lfuS jacobi %.2lfuS modadd %.2lfuS \n",bits,mult_time,square_time,xgcd_time,jac_time,add_time);
 
         printf("S/M ratio= %.2lf\n",square_time/mult_time);
         printf("I/M ratio= %.2lf\n",xgcd_time/mult_time);
         printf("J/M ratio= %.2lf\n",jac_time/mult_time);
+        printf("A/M ratio= %.2lf\n",add_time/mult_time);
 
     }
 

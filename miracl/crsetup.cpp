@@ -5,8 +5,6 @@
  *   common.crs
  *
  *   Requires: big.cpp
- *
- *   Copyright (c) 1999 Shamus Software Ltd.
  */
 
 #include <iostream>

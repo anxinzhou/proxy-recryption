@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *    MIRACL C++ functions gf2m.cpp
  *
@@ -7,7 +41,6 @@
  *
  *    NOTE:   : Must be used in conjunction with big.h and big.cpp
  *
- *    Copyright (c) 2000-2004 Shamus Software Ltd
  */
 
 #include "gf2m.h"
@@ -50,8 +83,10 @@ GF2m operator*(const GF2m& b1,const GF2m& b2)
 GF2m operator/(const GF2m& b1,const GF2m& b2)
 {GF2m abb; inverse2(b2.fn,abb.fn); modmult2(b1.fn,abb.fn,abb.fn); return abb;}
 
+#ifndef MR_STATIC
 GF2m pow(const GF2m& b,int m)
 {GF2m z; power2(b.fn,m,z.fn); return z;}
+#endif
 
 GF2m sqrt(const GF2m& b)
 {GF2m z; sqroot2(b.fn,z.fn); return z;}

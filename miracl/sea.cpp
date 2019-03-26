@@ -210,7 +210,6 @@
 // Note that is a little faster to use an integer-only build of MIRACL.
 // See mirdef.hio
 //
-// Copyright Shamus Software Ltd. 1999
 //
 
 #include <iostream>
@@ -248,6 +247,8 @@ PolyMod MY2,MY4;
 
 ZZn A,B;         // Here ZZn are integers mod the prime p
                  // Montgomery representation is used internally
+
+BOOL Edwards=FALSE;
 
 // Elliptic curve Point duplication formula
 
@@ -498,12 +499,24 @@ Big kangaroo(Big p,Big order,Big ordermod)
             cout << "Sanity Check Failed. Please report to mike@compapp.dcu.ie" << endl;
             exit(0);
         }
-        if (prime(nrp))
-        {
-            cout << "NP= " << nrp << endl;
-            cout << "NP is Prime!" << endl;
-            break;
-        }
+        if (Edwards)
+		{
+			if (prime(nrp/4))
+			{
+				cout << "NP/4= " << nrp/4 << endl;
+				cout << "NP/4 is Prime!" << endl;
+				break;
+			}
+		}
+		else
+		{
+			if (prime(nrp))
+			{
+				cout << "NP= " << nrp << endl;
+				cout << "NP is Prime!" << endl;
+				break;
+			}
+		}
 
 // final checks....
         real_order=nrp; i=0; 
@@ -659,6 +672,7 @@ int main(int argc,char **argv)
     miracl *mip=&precision;
     BOOL escape,search,fout,gotI,gotA,gotB,atkin;
     ZZn j,g,qb,qc,delta,el;
+    ZZn EB,EA,T,T1,T3,A2,A4,AZ,AW;
     int Base; 
 
     argv++; argc--;
@@ -668,6 +682,7 @@ int main(int argc,char **argv)
         cout << "Program finds the number of points (NP) on an Elliptic curve" << endl;
         cout << "which is defined over the Galois field GF(P), P a prime" << endl;
         cout << "The Elliptic Curve has the equation Y^2 = X^3 + AX + B mod P" << endl;
+		cout << "(Or use flag -E for Inverted Edwards coordinates X^2+AY^2=X^2.Y^2+B mod P)" << endl;
         cout << "sea <A> <B> <-i file>" << endl;
         cout << "where the input file contains pre-processed modular polynomials" << endl;
         cout << "for a particular prime modulus P" << endl;
@@ -677,10 +692,10 @@ int main(int argc,char **argv)
         cout << "To observe Atkin prime processing, use flag -a" << endl;
         cout << "NOTE: Atkin prime information is not currently used" << endl;
         cout << "To search for NP prime, incrementing B, use flag -s" << endl;
-        cout << "\nFreeware from Shamus Software, Dublin, Ireland" << endl;
+		cout << "(For Edwards curve the search is for NP=4*prime)" << endl;
+        cout << "\nFreeware from Certivox, Dublin, Ireland" << endl;
         cout << "Full C++ source code and MIRACL multiprecision library available" << endl;
-        cout << "http://indigo.ie/~mscott for details" << endl;
-        cout << "or email mscott@indigo.ie" << endl;
+        cout << "email mscott@indigo.ie" << endl;
         return 0;
     }
 
@@ -749,6 +764,13 @@ int main(int argc,char **argv)
         {
             ip++;
             Base=16;
+            continue;
+        }
+
+        if (strcmp(argv[ip],"-E")==0)
+        {
+            ip++;
+            Edwards=TRUE;
             continue;
         }
 
@@ -824,10 +846,34 @@ int main(int argc,char **argv)
 
     fft_reset();   // reset FFT tables
 
-    ecurve(a,b,p,MR_AFFINE);    // initialise Elliptic Curve
+	if (Edwards)
+	{
+		modulo(p);
+		EB=b;
+		EA=a;
+		AZ=(ZZn)1/(EA-EB);
+		A2=2*(EA+EB)/(EA-EB);
+		A4=1; AW=1;
 
-    A=a;
-    B=b;
+		AW*=AZ; A2*=AZ; A4*=AZ;
+
+		A4*=AW;
+
+		T=4*A2;
+		T1=3*T;
+		T3=18*36*(2*A4);
+
+		A=T3-3*T1*T1;
+		B=-T1*T3+2*T1*T1*T1;
+		ecurve((Big)A,(Big)B,p,MR_AFFINE);    // initialise Elliptic Curve
+
+	}
+	else
+	{
+		ecurve(a,b,p,MR_AFFINE);    // initialise Elliptic Curve
+		A=a;
+		B=b;
+	}
 
 // The elliptic curve as a Polynomial
 
@@ -838,6 +884,11 @@ int main(int argc,char **argv)
     Y4=Y2*Y2;
 
     cout << "Counting the number of points (NP) on the curve" << endl;
+	if (Edwards)
+	{
+		cout << "X^2+" << EA << "*Y^2=X^2*Y^2+" << EB << endl;
+		cout << "Equivalent to Weierstrass form" << endl;
+	}
     cout << "y^2= " << Y2 << " mod " << p << endl;   
 
     delta=-16*(4*A*A*A+27*B*B);
@@ -878,7 +929,7 @@ int main(int argc,char **argv)
     if ((p+1-parity)%2==0)
     {                                  
         cout << " ***" << endl;
-        if (search) {b+=1; continue; }
+        if (search && !Edwards) {b+=1; continue; }
     }
     else cout << endl;
 
@@ -1053,7 +1104,7 @@ int main(int argc,char **argv)
             if ((p+1)%lp==0)
             {      
                 cout << " ***" << endl;
-                if (search) {escape=TRUE; break;}
+                if (search && (!Edwards || lp!=4)) {escape=TRUE; break;}
             }
             else cout << endl;
             continue;         
@@ -1083,7 +1134,7 @@ int main(int argc,char **argv)
                 if ((p+1-tau)%lp==0)
                 {
                     cout << " ***" << endl;
-                    if (search) escape=TRUE;
+                    if (search && (!Edwards || lp!=4)) escape=TRUE;
                 }
                 else cout << endl;
                 break;
@@ -1244,7 +1295,7 @@ int main(int argc,char **argv)
                     if ((p+1)%lp==0)
                     {
                         cout << " ***" << endl;
-                        if (search) escape=TRUE;
+                        if (search && (!Edwards || lp!=4)) escape=TRUE;
                     }
                     else cout << endl; 
                     good[nl]=lp;
@@ -1518,7 +1569,7 @@ int main(int argc,char **argv)
                 if ((p+1-tau)%lp==0)
                 {
                     cout << " ***" << endl;
-                    if (search) escape=TRUE;
+                    if (search && (!Edwards || lp!=4)) escape=TRUE;
                 }
                 else cout << endl;
                 break;
@@ -1540,8 +1591,16 @@ int main(int argc,char **argv)
 
     nrp=kangaroo(p,order,ordermod);
 
-    if (!prime(nrp) && search) {b+=1; continue; }
-    else break;
+    if (Edwards)
+	{
+		if (!prime(nrp/4) && search) {b+=1; continue; }
+		else break;
+	}
+	else
+	{
+		if (!prime(nrp) && search) {b+=1; continue; }
+		else break;
+    }
     }
 
     if (fout) 
@@ -1553,14 +1612,49 @@ int main(int argc,char **argv)
 
         ofile << a << endl;
         ofile << b << endl;
-        ofile << nrp << endl;
 
     // generate a random point on the curve 
     // point will be of prime order for "ideal" curve, otherwise any point
-        do {
-            x=rand(p);
-        } while (!P.set(x,x));
-        P.get(x,y);
+		if (!Edwards)
+		{
+			do {
+				x=rand(p);
+			} while (!P.set(x,x));
+			P.get(x,y);
+			ofile << nrp << endl;
+		}
+		else
+		{
+			ZZn X,Y,Z,R,TA,TB,TC,TD,TE,TU;
+			forever
+			{
+				X=randn();
+				R=(X*X-EB)/(X*X-EA);
+				if (!qr(R))continue;
+				Y=sqrt(R);
+				break;
+			}
+			Z=1;
+// double point twice (4*P)
+			for (i=0;i<2;i++)
+			{
+				TA = X*X;
+				TB = Y*Y;
+				TU = EA*TB;
+				TC = TA+TU;
+				TD = TA-TU;
+				TE = (X+Y)*(X+Y)-TA-TB;
+			
+				X = TC*TD;
+				Y = TE*(TC-2*EB*Z*Z);
+				Z = TD*TE;
+			}
+			X/=Z;
+			Y/=Z;
+			x=X;
+			y=Y;
+			ofile << nrp/4 << endl;
+		}
         ofile << x << endl;
         ofile << y << endl;
         mip->IOBASE=10;

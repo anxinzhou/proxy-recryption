@@ -7,7 +7,6 @@
  *
  *   Requires: big.cpp zzn.cpp
  *
- *   Copyright (c) 1988-1999 Shamus Software Ltd.
  */
 
 #include <iostream>
@@ -29,13 +28,13 @@ miracl *mip;
 static long p;
 static int iv;
 static ZZn b,q,fvw,fd,fp,fn,fu[1+MULT/2];
-static BOOL cp[1+MULT/2],plus[1+MULT/2],minus[1+MULT/2];
+static BOOL cp[1+MULT/2],Plus[1+MULT/2],Minus[1+MULT/2];
 
 void marks(long start)
 { /* mark non-primes in this interval. Note    *
    * that those < NEXT are dealt with already  */
     int i,pr,j,k;
-    for (j=1;j<=MULT/2;j+=2) plus[j]=minus[j]=TRUE;
+    for (j=1;j<=MULT/2;j+=2) Plus[j]=Minus[j]=TRUE;
     for (i=0;;i++)
     { /* mark in both directions */
         pr=mip->PRIMES[i];
@@ -43,10 +42,10 @@ void marks(long start)
         if ((long)pr*pr>start) break;
         k=pr-start%pr;
         for (j=k;j<=MULT/2;j+=pr)
-            plus[j]=FALSE;
+            Plus[j]=FALSE;
         k=start%pr;
         for (j=k;j<=MULT/2;j+=pr)
-            minus[j]=FALSE;
+            Minus[j]=FALSE;
     }        
 }
 
@@ -147,7 +146,7 @@ int main()
 
         /* if neither interval+/-pos is prime, don't bother */
 
-                if (!plus[pos] && !minus[pos]) continue;
+                if (!Plus[pos] && !Minus[pos]) continue;
                 q*=(fvw-fu[pos]);  /* batching gcds */
             }
             if (i++%btch==0)
@@ -169,6 +168,7 @@ int main()
                 n/=t;
                 if (prime(n)) cout << "\nprime factor     " << n;
                 else          cout << "\ncomposite factor " << n;
+                cout << endl;
                 return 0;
             }
         } 

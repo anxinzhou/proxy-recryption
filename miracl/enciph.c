@@ -15,8 +15,6 @@
  *   that up to half the bytes in x (the lower half) are also secure.
  *   They could be used to considerably speed up this method.
  *   
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>

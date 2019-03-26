@@ -13,13 +13,16 @@
  *   point (x,y). In fact normally q is the prime number of points counted
  *   on the curve. 
  *
- *   Copyright (c) 1997-2005 Shamus Software Ltd.
  */
 
 #include <stdio.h>
 #include "miracl.h"
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef MR_COUNT_OPS
+int fpm2,fpi2,fpc,fpa,fpx;
+#endif
 
 void strip(char *name)
 { /* strip off filename extension */
@@ -47,19 +50,29 @@ int main()
 {
     FILE *fp;
     int bits,ep;
-    epoint *g,*public;
+    epoint *g,*publc;
     char ifname[50],ofname[50];
     big a,b,p,q,x,y,v,u1,u2,r,s,hash;
     miracl *mip;
 
 /* get public data */
+#ifndef MR_EDWARDS	
     fp=fopen("common.ecs","rt");
     if (fp==NULL)
     {
         printf("file common.ecs does not exist\n");
         return 0;
     }
-    fscanf(fp,"%d\n",&bits);
+    fscanf(fp,"%d\n",&bits); 
+#else
+    fp=fopen("edwards.ecs","rt");
+    if (fp==NULL)
+    {
+        printf("file edwards.ecs does not exist\n");
+        return 0;
+    }
+    fscanf(fp,"%d\n",&bits); 
+#endif
 
     mip=mirsys(bits/4,16);   /* Use Hex Internally */
     a=mirvar(0);
@@ -86,7 +99,12 @@ int main()
 
     ecurve_init(a,b,p,MR_PROJECTIVE);  /* initialise curve */
     g=epoint_init();
-    epoint_set(x,y,0,g); /* initialise point of order q */
+    epoint_set(x,y,0,g); 
+    if (!epoint_set(x,y,0,g)) /* initialise point of order q */
+    {
+        printf("1. Problem - point (x,y) is not on the curve\n");
+        exit(0);
+    }
 
 /* get public key of signer */
     fp=fopen("public.ecs","rt");
@@ -99,8 +117,12 @@ int main()
     innum(x,fp);
     fclose(fp);
 
-    public=epoint_init();
-    epoint_set(x,x,ep,public);  /* decompress */
+    publc=epoint_init();
+    if (!epoint_set(x,x,ep,publc))  /* decompress */
+    {
+        printf("1. Not a point on the curve\n");
+        return 0;
+    }
 
 /* get message */
     printf("signed file = ");
@@ -124,7 +146,7 @@ int main()
     innum(r,fp);
     innum(s,fp);
     fclose(fp);
-    if (compare(r,q)>=0 || compare(s,q)>=0)
+    if (mr_compare(r,q)>=0 || mr_compare(s,q)>=0)
     {
         printf("Signature is NOT verified\n");
         return 0;
@@ -132,11 +154,16 @@ int main()
     xgcd(s,q,s,s,s);
     mad(hash,s,s,q,q,u1);
     mad(r,s,s,q,q,u2);
-
-    ecurve_mult2(u2,public,u1,g,g);
+#ifdef MR_COUNT_OPS
+fpm2=fpi2=fpc=fpa=fpx=0;
+#endif
+    ecurve_mult2(u2,publc,u1,g,g);
+#ifdef MR_COUNT_OPS
+printf("Number of modmuls= %d, inverses= %d\n",fpc,fpx);
+#endif
     epoint_get(g,v,v);
     divide(v,q,q);
-    if (compare(v,r)==0) printf("Signature is verified\n");
+    if (mr_compare(v,r)==0) printf("Signature is verified\n");
     else                 printf("Signature is NOT verified\n");
     return 0;
 }

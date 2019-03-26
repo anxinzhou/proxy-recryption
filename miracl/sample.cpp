@@ -3,7 +3,6 @@
  *
  *   Requires: flash.cpp 
  *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <iostream>
@@ -26,7 +25,7 @@ int main()
 { /* Brents example program */
     Flash x;
     cout << pi() << endl;
-    x=exp(pi()*sqrt((Flash)"163/9"));
+    x=exp(pi()*sqrt((Flash)(char *)"163/9"));
     cout << x << endl;
     cout << pow(x,3) << endl;
     return 0;

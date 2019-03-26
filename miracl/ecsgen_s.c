@@ -22,7 +22,6 @@
  *   The system parameters can be found in the file common.ecs
  *   Assumes MR_GENERIC_MT is defined in mirdef.h
  *
- *   Copyright (c) 1997-2005 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -42,6 +41,7 @@ int main()
     memset(mem,0,MR_BIG_RESERVE(7));
     memset(mem1,0,MR_ECP_RESERVE(2));
     
+#ifndef MR_EDWARDS	
     fp=fopen("common.ecs","rt");
     if (fp==NULL)
     {
@@ -49,6 +49,15 @@ int main()
         return 0;
     }
     fscanf(fp,"%d\n",&bits); 
+#else
+    fp=fopen("edwards.ecs","rt");
+    if (fp==NULL)
+    {
+        printf("file edwards.ecs does not exist\n");
+        return 0;
+    }
+    fscanf(fp,"%d\n",&bits); 
+#endif
 
     mirsys(mip,bits/4,16);                 /* Use Hex internally */
     a=mirvar_mem(mip,mem,0);

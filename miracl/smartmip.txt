@@ -42,7 +42,6 @@ curve cryptosystem over GF(2^283) might look like this...
 
 /*
  *   MIRACL compiler/hardware definitions - mirdef.h
- *   Copyright (c) 1988-2006 Shamus Software Ltd.
  */
 
 #define MR_LITTLE_ENDIAN

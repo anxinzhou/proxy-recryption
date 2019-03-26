@@ -22,6 +22,8 @@ Use with this mirdef.h header (for a PC using MS C)
 #define MR_COMBA 5
 #define MR_PSEUDO_MERSENNE
 #define MR_SPECIAL
+#define MR_SIMPLE_BASE
+#define MR_SIMPLE_IO
 
 Build the library from these modules (Example using MS C compiler)
 
@@ -36,7 +38,6 @@ cl /c /O2 /W3 mrcurve.c
 cl /c /O2 /W3 mrsroot.c
 cl /c /O2 /W3 mrjack.c
 cl /c /O2 /W3 mrlucas.c
-cl /c /O2 /W3 mrsmall.c
 cl /c /O2 /W3 mrarth2.c
 cl /c /O2 /W3 mrmonty.c
 cl /c /O2 /W3 mrcomba.c
@@ -51,7 +52,7 @@ del miracl.lib
 lib /OUT:miracl.lib mrio1.obj mrmonty.obj mrcomba.obj mrxgcd.obj mrmuldv.obj
 lib /OUT:miracl.lib miracl.lib mrbits.obj mrarth2.obj mrlucas.obj mrjack.obj
 lib /OUT:miracl.lib miracl.lib mrarth0.obj mrarth1.obj mrcore.obj mrebrick.obj
-lib /OUT:miracl.lib miracl.lib mrcurve.obj mrsroot.obj mrsmall.obj
+lib /OUT:miracl.lib miracl.lib mrcurve.obj mrsroot.obj
 del mr*.obj
 
 rem Create the program
@@ -112,6 +113,10 @@ armlink ecdhp32.o miracl.a -o ecdhp32.axf
 #include <string.h>
 #include "miracl.h"
 
+/* !!!!!! THIS CODE AND THESE ROMS ARE NOW CREATED AUTOMATICALLY USING THE ROMAKER.C APPLICATION !!!!!!!! */
+/* !!!!!! READ COMMENTS IN ROMAKER.C !!!!!! */
+
+#define HEXDIGS (MIRACL/4)
 #define CURVE_BITS 160
 
 /* Pseudo Mersenne 160 bit elliptic curve Y^2=X^3-3X+383 modulo 2^160-57 
@@ -127,9 +132,7 @@ static const mr_small rom[]=
 #define WINDOW 4
 
 /* 32 precomputed points based on fixed generator G(x,y)        */
-/* (created using ebrick.c program with window size of 4)       */
-/* NOTE: If MR_SPECIAL is defined in mirdef.h for this program, */
-/* it MUST be defined for the build of ebrick.c as well         */
+/* (created using romaker.c program with window size of 4)      */
 
 /* These values are only correct if MR_SPECIAL is defined!      */
 
@@ -179,7 +182,7 @@ static const mr_small prom[]=
 
 int main()
 {
-    int ia,ib,promptr;
+    int promptr;
     epoint *PB;
     big A,B,p,a,b,pa,pb,key;
     ebrick binst;
@@ -187,8 +190,8 @@ int main()
 
 /* Specify base 16 here so that HEX can be read in directly without a base-change */
 
-    miracl *mip=mirsys(&instance,WORDS*8,16); /* size of bigs is fixed */
-    char mem_big[MR_BIG_RESERVE(8)];          /* we need 10 bigs... */
+    miracl *mip=mirsys(&instance,WORDS*HEXDIGS,16); /* size of bigs is fixed */
+    char mem_big[MR_BIG_RESERVE(8)];          /* we need 8 bigs... */
     char mem_ecp[MR_ECP_RESERVE(1)];          /* ..and one elliptic curve point */
  	memset(mem_big, 0, MR_BIG_RESERVE(8));    /* clear the memory */
 	memset(mem_ecp, 0, MR_ECP_RESERVE(1));
@@ -204,13 +207,14 @@ int main()
 
     PB=epoint_init_mem(mip, mem_ecp, 0); /* initialise Elliptic Curve points */
 
-    irand(mip, 3L);                      /* change parameter for different random numbers */
+    irand(mip, 6L);                      /* change parameter for different random numbers */
 
     promptr=0;
-    init_big_from_rom(p,WORDS,rom,25,&promptr);  /* Read in prime modulus p from ROM   */
-    init_big_from_rom(B,WORDS,rom,25,&promptr);  /* Read in curve parameter B from ROM */
+    init_big_from_rom(p,WORDS,rom,WORDS*5,&promptr);  /* Read in prime modulus p from ROM   */
+	/*init_big_from_rom(A,WORDS,rom,WORDS*5,&promptr);*/
+	convert(mip,-3,A);                           /* fix A=-3 */
+    init_big_from_rom(B,WORDS,rom,WORDS*5,&promptr);  /* Read in curve parameter B from ROM */
                                                  /* don't need q or G(x,y) (we have precomputed table from it) */
-
     convert(mip,-3,A);                           /* set A=-3 */
 
 /* Create precomputation instance from precomputed table in ROM */
@@ -220,15 +224,16 @@ int main()
 /* offline calculations */
 
     bigbits(mip,CURVE_BITS,a);  /* A's random number */
-    ia=mul_brick(mip,&binst,a,pa,pa);    /* a*G =(pa,ya), ia is sign of ya */
-
+    mul_brick(mip,&binst,a,pa,pa);    /* a*G =(pa,ya) */
     bigbits(mip,CURVE_BITS,b);  /* B's random number */
-    ib=mul_brick(mip,&binst,b,pb,pb);    /* b*G =(pb,yb), ib is sign of yb */
+    mul_brick(mip,&binst,b,pb,pb);    /* b*G =(pb,yb) */
+
+/* swap X values of point */
 
 /* online calculations */
 
     ecurve_init(mip,A,B,p,MR_PROJECTIVE);
-    epoint_set(mip,pb,pb,ib,PB); /* decompress PB */
+    epoint_set(mip,pb,pb,0,PB); /* decompress PB */
     ecurve_mult(mip,a,PB,PB);
     epoint_get(mip,PB,key,key);
 
@@ -237,7 +242,7 @@ int main()
 printf("Alice's Key= ");
 otnum(mip,key,stdout);
 
-    epoint_set(mip,pa,pa,ia,PB); /* decompress PA */
+    epoint_set(mip,pa,pa,0,PB); /* decompress PA */
     ecurve_mult(mip,b,PB,PB);
     epoint_get(mip,PB,key,key);
 

@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *    MIRACL  C++ Header file ZZn2.h
  *
@@ -5,11 +39,9 @@
  *
  *    PURPOSE : Definition of class ZZn2  (Arithmetic over n^2)
  *
- *    Note: This code assumes that -1 is a Quadratic Non-Residue,
- *          if the modulus p is a prime = 3 mod 8
- *          OR -2 is a QNR if p=5 mod 8 or 7 mod 8
- *           
- *    Copyright (c) 2001-2006 Shamus Software Ltd.
+ *    Note: This code assumes that 
+ *          p=5 mod 8
+ *          OR p=3 mod 4
  */
 
 #ifndef ZZN2_H
@@ -61,6 +93,8 @@ public:
     BOOL iszero()  const { return zzn2_iszero((zzn2 *)&fn); }
     BOOL isunity() const { return zzn2_isunity((zzn2 *)&fn); }
 
+    friend class ECn2;
+
     ZZn2& negate()
         {zzn2_negate(&fn,&fn); return *this;}
 
@@ -68,10 +102,10 @@ public:
     ZZn2& operator=(const ZZn& x) {zzn2_from_zzn(x.getzzn(),&fn); return *this; }
     ZZn2& operator=(const ZZn2& x) {MR_CLONE_ZZN2(x) return *this; }
     ZZn2& operator+=(const ZZn& x) {zzn2_sadd(&fn,x.getzzn(),&fn); return *this; }
-    ZZn2& operator+=(const ZZn2& x){zzn2_add(&fn,(zzn2 *)&x,&fn); return *this;}
+    ZZn2& operator+=(const ZZn2& x){zzn2_add(&fn,(zzn2 *)&x.fn,&fn); return *this;}
     ZZn2& operator-=(const ZZn& x) {zzn2_ssub(&fn,x.getzzn(),&fn); return *this; }
-    ZZn2& operator-=(const ZZn2& x) {zzn2_sub(&fn,(zzn2 *)&x,&fn); return *this; }
-    ZZn2& operator*=(const ZZn2& x) {zzn2_mul(&fn,(zzn2 *)&x,&fn); return *this; }
+    ZZn2& operator-=(const ZZn2& x) {zzn2_sub(&fn,(zzn2 *)&x.fn,&fn); return *this; }
+    ZZn2& operator*=(const ZZn2& x) {zzn2_mul(&fn,(zzn2 *)&x.fn,&fn); return *this; }
     ZZn2& operator*=(const ZZn& x) {zzn2_smul(&fn,x.getzzn(),&fn); return *this; }
     ZZn2& operator*=(int x) {zzn2_imul(&fn,x,&fn); return *this;}
 
@@ -102,6 +136,7 @@ public:
     friend ZZn  imaginary(const ZZn2&); 
 
     friend ZZn2 pow(const ZZn2&,const Big&);
+	friend ZZn2 powu(const ZZn2&,const Big&);
     friend ZZn2 powl(const ZZn2&,const Big&);
     friend ZZn2 conj(const ZZn2&);
     friend ZZn2 inverse(const ZZn2&);
@@ -116,14 +151,16 @@ public:
     friend ZZn2 sqrt(const ZZn2&);   // square root - 0 if none exists
 
     friend BOOL operator==(const ZZn2& x,const ZZn2& y)
-    {if (zzn2_compare((zzn2 *)&x,(zzn2 *)&y)) return TRUE; else return FALSE; }
+    {return (zzn2_compare((zzn2 *)&x.fn,(zzn2 *)&y.fn)); }
 
     friend BOOL operator!=(const ZZn2& x,const ZZn2& y)
-    {if (!zzn2_compare((zzn2 *)&x,(zzn2 *)&y)) return TRUE; else return FALSE; }
+    {return !(zzn2_compare((zzn2 *)&x.fn,(zzn2 *)&y.fn)); }
 
 #ifndef MR_NO_STANDARD_IO
     friend ostream& operator<<(ostream&,const ZZn2&);
 #endif
+
+    zzn2* getzzn2(void) const;
 
     ~ZZn2()  
     {

@@ -5,5 +5,5 @@ RATCALC   - Freeware Rational Calculator.
 FACTOR    - Freeware General Purpose Factoring Program
 
 Note: These are 32-bit applications that run in a Windows '95/NT 
-command prompt window.    
+command prompt window. They will not work on a 64-bit OS 
         

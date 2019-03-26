@@ -18,7 +18,7 @@ int  c[]={0,    3,  0, 27,  0,283,417};
 
 int main()
 {
-    unsigned long seed;
+    time_t seed;
     int i,j,k,bits;
     long iterations;
     big x,y,w;
@@ -50,8 +50,8 @@ int main()
 
     printf("NOTE: times are elapsed real-times - so make sure nothing else is running!\n\n");
 
-    time((time_t *)&seed);
-    irand(seed);
+    time(&seed);
+    irand((unsigned long)seed);
     printf("Calculating Square/Multiply (S/M), Square Root/Multiply (R/M) and Inverse/Multiply (I/M) ratios\n");
     printf("Please Wait......\n");
  

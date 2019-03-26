@@ -3,8 +3,6 @@
  *      Compiles with Turbo C V1.0+, Microsoft C V3.0+ or Zortech C++ V2.0
  *  **  Change display mode for 40/80 column operation (e.g. 'mode 40' to DOS)
  *  **  Change colour/B&W below
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>     /*** IBM-PC specific section ***/
@@ -113,8 +111,8 @@ static char *htext[]=
  "F-D converts  fraction  <-->  decimal  ",
  "SET changes settings - use arrow keys  ",
  "Alternative arrow keys -   u  h  j  n  ",
- "This program is Public Domain - Shamus ",
- "Software, Ireland mscott@indigo.ie     "};     /******/
+ "This program is Public Domain -        ",
+ "Certivox, Ireland mscott@indigo.ie     "};     /******/
 
 static char display[]=   "   MIRACL RATIONAL CALCULATOR V3.2   ";
 static char  status[]=   "                                     ";

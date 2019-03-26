@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *    MIRACL C++ Implementation file gf2m4x.cpp
  *
@@ -44,7 +78,6 @@ GF2m4x& GF2m4x::powq()
         x[1]=x[2];       // c=b
         x[2]=x[3];
         x[2]+=t;         // b=a+c
-       
     }
     if (r==2)
     {
@@ -174,7 +207,6 @@ GF2m4x& GF2m4x::operator*=(const GF2m& b)
    return *this;
 }
 
-
 GF2m4x& GF2m4x::operator/=(const GF2m& b)
 {
    GF2m ib=(GF2m)1/b;
@@ -263,6 +295,16 @@ void GF2m4x::invert()
     return;
 }
 
+// An inversion for unitary elements
+
+GF2m4x conj(const GF2m4x& x)
+{
+	GF2m4x r=x;
+	r.powq();
+	r.powq();
+	return r;
+}
+
 GF2m4x& GF2m4x::operator/=(const GF2m4x& a)
 {
     GF2m4x b=a;
@@ -346,9 +388,18 @@ GF2m4x pow(const GF2m4x& a,const Big& k)
 {
     int i,j,nb,n,nbw,nzs;
     GF2m4x u,u2,t[16];
-    if (k.iszero()) return (GF2m4x)1;
+	
+	if (k.iszero()) return (GF2m4x)1;
+	Big e=k;
+
+	if (k<0) e=-e;
+	
     u=a;
-    if (k.isone()) return u;
+    if (e.isone()) 
+	{
+		if (k<0) u.invert();
+		return u;
+	}
 
 //
 // Prepare table for windowing
@@ -361,10 +412,10 @@ GF2m4x pow(const GF2m4x& a,const Big& k)
 
 // Left to right method - with windows
 
-    nb=bits(k);
+    nb=bits(e);
     if (nb>1) for (i=nb-2;i>=0;)
     {
-        n=window(k,i,&nbw,&nzs,5);
+        n=window(e,i,&nbw,&nzs,5);
         for (j=0;j<nbw;j++) u*=u;
         if (n>0) u*=t[n/2];
         i-=nbw;
@@ -374,6 +425,54 @@ GF2m4x pow(const GF2m4x& a,const Big& k)
             i-=nzs;
         }
     }
+	if (k<0) u.invert();
+    return u;
+}
+
+// faster GF2m4x powering of unitary elements
+
+GF2m4x powu(const GF2m4x& x,const Big& e)
+{
+    int i,j,nb,n,nbw,nzs;
+    GF2m4x u,u2,t[11];
+    Big k,k3;
+    if (e.iszero()) return (GF2m4x)1;
+	k=e;
+	if (e<0) k=-k;
+	
+	u=x;
+    if (k.isone())
+	{
+		if (e<0) u=conj(u);
+		return u;
+	}
+
+//
+// Prepare table for windowing
+//
+    k3=3*k;
+    u2=(u*u);
+    t[0]=u;
+
+    for (i=1;i<=10;i++)
+        t[i]=u2*t[i-1];
+
+    nb=bits(k3);
+    for (i=nb-2;i>=1;)
+    {
+        n=naf_window(k,k3,i,&nbw,&nzs,11);
+
+        for (j=0;j<nbw;j++) u*=u;
+        if (n>0) u*=t[n/2];
+        if (n<0) u*=conj(t[(-n)/2]);
+        i-=nbw;
+        if (nzs)
+        {
+            for (j=0;j<nzs;j++) u*=u;
+            i-=nzs;
+        }
+    }
+	if (e<0) u=conj(u);
     return u;
 }
 

@@ -5,12 +5,11 @@
  *   Math. Comp. Vol. 48, 177, Jan. 1987, pp329-339
  *
  *   Requires: big.cpp
- *
- *   Copyright (c) 1988-1999 Shamus Software Ltd.
  */
 
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 #include "big.h"
 
 using namespace std;
@@ -464,6 +463,7 @@ int main()
                     NN/=PP;
                     if (prime(NN)) cout << "\nprime factor     " << NN;
                     else           cout << "\ncomposite factor " << NN;
+                    cout << endl;
                     return 0;
                 }
             }

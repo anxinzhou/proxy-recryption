@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL utility program to automatically generate a mirdef.h file 
  *
@@ -12,8 +46,6 @@
  *   Generated are mirdef.tst - the suggested mirdef.h file, and 
  *   miracl.lst which tells which modules should be included in the library 
  *   build.
- *
- *   Copyright (c) 1994-2006 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -31,10 +63,10 @@ static int answer(void)
 
 int main()
 {
-    int chosen,utlen,dllen,flsh,stripped,standard,nofull,port,mant,r,userlen;
+    int chosen,chosen2,utlen,dllen,flsh,stripped,standard,nofull,port,mant,r,userlen;
     int nbits,i,b,dlong,threaded,choice,selected,special,sb,ab;
     int chosen64,no64,step_size,double_type,rounding,lmant,dmant,static_build,maxsize;
-    int maxbase,bitsinchar,llsize,nio;
+    int maxbase,bitsinchar,llsize,nio,edwards,double_length_type;
     int qlong,qllen;
     long end;
     unsigned char byte;
@@ -88,8 +120,7 @@ int main()
 
 
     fp=fopen("mirdef.tst","wt");
-    fprintf(fp,"/*\n *   MIRACL compiler/hardware definitions - mirdef.h\n");
-    fprintf(fp," *   Copyright (c) 1988-2006 Shamus Software Ltd.\n */\n\n");
+    fprintf(fp,"/*\n *   MIRACL compiler/hardware definitions - mirdef.h\n */\n");
     end=1;
     ptr=(char *)(&end);
 
@@ -259,7 +290,8 @@ int main()
 
 /* Now try to find a double length type */
     dlong=0;
-
+	dllen=0;
+	double_length_type=0;
     if (!double_type)
     {
       dllen=2*utlen;
@@ -268,6 +300,7 @@ int main()
       {
         printf("    double length type is a short\n");
         fprintf(fp,"#define mr_dltype short\n");
+		double_length_type=1;
         if (sizeof(short)==sizeof(int)) fprintf(fp,"#define MR_DLTYPE_IS_INT\n");
         chosen=1;
       }
@@ -275,6 +308,7 @@ int main()
       {
         printf("    double length type is an int\n");
         fprintf(fp,"#define mr_dltype int\n");
+		double_length_type=1;
         fprintf(fp,"#define MR_DLTYPE_IS_INT\n");
         chosen=1;
       }
@@ -282,13 +316,15 @@ int main()
       {
         printf("    double length type is a long\n");
         fprintf(fp,"#define mr_dltype long\n");
-        if (sizeof(long)==sizeof(int)) fprintf(fp,"#define MR_DLTYPE_IS_INT\n");
+		double_length_type=1;
+        fprintf(fp,"#define MR_DLTYPE_IS_LONG\n");
         chosen=1;
       }
       if (!chosen && llsize>0 && dllen==llsize)
       {
            printf("    double length type is a %s\n",longlong);
            fprintf(fp,"#define mr_dltype %s\n",longlong);
+		   double_length_type=1;
            chosen=1;
       }
       if (!chosen && dllen==2*bitsinchar*sizeof(long))
@@ -310,6 +346,7 @@ int main()
 
             printf("    double length type is a %s\n",longlong);
             fprintf(fp,"#define mr_dltype %s\n",longlong);
+			double_length_type=1;
             chosen=1;
             if (64==dllen && !chosen64)
             { 
@@ -332,21 +369,21 @@ int main()
     if (!double_type)
     {
       qllen=4*utlen;
-      chosen=0;
+      chosen2=0;
 
-      if (!chosen && qllen==bitsinchar*sizeof(long))
+      if (!chosen2 && qllen==bitsinchar*sizeof(long))
       {
         printf("    quad length type is a long\n");
         fprintf(fp,"#define mr_qltype long\n");
-        chosen=1;
+        chosen2=1;
       }
-      if (!chosen && llsize>0 && dllen==llsize)
+      if (!chosen2 && llsize>0 && dllen==llsize)
       {
            printf("    quad length type is a %s\n",longlong);
            fprintf(fp,"#define mr_qltype %s\n",longlong);
-           chosen=1;
+           chosen2=1;
       }
-      if (!chosen && qllen==2*bitsinchar*sizeof(long))
+      if (!chosen2 && qllen==2*bitsinchar*sizeof(long))
       {
         printf("\nDoes compiler support a %d bit integer type? (Y/N)?", 
               qllen);
@@ -365,7 +402,7 @@ int main()
 
             printf("    quad length type is a %s\n",longlong);
             fprintf(fp,"#define mr_qltype %s\n",longlong);
-            chosen=1;
+            chosen2=1;
             if (64==qllen && !chosen64)
             { 
                 printf("    64 bit unsigned type is an unsigned %s\n",longlong);
@@ -410,7 +447,7 @@ int main()
     if (!double_type)
     {
         printf("\nFor very constrained environments it is possible to build a version of MIRACL\n");
-        printf("(for C only) which does not require a heap. Not recommended for beginners.\n");
+        printf("which does not require a heap. Not recommended for beginners.\n");
         printf("Some routines are not available in this mode and the max length of Big\n");
         printf("variables is fixed at compile time\n");
         printf("Do you want a no-heap version of the MIRACL C library? (Y/N)? ");
@@ -446,23 +483,33 @@ int main()
     fprintf(fpl,"mrmonty.c\n");
     fprintf(fpl,"mrpower.c\n");
     fprintf(fpl,"mrsroot.c\n");
-    fprintf(fpl,"mrcurve.c\n");
     fprintf(fpl,"mrlucas.c\n");
     fprintf(fpl,"mrshs.c\n");
     fprintf(fpl,"mrshs256.c\n");
     fprintf(fpl,"mraes.c\n");
+	fprintf(fpl,"mrgcm.c\n");
+	fprintf(fpl,"mrfpe.c\n");
     fprintf(fpl,"mrstrong.c\n");
+    fprintf(fpl,"mrcurve.c\n");
     fprintf(fpl,"mrbrick.c\n");
     fprintf(fpl,"mrebrick.c\n");
+    fprintf(fpl,"mrzzn2.c\n");
+    fprintf(fpl,"mrzzn2b.c\n");
+    fprintf(fpl,"mrzzn3.c\n");
+    fprintf(fpl,"mrecn2.c\n");
+
     if (!static_build)
     {
         fprintf(fpl,"mrfast.c\n");
         fprintf(fpl,"mralloc.c\n");
     }
-    if (chosen64) fprintf(fpl,"mrshs512.c\n");
-
+    if (chosen64)
+	{
+		fprintf(fpl,"mrshs512.c\n");
+		fprintf(fpl,"mrsha3.c\n");
+	}
     port=0;
-    if (chosen)
+    if (chosen && double_length_type)
     {
         printf("\nDo you want a C-only version of MIRACL (Y/N)?");
         port=answer();
@@ -777,7 +824,8 @@ int main()
        if (special) fprintf(fp,"#define MR_SPECIAL\n");
        if (special==1) fprintf(fp,"#define MR_GENERALIZED_MERSENNE\n");
        if (special==2) fprintf(fp,"#define MR_PSEUDO_MERSENNE\n");
-       
+       if (special) fprintf(fp,"#define MR_NO_LAZY_REDUCTION\n");
+
        fprintf(fpl,"mrcomba.c\n");
 
        printf("\nSpecial routines for modular multiplication will now \n");
@@ -867,35 +915,58 @@ int main()
     r=answer();
     if (r)
     {
-        fprintf(fp,"#define MR_SHORT_OF_MEMORY\n");
+        fprintf(fp,"#define MR_SMALL_AES\n");
     }
     
-    printf("\nDo you want to save space by using only affine coordinates \n");
-    printf("for elliptic curve cryptography. Default to No. (Y/N)?");
+    edwards=0;
+    printf("\nDo you want to use Edwards paramaterization of elliptic curves over Fp\n");
+    printf("This is faster for basic Elliptic Curve cryptography (but does not support\n");
+    printf("Pairing-based Cryptography and some applications). Default to No. (Y/N)?");
     r=answer();
     if (r)
     {
-        fprintf(fp,"#define MR_AFFINE_ONLY\n");
+        edwards=1;
+        fprintf(fp,"#define MR_EDWARDS\n");
     }
- 
+
+    if (!edwards)
+    {
+        printf("\nDo you want to save space by using only affine coordinates \n");
+        printf("for elliptic curve cryptography. Default to No. (Y/N)?");
+        r=answer();
+        if (r)
+        {
+            fprintf(fp,"#define MR_AFFINE_ONLY\n");
+        }
+    }
     printf("\nDo you want to save space by not using point compression \n");
     printf("for EC(p) elliptic curve cryptography. Default to No. (Y/N)?");
     r=answer();
     if (r)
         fprintf(fp,"#define MR_NOSUPPORT_COMPRESSION\n");
  
+    printf("\nDo you want to save space by not supporting special code \n");
+    printf("for EC double-addition, as required for ECDSA signature \n");
+    printf("verification, or any multi-addition of points. Default to No. (Y/N)?");
+    r=answer();
+    if (r)
+        fprintf(fp,"#define MR_NO_ECC_MULTIADD\n");
+
+
     printf("\nDo you want to save RAM by using a smaller sliding window \n");
-    printf("(By default the window size is 5, this reduces it to 4) \n");
     printf("for all elliptic curve cryptography. Default to No. (Y/N)?");
     r=answer();
     if (r)
         fprintf(fp,"#define MR_SMALL_EWINDOW\n");
 
+    if (!special)
+    {
     printf("\nDo you want to save some space by supressing Lazy Reduction? \n");
     printf("(as used for ZZn2 arithmetic). Default to No. (Y/N)?");
     r=answer();
     if (r)
         fprintf(fp,"#define MR_NO_LAZY_REDUCTION\n");
+    }
 
     printf("\nDo you NOT want to use the built in random number generator?\n");
     printf("Removing it saves space, and maybe you have your own source\n");
@@ -919,10 +990,11 @@ int main()
           fprintf(fp,"#define MR_SIMPLE_BASE\n");
       }
     } 
-    if (nio && sb)
+    if (sb)
     {
       printf("\nDo you want to save space by only using simple I/O? \n");
       printf("(Input from ROM, and Input/Output as binary bytes only) \n");
+      printf("(However crude HEX-only output is supported) \n");
       printf("Default to No. (Y/N)?");
       r=answer();
       if (r)
@@ -944,6 +1016,30 @@ int main()
      {
          fprintf(fp,"#define MR_NO_SS\n");
      }
+    }
+
+    printf("\nDo you want to enable a Double Precision big type. See doubig.txt\n");
+    printf("for more information. Default to No. (Y/N)?");
+    r=answer();
+    if (r)
+    {
+         fprintf(fp,"#define MR_DOUBLE_BIG\n");
+    }
+
+	printf("\nDo you want to compile MIRACL as a C++ library, rather than a C library?\n");
+    printf("Default to No. (Y/N)?");
+    r=answer();
+    if (r)
+    {
+         fprintf(fp,"#define MR_CPP\n");
+    }
+
+	printf("\nDo you want to avoid the use of compiler intrinsics?\n");
+    printf("Default to No. (Y/N)?");
+    r=answer();
+    if (r)
+    {
+         fprintf(fp,"#define MR_NO_INTRINSICS\n");
     }
 
     if (!port)

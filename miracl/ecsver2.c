@@ -18,13 +18,20 @@
  *   (x,y) point, itself a large prime. The number of points on the curve is 
  *   cf.q where cf is the "co-factor", normally 2 or 4.
  * 
- *   Copyright (c) 2000-2003 Shamus Software Ltd.
  */
 
 #include <stdio.h>
 #include "miracl.h"
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef MR_COUNT_OPS
+int fpm2;
+int fpi2;
+int fpc;
+int fpa;
+int fpx;
+#endif
 
 void strip(char *name)
 { /* strip off filename extension */
@@ -130,7 +137,7 @@ int main()
     innum(r,fp);
     innum(s,fp);
     fclose(fp);
-    if (compare(r,q)>=0 || compare(s,q)>=0)
+    if (mr_compare(r,q)>=0 || mr_compare(s,q)>=0)
     {
         printf("Signature is NOT verified\n");
         return 0;
@@ -138,11 +145,16 @@ int main()
     xgcd(s,q,s,s,s);
     mad(hash,s,s,q,q,u1);
     mad(r,s,s,q,q,u2);
-
+#ifdef MR_COUNT_OPS
+fpm2=fpi2=0;
+#endif
     ecurve2_mult2(u2,public,u1,g,g);
+#ifdef MR_COUNT_OPS
+printf("Number of modmuls= %d, inverses= %d\n",fpm2,fpi2);
+#endif
     epoint2_get(g,v,v);
     divide(v,q,q);
-    if (compare(v,r)==0) printf("Signature is verified\n");
+    if (mr_compare(v,r)==0) printf("Signature is verified\n");
     else                 printf("Signature is NOT verified\n");
     return 0;
 }

@@ -338,7 +338,7 @@ GF2m resultant(const Poly2& a,const Poly2 &b)
         {
             lc=pow(lc,d0-d2);
             r*=lc;
-            if (d0&d1&1) r=-r;
+          /*  if (d0&d1&1) r=-r; */
         }
         else
         {
@@ -826,10 +826,10 @@ ostream& operator<<(ostream& s,const Poly2& p)
         a=ptr->an;
         if (!first) s << " + ";
         if (ptr->n==0) 
-           s << a; 
+           s << (Big)a; 
         else 
         {
-            if (a!=(GF2m)1)  s << a << "*x"; 
+            if (a!=(GF2m)1)  s << (Big)a << "*x"; 
             else            s << "x";
             if (ptr->n!=1)  s << "^" << ptr->n;
         }

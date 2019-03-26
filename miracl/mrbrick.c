@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   Module to implement Comb method for fast
  *   computation of g^x mod n, for fixed g and n, using precomputation. 
@@ -5,8 +39,6 @@
  *   of the Digital Signature Standard (DSS) for example.
  *
  *   See "Handbook of Applied Cryptography", CRC Press, 2001
- *
- *   Copyright (c) 1988-2006 Shamus Software Ltd.
  */
 
 #include <stdlib.h> 
@@ -20,7 +52,7 @@ BOOL brick_init(_MIPD_ brick *b,big g,big n,int window,int nb)
    * n  is the fixed modulus                          *
    * nb is the maximum number of bits in the exponent */
 
-    int i,j,k,t,bp,len,bptr;
+    int i,j,k,t,bp,len,bptr,is;
     big *table;
 
 #ifdef MR_OS_THREADS
@@ -43,7 +75,7 @@ BOOL brick_init(_MIPD_ brick *b,big g,big n,int window,int nb)
 
     b->window=window;
     b->max=nb;
-    table=mr_alloc(_MIPP_ (1<<window),sizeof(big));
+    table=(big *)mr_alloc(_MIPP_ (1<<window),sizeof(big));
     if (table==NULL)
     {
         mr_berror(_MIPP_ MR_ERR_OUT_OF_MEMORY);   
@@ -83,7 +115,10 @@ BOOL brick_init(_MIPD_ brick *b,big g,big n,int window,int nb)
         for (j=0;j<k;j++)
         {
             if (i&bp)
-                nres_modmult(_MIPP_ table[1<<j],table[i],table[i]);
+			{
+				is=1<<j;
+                nres_modmult(_MIPP_ table[is],table[i],table[i]);
+			}
             bp<<=1;
         }
     }
@@ -92,7 +127,7 @@ BOOL brick_init(_MIPD_ brick *b,big g,big n,int window,int nb)
 
     len=n->len;
     bptr=0;
-    b->table=mr_alloc(_MIPP_ len*(1<<window),sizeof(mr_small));
+    b->table=(mr_small *)mr_alloc(_MIPP_ len*(1<<window),sizeof(mr_small));
 
     for (i=0;i<(1<<window);i++)
     {

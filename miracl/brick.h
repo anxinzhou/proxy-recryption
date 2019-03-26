@@ -8,7 +8,6 @@
  *              precomputation
  *    NOTE    : Must be used in conjunction with big.cpp
  *                
- *    Copyright (c) 1988-2006 Shamus Software Ltd.
  */
 
 #ifndef BRICK_H

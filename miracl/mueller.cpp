@@ -75,7 +75,6 @@
 // This program would be a lot faster if the coefficients were calculated mod
 // many 32-bit primes, and then combined via the CRT.
 //
-// Copyright Shamus Software Ltd., 1999 
 //
 
 #include <iostream>
@@ -362,10 +361,9 @@ int main(int argc,char **argv)
         cout << "See source code file for details" << endl;
         cout << "Files generated from different ranges may be combined in an" << endl;
         cout << "obvious way using a standard text editor" << endl;
-        cout << "\nFreeware from Shamus Software, Dublin, Ireland" << endl;
+        cout << "\nFreeware from Certivox, Dublin, Ireland" << endl;
         cout << "Full C++ source code and MIRACL multiprecision library available" << endl;
-        cout << "http://indigo.ie/~mscott for details" << endl;
-        cout << "or email mscott@indigo.ie" << endl;
+        cout << "email mscott@indigo.ie" << endl;
 
         return 0;
     }

@@ -1,3 +1,38 @@
+
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  * Implementation of the NIST Advanced Ecryption Standard
  *
@@ -9,12 +44,17 @@
  * RIJNDAEL, partly because it is entirely patent-free.
  *
  * We were right! Rijndael is the AES from October 2nd 2000
- *
- * Copyright (c) Shamus Software 1999-2001
  */
 
 #include <stdlib.h> 
 #include "miracl.h"
+
+/* Define this if INTEL AES-NI intrinsics are supported - for example with GCC compiler */ 
+/* #define AES_NI_SUPPORT */
+
+#ifdef AES_NI_SUPPORT
+#include <wmmintrin.h> 
+#endif
 
 #define MR_WORD mr_unsign32
 
@@ -198,7 +238,7 @@ static const MR_WORD rtable[]=
 0x8b493c28,0x41950dff,0x7101a839,0xdeb30c08,0x9ce4b4d8,0x90c15664,
 0x6184cb7b,0x70b632d5,0x745c6c48,0x4257b8d0};
 
-#ifndef MR_SHORT_OF_MEMORY
+#ifndef MR_SMALL_AES
 
 static const MR_WORD ftable1[]=
 {0x6363c6a5,0x7c7cf884,0x7777ee99,0x7b7bf68d,0xf2f2ff0d,0x6b6bd6bd,
@@ -562,7 +602,7 @@ void aes_getreg(aes *a,char *ir)
 
 BOOL aes_init(aes* a,int mode,int nk,char *key,char *iv)
 { /* Key=nk bytes */
-  /* currently NB,nk = 16, 24 or 32          */
+  /* currently NB.nk = 16, 24 or 32          */
   /* Key Scheduler. Create expanded encryption key */
     int i,j,k,N,nr;
     MR_WORD CipherKey[8];
@@ -616,10 +656,27 @@ BOOL aes_init(aes* a,int mode,int nk,char *key,char *iv)
     return TRUE;
 }
 
-static void aes_ecb_encrypt(aes *a,MR_BYTE *buff)
+void aes_ecb_encrypt(aes *a,MR_BYTE *buff)
 {
     int i,j,k;
     MR_WORD p[4],q[4],*x,*y,*t;
+
+#ifdef AES_NI_SUPPORT
+	__m128i ky,m = _mm_loadu_si128((__m128i *) buff);
+	ky = _mm_loadu_si128((__m128i *) &a->fkey[0]);
+    m = _mm_xor_si128       (m, ky); 
+	k=NB;
+	for (i=1;i<a->Nr;i++)
+	{
+		ky=_mm_loadu_si128((__m128i *) &a->fkey[k]);
+		m =_mm_aesenc_si128(m, ky); 
+		k+=4;
+	}
+	ky=_mm_loadu_si128((__m128i *) &a->fkey[k]);
+    m=_mm_aesenclast_si128(m, ky);
+
+    _mm_storeu_si128((__m128i *)buff, m);
+#else
 
     for (i=j=0;i<NB;i++,j+=4)
     {
@@ -633,7 +690,7 @@ static void aes_ecb_encrypt(aes *a,MR_BYTE *buff)
 /* State alternates between x and y */
     for (i=1;i<a->Nr;i++)
     { /* Nr is number of rounds. May be odd. */
-#ifndef MR_SHORT_OF_MEMORY
+#ifndef MR_SMALL_AES
         y[0]=a->fkey[k]^ftable[MR_TOBYTE(x[0])]^
              ftable1[MR_TOBYTE(x[1]>>8)]^
              ftable2[MR_TOBYTE(x[2]>>16)]^
@@ -696,12 +753,30 @@ static void aes_ecb_encrypt(aes *a,MR_BYTE *buff)
         unpack(y[i],(MR_BYTE *)&buff[j]);
         x[i]=y[i]=0;   /* clean up stack */
     }
+#endif
 }
 
-static void aes_ecb_decrypt(aes *a,MR_BYTE *buff)
+void aes_ecb_decrypt(aes *a,MR_BYTE *buff)
 {
     int i,j,k;
     MR_WORD p[4],q[4],*x,*y,*t;
+
+#ifdef AES_NI_SUPPORT
+	__m128i ky,m = _mm_loadu_si128((__m128i *) buff);
+	ky = _mm_loadu_si128((__m128i *) &a->rkey[0]);
+    m = _mm_xor_si128       (m, ky); 
+	k=NB;
+	for (i=1;i<a->Nr;i++)
+	{
+		ky=_mm_loadu_si128((__m128i *) &a->rkey[k]);
+		m =_mm_aesdec_si128    (m, ky); 
+		k+=4;
+	}
+	ky=_mm_loadu_si128((__m128i *) &a->rkey[k]);
+    m=_mm_aesdeclast_si128(m, ky);
+
+    _mm_storeu_si128((__m128i *)buff, m);
+#else
 
     for (i=j=0;i<NB;i++,j+=4)
     {
@@ -715,7 +790,7 @@ static void aes_ecb_decrypt(aes *a,MR_BYTE *buff)
 /* State alternates between x and y */
     for (i=1;i<a->Nr;i++)
     { /* Nr is number of rounds. May be odd. */
-#ifndef MR_SHORT_OF_MEMORY
+#ifndef MR_SMALL_AES
         y[0]=a->rkey[k]^rtable[MR_TOBYTE(x[0])]^
              rtable1[MR_TOBYTE(x[3]>>8)]^
              rtable2[MR_TOBYTE(x[2]>>16)]^
@@ -777,7 +852,7 @@ static void aes_ecb_decrypt(aes *a,MR_BYTE *buff)
         unpack(y[i],(MR_BYTE *)&buff[j]);
         x[i]=y[i]=0;   /* clean up stack */
     }
-
+#endif
 }
 
 mr_unsign32 aes_encrypt(aes* a,char *buff)

@@ -139,7 +139,7 @@ void brent(void)
             } while (k<r && size(z)==1);
             r*=2;
         } while (size(z)==1);
-        if (compare(z,n)==0) do 
+        if (mr_compare(z,n)==0) do 
         { /* back-track */
             mad(ys,ys,c3,n,n,ys);
             subtract(ys,x,z);
@@ -158,7 +158,7 @@ void brent(void)
             }
             else
             { /* if end of factorisation - pass it on... */
-                if (compare(z,n)==0) return;
+                if (mr_compare(z,n)==0) return;
               /* you will have to come back to it */
                 if (!suppress) printf("COMPOSITE FACTOR ");
                 else printf("& ");
@@ -316,7 +316,7 @@ void pollard(int lim1,long lim2)
                 }
                 else continue;
             }
-            if (compare(t,n)==0)
+            if (mr_compare(t,n)==0)
             {
                 if (!suppress) 
                 {
@@ -485,7 +485,7 @@ void williams(int lim1,long lim2,int ntrys)
                     }
                     else continue;
                 }
-                if (compare(t,n)==0)
+                if (mr_compare(t,n)==0)
                 {
                     if (!suppress) 
                     {
@@ -773,7 +773,7 @@ int lenstra(int lim1,long lim2,int nc,int kurve,int ncurves)
                     }
                     else continue;
                 }
-                if (compare(t,n)==0)
+                if (mr_compare(t,n)==0)
                 {
                     if (!suppress) 
                     {
@@ -848,7 +848,6 @@ static int *epr,*r1,*r2,*rp,*b,*pr,*e,*hash;
 static unsigned char *logp,*sieve;
 static int mm,mlf,jj,nbts,nlp,lp,hmod,hmod2;
 static BOOL partial;
-static miracl *mip;
 
 int knuth(int mm,int *epr,big N,big D)
 { /* Input number to be factored N and find best multiplier k  *
@@ -1079,7 +1078,7 @@ BOOL gotcha(void)
     { /* check for false alarm */
         if (!suppress) printf("\ntrying...\n");
         add(XX,YY,TT);
-        if (compare(XX,YY)==0 || compare(TT,NN)==0) found=FALSE;
+        if (mr_compare(XX,YY)==0 || mr_compare(TT,NN)==0) found=FALSE;
         if (!found) if(!suppress) printf("working... %5d",jj);
     }
     return found;
@@ -1183,20 +1182,20 @@ int initv(int d)
         w[i]=mirvar(0);
     }
 
-    EE=mr_alloc(mm+1,sizeof(int *));
-    G=mr_alloc(mlf+1,sizeof(int *));
+    EE=(unsigned int **)mr_alloc(mm+1,sizeof(int *));
+    G=(unsigned int **)mr_alloc(mlf+1,sizeof(int *));
     
     pak=1+mm/(MR_IBITS);
     for (i=0;i<=mm;i++)
     { 
         b[i]=(-1);
-        EE[i]=mr_alloc(pak,sizeof(int));
+        EE[i]=(unsigned int *)mr_alloc(pak,sizeof(int));
     }
     
     mip->ERCON=TRUE;
     for (i=0;i<=mlf;i++)
     {
-        G[i]=mr_alloc(pak,sizeof(int));
+        G[i]=(unsigned int *)mr_alloc(pak,sizeof(int));
         if (G[i]==NULL)
         { /* Out of space - try a quick fix */
             mlf=mm;
@@ -1332,7 +1331,7 @@ int qsieve(int d)
                 if (size(PP)<0) add(PP,DD,PP);
                 mad(PP,PP,PP,DD,DD,VV);       /* VV = PP^2 mod kN  */
                 absol(TT,TT);
-                if (compare(TT,RR)<0) S=1;    /* check for -ve VV */
+                if (mr_compare(TT,RR)<0) S=1;    /* check for -ve VV */
                 if (S==1) subtract(DD,VV,VV);
                 copy(VV,TT);
                 e[0]=S;
@@ -1373,9 +1372,13 @@ int qsieve(int d)
   NOTE: It may be necessary on some platforms to change the operators * and #
 */
 
+#if defined(unix)
+#define TIMES '.'
+#define RAISE '^'
+#else
 #define TIMES '*'
 #define RAISE '#'
-
+#endif
 
 int digits(void)
 { /* size of n */
@@ -1532,9 +1535,7 @@ LOOP:
         goto LOOP;
 }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc,char **argv)
 {
     FILE *ifile;
     int ip,b,d=250;
@@ -1546,18 +1547,24 @@ char **argv;
       printf("OR\n");
       printf("factor -f <formula>\n");
       printf("e.g. factor 999999999999999999999999999999999999999999999999999997\n");
+#if defined(unix)
+      printf("or   factor -f 10^100-19\n\n");
+#else
       printf("or   factor -f 10#100-19\n\n");
+#endif
       printf("To suppress the commentary, use flag -s\n");
       printf("To input from a file, use flag -i <filename>\n");
       printf("To output to a file, use flag -o <filename>\n");
       printf("To set max. number size, set -dn, where n is number of decimal digits\n");
       printf("(Default is -d150). Must be first flag and before number.\n");
+#if defined(unix)
+      printf("e.g. factor -d200 -f 10^200-1 -s -o factors.dat\n\n");
+#else
       printf("e.g. factor -d200 -f 10#200-1 -s -o factors.dat\n\n");
-      printf("Freeware from Shamus Software, Dublin, Ireland\n");
+#endif
+      printf("Freeware from Certivox, Dublin, Ireland\n");
       printf("Full C source code and MIRACL multiprecision library available\n");
       printf("Email to mscott@indigo.ie for details\n");
-      printf("Web page http://indigo.ie/~mscott\n");
-      printf("Source code from ftp://ftp.computing.dcu.ie/pub/crypto/miracl.zip\n");
       return 0;
     }
 
@@ -1681,7 +1688,7 @@ char **argv;
     mr_free(plus);
     mr_free(cp);
     mr_free(fu);
-    if (digits()<100)
+    if (digits()<110)
     {
         if (!suppress) printf("finally - the multiple polynomial quadratic sieve - with large prime (*)\n");
         qsieve(digits());

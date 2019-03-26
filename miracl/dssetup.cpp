@@ -1,5 +1,5 @@
 /*
- *   Proposed Digital Signature Standard
+ *   Digital Signature Standard
  *
  *   See Communications ACM July 1992, Vol. 35 No. 7
  *   This new standard for digital signatures has been proposed by 
@@ -14,7 +14,6 @@
  *
  *   Requires: big.cpp
  *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <iostream>

@@ -8,7 +8,6 @@ only build of the library.
 
 /*
  *   MIRACL compiler/hardware definitions - mirdef.h
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 
@@ -64,18 +63,23 @@ armcc -I. -c -O2 mrshs.c
 armcc -I. -c -O2 mrshs256.c
 armcc -I. -c -O2 mrshs512.c
 armcc -I. -c -O2 mraes.c
+armcc -I. -c -O2 mrgcm.c
 armcc -I. -c -O2 mrlucas.c
 armcc -I. -c -O2 mrstrong.c
 armcc -I. -c -O2 mrbrick.c
 armcc -I. -c -O2 mrebrick.c
 armcc -I. -c -O2 mrgf2m.c
 armcc -I. -c -O2 mrec2m.c
+armcc -I. -c -O2 mrzzn2.c
+armcc -I. -c -O2 mrzzn2b.c
+armcc -I. -c -O2 mrzzn3.c
+armcc -I. -c -O2 mrecn2.c
 armar -rc miracl.a mrcore.o mrarth0.o mrarth1.o mrarth2.o mralloc.o mrsmall.o
-armar -r  miracl.a mrio1.o mrio2.o mrjack.o mrgcd.o mrxgcd.o mrarth3.o
+armar -r  miracl.a mrio1.o mrio2.o mrjack.o mrgcd.o mrxgcd.o mrarth3.o mrgcm.o
 armar -r  miracl.a mrrand.o mrprime.o mrcrt.o mrscrt.o mrmonty.o mrcurve.o 
 armar -r  miracl.a mrfast.o mrshs.o mraes.o mrlucas.o mrstrong.o mrbrick.o 
-armar -r  miracl.a mrebrick.o mrec2m.o mrgf2m.o mrpower.o mrsroot.o
-armar -r  miracl.a mrshs256.o mrshs512.o mrbits.o
+armar -r  miracl.a mrebrick.o mrec2m.o mrgf2m.o mrpower.o mrsroot.o mrzzn2b.o
+armar -r  miracl.a mrshs256.o mrshs512.o mrbits.o mrzzn2.o mrzzn3.o mrecn2.o
 del mr*.o
 armcc -I. -c pk-demo.c
 armlink pk-demo.o miracl.a -o pk-demo.axf

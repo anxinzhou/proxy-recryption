@@ -1,7 +1,7 @@
 //
 // Agrawal, Kayal & Saxena Prime Prover (Conjecture 4)
 //
-// cl /O2 /GX tp.cpp polymod.cpp poly.cpp zzn.cpp big.cpp ms32.lib
+// cl /O2 /GX tp.cpp polymod.cpp poly.cpp zzn.cpp big.cpp miracl.lib
 //
 // Note neat way of assigning polynomials via the dummy type Variable
 //
@@ -24,8 +24,13 @@ Miracl precision=100;
 //
 // NOTE: It may be necessary on some platforms to change the operators * and #
 
+#if defined(unix)
+#define TIMES '.'
+#define RAISE '^'
+#else
 #define TIMES '*'
 #define RAISE '#'
+#endif
 
 Big tt;
 static char *ss;
@@ -176,7 +181,11 @@ int main(int argc,char **argv)
         cout << "tp <number N>" << endl;
         cout << "OR" << endl;
         cout << "tp -f <formula for N>" << endl;
+#if defined(unix)
+        cout << "e.g. tp -f 2^192-2^64-1" << endl;
+#else
         cout << "e.g. tp -f 2#192-2#64-1" << endl;
+#endif
         cout << "To input N in Hex, precede with -h" << endl;
         return 0;
     }

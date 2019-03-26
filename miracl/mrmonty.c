@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL Montgomery's method for modular arithmetic without division.
  *   mrmonty.c 
@@ -12,13 +46,10 @@
  *   The advantage of this approach is that no division required in order
  *   to compute a modular reduction - useful if division is slow
  *   e.g. on a SPARC processor, or a DSP.
- *
- *   NOTE:- nres_modmult() *might* use mr_mip->w7
  *   
  *   The disadvantage is that numbers must first be converted to an internal
  *   "n-residue" form.
  *
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #include <stdlib.h> 
@@ -28,8 +59,16 @@
 #include <math.h>
 #endif
 
+#ifdef MR_WIN64
+#include <intrin.h>
+#endif
+
 #ifdef MR_COUNT_OPS
 extern int fpc,fpa; 
+#endif
+
+#ifdef MR_CELL
+extern void mod256(_MIPD_ big,big);
 #endif
 
 void kill_monty(_MIPDO_ )
@@ -77,7 +116,10 @@ mr_small prepare_monty(_MIPD_ big n)
 /* set a small negative QNR (on the assumption that n is prime!) */
 /* These defaults can be over-ridden                             */
 
+/* Did you know that for p=2 mod 3, -3 is a QNR? */
+
     mr_mip->pmod8=remain(_MIPP_ n,8);
+	
     switch (mr_mip->pmod8)
     {
     case 0:
@@ -94,9 +136,13 @@ mr_small prepare_monty(_MIPD_ big n)
         mr_mip->qnr=-2;
         break;
     case 7:
-        mr_mip->qnr=-2;
+        mr_mip->qnr=-1;
         break;
     }
+	mr_mip->pmod9=remain(_MIPP_ n,9);
+
+	mr_mip->NO_CARRY=FALSE;
+	if (n->w[n->len-1]>>M4 < 5) mr_mip->NO_CARRY=TRUE;
 
 #ifdef MR_PENTIUM
 
@@ -110,7 +156,12 @@ if (mr_mip->base!=0)
     }
 #endif
 
+#ifdef MR_DISABLE_MONTGOMERY
+    mr_mip->MONTY=OFF;
+#else
     mr_mip->MONTY=ON;
+#endif
+
 #ifdef MR_COMBA
     mr_mip->ACTIVE=FALSE;
 
@@ -124,7 +175,7 @@ if (mr_mip->base!=0)
     }
 
 #endif
-
+    convert(_MIPP_ 1,mr_mip->one);
     if (!mr_mip->MONTY)
     { /* Montgomery arithmetic is turned off */
         copy(n,mr_mip->modulus);
@@ -156,7 +207,7 @@ if (mr_mip->base!=0)
     {
         mr_mip->w6->len=n->len+1;
         mr_mip->w6->w[n->len]=1;
-        if (xgcd(_MIPP_ n,mr_mip->w6,mr_mip->w14,mr_mip->w14,mr_mip->w14)!=1)
+        if (invmodp(_MIPP_ n,mr_mip->w6,mr_mip->w14)!=1)
         { /* problems */
             mr_berror(_MIPP_ MR_ERR_BAD_MODULUS);
             MR_OUT
@@ -171,7 +222,7 @@ if (mr_mip->base!=0)
         mr_mip->w6->w[1]=1;    /* w6 = base */
         mr_mip->w15->len=1;
         mr_mip->w15->w[0]=n->w[0];  /* w15 = n mod base */
-        if (xgcd(_MIPP_ mr_mip->w15,mr_mip->w6,mr_mip->w14,mr_mip->w14,mr_mip->w14)!=1)
+        if (invmodp(_MIPP_ mr_mip->w15,mr_mip->w6,mr_mip->w14)!=1)
         { /* problems */
             mr_berror(_MIPP_ MR_ERR_BAD_MODULUS);
             MR_OUT
@@ -206,6 +257,7 @@ if (mr_mip->base!=0)
         }
     }
 #endif
+    nres(_MIPP_ mr_mip->one,mr_mip->one);
     MR_OUT
 
     return mr_mip->ndash;
@@ -252,6 +304,9 @@ void redc(_MIPD_ big x,big y)
 #ifdef MR_ITANIUM
     mr_small tm;
 #endif
+#ifdef MR_WIN64
+    mr_small tm,tr;
+#endif
     int i,j,rn,rn2;
     big w0,modulus;
 #ifdef MR_NOASM
@@ -272,7 +327,11 @@ void redc(_MIPD_ big x,big y)
     copy(x,w0);
     if (!mr_mip->MONTY)
     {
+/*#ifdef MR_CELL
+        mod256(_MIPP_ w0,w0);
+#else */
         divide(_MIPP_ w0,modulus,modulus);
+/* #endif */
         copy(w0,y);
         MR_OUT
         return;
@@ -564,13 +623,69 @@ void redc(_MIPD_ big x,big y)
     MR_OUT
 }
 
+/* "Complex" method for ZZn2 squaring */
+
+void nres_complex(_MIPD_ big a,big b,big r,big i)
+{
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+    if (mr_mip->ERNUM) return;
+	MR_IN(225)
+
+	if (mr_mip->NO_CARRY && mr_mip->qnr==-1)
+	{ /* if modulus is small enough we can ignore carries, and use simple addition and subtraction */
+	  /* recall that Montgomery reduction can cope as long as product is less than pR */
+#ifdef MR_COMBA
+#ifdef MR_COUNT_OPS
+fpa+=3;
+#endif
+		if (mr_mip->ACTIVE)
+		{
+			comba_add(a,b,mr_mip->w1);
+			comba_add(a,mr_mip->modulus,mr_mip->w2); /* a-b is p+a-b */
+			comba_sub(mr_mip->w2,b,mr_mip->w2);
+			comba_add(a,a,r);
+		}
+		else
+		{
+#endif
+			mr_padd(_MIPP_ a,b,mr_mip->w1);
+			mr_padd(_MIPP_ a,mr_mip->modulus,mr_mip->w2);
+			mr_psub(_MIPP_ mr_mip->w2,b,mr_mip->w2);
+			mr_padd(_MIPP_ a,a,r);
+#ifdef MR_COMBA
+		}
+#endif
+		nres_modmult(_MIPP_ r,b,i);
+		nres_modmult(_MIPP_ mr_mip->w1,mr_mip->w2,r);
+	}
+	else
+	{
+		nres_modadd(_MIPP_ a,b,mr_mip->w1);
+		nres_modsub(_MIPP_ a,b,mr_mip->w2);
+
+		if (mr_mip->qnr==-2)
+			nres_modsub(_MIPP_ mr_mip->w2,b,mr_mip->w2);
+     
+		nres_modmult(_MIPP_ a,b,i);
+		nres_modmult(_MIPP_ mr_mip->w1,mr_mip->w2,r);
+
+		if (mr_mip->qnr==-2)
+			nres_modadd(_MIPP_ r,i,r);
+
+		nres_modadd(_MIPP_ i,i,i);
+	}
+	MR_OUT
+}
+
 #ifndef MR_NO_LAZY_REDUCTION
 
 /*
 
 Lazy reduction technique for zzn2 multiplication - competitive if Reduction is more
 expensive that Multiplication. This is true for pairing-based crypto. Note that
-Lazy reduction can also be used with Karatsuba! Uses w1, w2, w5, w6 and possibly w7.
+Lazy reduction can also be used with Karatsuba! Uses w1, w2, w5, and w6.
 
 Reduction poly is X^2-D=0
 
@@ -598,8 +713,8 @@ if (mr_mip->qnr==-2) fpa++;
 #ifdef MR_COMBA
     if (mr_mip->ACTIVE)
     {
-        comba_mult(_MIPP_ a0,b0,mr_mip->w0);
-        comba_mult(_MIPP_ a1,b1,mr_mip->w5);
+        comba_mult(a0,b0,mr_mip->w0);
+        comba_mult(a1,b1,mr_mip->w5);
     }
     else
     {
@@ -623,20 +738,43 @@ if (mr_mip->qnr==-2) fpa++;
     }
 #endif
 
-    nres_double_modadd(_MIPP_ mr_mip->w0,mr_mip->w5,mr_mip->w6);  /* w6 =  a0.b0+a1.b1 */
-    if (mr_mip->qnr==-2)
+	if (mr_mip->NO_CARRY && mr_mip->qnr==-1)
+	{ /* if modulus is small enough we can ignore carries, and use simple addition and subtraction */
+#ifdef MR_COMBA
+#ifdef MR_COUNT_OPS
+fpa+=2;
+#endif
+		if (mr_mip->ACTIVE)
+		{
+			comba_double_add(mr_mip->w0,mr_mip->w5,mr_mip->w6);
+			comba_add(a0,a1,mr_mip->w1);
+			comba_add(b0,b1,mr_mip->w2); 
+		}
+		else
+		{
+#endif
+			mr_padd(_MIPP_ mr_mip->w0,mr_mip->w5,mr_mip->w6);
+			mr_padd(_MIPP_ a0,a1,mr_mip->w1);
+			mr_padd(_MIPP_ b0,b1,mr_mip->w2); 
+#ifdef MR_COMBA
+		}
+#endif
+	}
+	else
+	{
+		nres_double_modadd(_MIPP_ mr_mip->w0,mr_mip->w5,mr_mip->w6);  /* w6 =  a0.b0+a1.b1 */
+		if (mr_mip->qnr==-2)
           nres_double_modadd(_MIPP_ mr_mip->w5,mr_mip->w5,mr_mip->w5);
-    nres_double_modsub(_MIPP_ mr_mip->w0,mr_mip->w5,mr_mip->w0);  /* r = a0.b0+D.a1.b1 */
-   
-    nres_modadd(_MIPP_ a0,a1,mr_mip->w1);
-    nres_modadd(_MIPP_ b0,b1,mr_mip->w2); 
-    
+		nres_modadd(_MIPP_ a0,a1,mr_mip->w1);
+		nres_modadd(_MIPP_ b0,b1,mr_mip->w2); 
+    }
+	nres_double_modsub(_MIPP_ mr_mip->w0,mr_mip->w5,mr_mip->w0);  /* r = a0.b0+D.a1.b1 */
 
 #ifdef MR_COMBA
     if (mr_mip->ACTIVE)
     {
         comba_redc(_MIPP_ mr_mip->w0,r);
-        comba_mult(_MIPP_ mr_mip->w1,mr_mip->w2,mr_mip->w0);
+        comba_mult(mr_mip->w1,mr_mip->w2,mr_mip->w0);
     }
     else
     {
@@ -658,7 +796,18 @@ if (mr_mip->qnr==-2) fpa++;
 #ifdef MR_KCM
     }
 #endif
-    nres_double_modsub(_MIPP_ mr_mip->w0,mr_mip->w6,mr_mip->w0); /* (a0+a1)*(b0+b1) - w6 */
+
+	if (mr_mip->NO_CARRY && mr_mip->qnr==-1)
+	{
+#ifdef MR_COMBA
+		if (mr_mip->ACTIVE)
+			comba_double_sub(mr_mip->w0,mr_mip->w6,mr_mip->w0);
+		else
+#endif
+			mr_psub(_MIPP_ mr_mip->w0,mr_mip->w6,mr_mip->w0);
+	}
+	else
+		nres_double_modsub(_MIPP_ mr_mip->w0,mr_mip->w6,mr_mip->w0); /* (a0+a1)*(b0+b1) - w6 */
 
 #ifdef MR_COMBA
     if (mr_mip->ACTIVE)
@@ -725,7 +874,11 @@ void nres_negate(_MIPD_ big x, big w)
 #ifdef MR_OS_THREADS
     miracl *mr_mip=get_mip();
 #endif
-
+	if (size(x)==0) 
+	{
+		zero(w);
+		return;
+	}
 #ifdef MR_COMBA
     if (mr_mip->ACTIVE)
     {
@@ -738,14 +891,61 @@ void nres_negate(_MIPD_ big x, big w)
         if (mr_mip->ERNUM) return;
 
         MR_IN(92)
-        if (size(x)==0) zero(w);
-        else mr_psub(_MIPP_ mr_mip->modulus,x,w);    
+        mr_psub(_MIPP_ mr_mip->modulus,x,w);    
         MR_OUT
 
 #ifdef MR_COMBA
     }
 #endif
 
+}
+
+void nres_div2(_MIPD_ big x,big w)
+{
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+
+    MR_IN(198)
+    copy(x,mr_mip->w1);
+    if (remain(_MIPP_ mr_mip->w1,2)!=0)
+        add(_MIPP_ mr_mip->w1,mr_mip->modulus,mr_mip->w1);
+    subdiv(_MIPP_ mr_mip->w1,2,mr_mip->w1);
+    copy(mr_mip->w1,w);
+
+    MR_OUT
+}
+
+void nres_div3(_MIPD_ big x,big w)
+{
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+
+    MR_IN(199)
+    copy(x,mr_mip->w1);
+    while (remain(_MIPP_ mr_mip->w1,3)!=0)
+        add(_MIPP_ mr_mip->w1,mr_mip->modulus,mr_mip->w1);
+    subdiv(_MIPP_ mr_mip->w1,3,mr_mip->w1);
+    copy(mr_mip->w1,w);
+
+    MR_OUT
+}
+
+void nres_div5(_MIPD_ big x,big w)
+{
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+
+    MR_IN(208)
+    copy(x,mr_mip->w1);
+    while (remain(_MIPP_ mr_mip->w1,5)!=0)
+        add(_MIPP_ mr_mip->w1,mr_mip->modulus,mr_mip->w1);
+    subdiv(_MIPP_ mr_mip->w1,5,mr_mip->w1);
+    copy(mr_mip->w1,w);
+
+    MR_OUT
 }
 
 /* mod pR addition and subtraction */
@@ -760,7 +960,7 @@ void nres_double_modadd(_MIPD_ big x,big y,big w)
 
     if (mr_mip->ACTIVE)
     {
-        comba_double_add(_MIPP_ x,y,w);
+        comba_double_modadd(_MIPP_ x,y,w);
         return;
     }
     else
@@ -789,7 +989,7 @@ void nres_double_modsub(_MIPD_ big x,big y,big w)
 
     if (mr_mip->ACTIVE)
     {
-        comba_double_sub(_MIPP_ x,y,w);
+        comba_double_modsub(_MIPP_ x,y,w);
         return;
     }
     else
@@ -827,7 +1027,7 @@ fpa++;
 
     if (mr_mip->ACTIVE)
     {
-        comba_add(_MIPP_ x,y,w);
+        comba_modadd(_MIPP_ x,y,w);
         return;
     }
     else
@@ -857,7 +1057,7 @@ fpa++;
 #ifdef MR_COMBA
     if (mr_mip->ACTIVE)
     {
-        comba_sub(_MIPP_ x,y,w);
+        comba_modsub(_MIPP_ x,y,w);
         return;
     }
     else
@@ -900,11 +1100,15 @@ int nres_moddiv(_MIPD_ big x,big y,big w)
         return 0;
     }
     redc(_MIPP_ y,mr_mip->w6);
-    gcd=xgcd(_MIPP_ mr_mip->w6,mr_mip->modulus,mr_mip->w6,mr_mip->w6,mr_mip->w6);
-    
-    if (gcd!=1) zero(w);
-    else mad(_MIPP_ x,mr_mip->w6,x,mr_mip->modulus,mr_mip->modulus,w);
-
+    gcd=invmodp(_MIPP_ mr_mip->w6,mr_mip->modulus,mr_mip->w6);
+   
+    if (gcd!=1) zero(w); /* fails silently and returns 0 */
+    else
+    {
+        nres(_MIPP_ mr_mip->w6,mr_mip->w6);
+        nres_modmult(_MIPP_ x,mr_mip->w6,w);
+    /*    mad(_MIPP_ x,mr_mip->w6,x,mr_mip->modulus,mr_mip->modulus,w); */
+    }
     MR_OUT
     return gcd;
 }
@@ -961,11 +1165,20 @@ void nres_premult(_MIPD_ big x,int k,big w)
         return;
     }
 
-    premult(_MIPP_ x,k,mr_mip->w0);
+    mr_pmul(_MIPP_ x,(mr_small)k,mr_mip->w0);
+#ifdef MR_COMBA
+#ifdef MR_SPECIAL
+	comba_redc(_MIPP_ mr_mip->w0,w);
+#else
+	divide(_MIPP_ mr_mip->w0,mr_mip->modulus,mr_mip->modulus);
+	copy(mr_mip->w0,w);
+#endif
+#else
     divide(_MIPP_ mr_mip->w0,mr_mip->modulus,mr_mip->modulus);
-    
-    if (sign==1) nres_negate(_MIPP_ mr_mip->w0,w);
-    else copy(mr_mip->w0,w);
+	copy(mr_mip->w0,w);
+#endif 
+	
+    if (sign==1) nres_negate(_MIPP_ w,w);
 
     MR_OUT
 }
@@ -975,11 +1188,9 @@ void nres_modmult(_MIPD_ big x,big y,big w)
 #ifdef MR_OS_THREADS
     miracl *mr_mip=get_mip();
 #endif
-    int sx=size(x);
-    int sy=size(y);
-    if (sx==0 && x==w) return;
-    if (sy==0 && y==w) return;
-    if (sx==0 || sy==0)
+    if ((x==NULL || x->len==0) && x==w) return;
+    if ((y==NULL || y->len==0) && y==w) return;
+    if (y==NULL || x==NULL || x->len==0 || y->len==0)
     {
         zero(w);
         return;
@@ -990,8 +1201,8 @@ fpc++;
 #ifdef MR_COMBA
     if (mr_mip->ACTIVE)
     {
-        if (x==y) comba_square(_MIPP_ x,mr_mip->w0);
-        else      comba_mult(_MIPP_ x,y,mr_mip->w0);
+        if (x==y) comba_square(x,mr_mip->w0);
+        else      comba_mult(x,y,mr_mip->w0);
         comba_redc(_MIPP_ mr_mip->w0,w);
     }
     else
@@ -1046,8 +1257,6 @@ fpc++;
  * Why are all of Peter Montgomery's clever  *
  * algorithms always described as "tricks" ??*/
 
-#ifndef MR_STATIC
-
 BOOL nres_double_inverse(_MIPD_ big x,big y,big w,big z)
 { /* find y=1/x mod n and z=1/w mod n */
   /* 1/x = w/xw, and 1/w = x/xw       */
@@ -1066,7 +1275,7 @@ BOOL nres_double_inverse(_MIPD_ big x,big y,big w,big z)
     }
     redc(_MIPP_ mr_mip->w6,mr_mip->w6);
     redc(_MIPP_ mr_mip->w6,mr_mip->w6);
-    xgcd(_MIPP_ mr_mip->w6,mr_mip->modulus,mr_mip->w6,mr_mip->w6,mr_mip->w6);
+    invmodp(_MIPP_ mr_mip->w6,mr_mip->modulus,mr_mip->w6);
 
     nres_modmult(_MIPP_ w,mr_mip->w6,mr_mip->w5);
     nres_modmult(_MIPP_ x,mr_mip->w6,z);
@@ -1096,8 +1305,7 @@ BOOL nres_multi_inverse(_MIPD_ int m,big *x,big *w)
 
     if (m==1)
     {
-        convert(_MIPP_ 1,w[0]);
-        nres(_MIPP_ w[0],w[0]);
+        copy(mr_mip->one,w[0]);
         nres_moddiv(_MIPP_ w[0],x[0],w[0]);
         MR_OUT
         return TRUE;
@@ -1118,7 +1326,8 @@ BOOL nres_multi_inverse(_MIPD_ int m,big *x,big *w)
 
     redc(_MIPP_ mr_mip->w6,mr_mip->w6);
     redc(_MIPP_ mr_mip->w6,mr_mip->w6);
-    xgcd(_MIPP_ mr_mip->w6,mr_mip->modulus,mr_mip->w6,mr_mip->w6,mr_mip->w6);
+
+    invmodp(_MIPP_ mr_mip->w6,mr_mip->modulus,mr_mip->w6);
 
 /* Now y=1/y */
 
@@ -1141,4 +1350,65 @@ BOOL nres_multi_inverse(_MIPD_ int m,big *x,big *w)
     return TRUE;   
 }
 
+/* initialise elliptic curve */
+
+void ecurve_init(_MIPD_ big a,big b,big p,int type)
+{ /* Initialize the active ecurve    *
+   * Asize indicate size of A        *
+   * Bsize indicate size of B        */
+    int as;
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
 #endif
+    if (mr_mip->ERNUM) return;
+
+    MR_IN(93)
+
+#ifndef MR_NO_SS
+    mr_mip->SS=FALSE;       /* no special support for super-singular curves */ 
+#endif
+
+    prepare_monty(_MIPP_ p);
+
+    mr_mip->Asize=size(a);
+    if (mr_abs(mr_mip->Asize)==MR_TOOBIG)
+    {
+        if (mr_mip->Asize>=0)
+        { /* big positive number - check it isn't minus something small */
+           copy(a,mr_mip->w1);
+           divide(_MIPP_ mr_mip->w1,p,p);
+           subtract(_MIPP_ p,mr_mip->w1,mr_mip->w1);
+           as=size(mr_mip->w1);
+           if (as<MR_TOOBIG) mr_mip->Asize=-as;
+        }
+    }
+    nres(_MIPP_ a,mr_mip->A);
+
+    mr_mip->Bsize=size(b);
+    if (mr_abs(mr_mip->Bsize)==MR_TOOBIG) 
+    {
+        if (mr_mip->Bsize>=0)
+        { /* big positive number - check it isn't minus something small */
+           copy(b,mr_mip->w1);
+           divide(_MIPP_ mr_mip->w1,p,p);
+           subtract(_MIPP_ p,mr_mip->w1,mr_mip->w1);
+           as=size(mr_mip->w1);
+           if (as<MR_TOOBIG) mr_mip->Bsize=-as;
+        }
+    }
+
+    nres(_MIPP_ b,mr_mip->B);
+#ifdef MR_EDWARDS
+    mr_mip->coord=MR_PROJECTIVE; /* only type supported for Edwards curves */
+#else
+#ifndef MR_AFFINE_ONLY
+    if (type==MR_BEST) mr_mip->coord=MR_PROJECTIVE;
+    else mr_mip->coord=type;
+#else
+    if (type==MR_PROJECTIVE)
+        mr_berror(_MIPP_ MR_ERR_NOT_SUPPORTED);
+#endif
+#endif
+    MR_OUT
+    return;
+}

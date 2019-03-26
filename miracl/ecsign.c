@@ -15,13 +15,16 @@
  *   point (x,y). In fact normally q is the prime number of points counted
  *   on the curve. 
  *
- *   Copyright (c) 1997-2005 Shamus Software Ltd.
  */
 
 #include <stdio.h>
 #include "miracl.h"
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef MR_COUNT_OPS
+int fpm2,fpi2,fpc,fpa,fpx;
+#endif
 
 void strip(char *name)
 { /* strip off filename extension */
@@ -55,14 +58,23 @@ int main()
     int bits;
     miracl *mip;
 /* get public data */
+#ifndef MR_EDWARDS	
     fp=fopen("common.ecs","rt");
     if (fp==NULL)
     {
         printf("file common.ecs does not exist\n");
         return 0;
     }
-    fscanf(fp,"%d\n",&bits);
-
+    fscanf(fp,"%d\n",&bits); 
+#else
+    fp=fopen("edwards.ecs","rt");
+    if (fp==NULL)
+    {
+        printf("file edwards.ecs does not exist\n");
+        return 0;
+    }
+    fscanf(fp,"%d\n",&bits); 
+#endif
     mip=mirsys(bits/4,16);   /* Use Hex internally */
     a=mirvar(0);
     b=mirvar(0);
@@ -92,14 +104,23 @@ int main()
 
     ecurve_init(a,b,p,MR_PROJECTIVE);  /* initialise curve */
     g=epoint_init();
-    epoint_set(x,y,0,g); /* initialise point of order q */
+
+    if (!epoint_set(x,y,0,g)) /* initialise point of order q */
+    {
+        printf("1. Problem - point (x,y) is not on the curve\n");
+        exit(0);
+    }
 
 /* calculate r - this can be done offline, 
    and hence amortized to almost nothing   */
     bigrand(q,k);
-
+#ifdef MR_COUNT_OPS
+fpm2=fpi2=fpc=fpa=fpx=0;
+#endif
     ecurve_mult(k,g,g);      /* see ebrick.c for method to speed this up */
-
+#ifdef MR_COUNT_OPS
+printf("Number of modmuls= %d, inverses= %d\n",fpc,fpx);
+#endif
     epoint_get(g,r,r);
     divide(r,q,q);
 

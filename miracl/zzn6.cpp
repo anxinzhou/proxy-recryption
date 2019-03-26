@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *    MIRACL  C++ Implementation file ZZn6.cpp
  *
@@ -9,17 +43,11 @@
  * the MIRACL library. It is not complete, and may not work in other 
  * applications
  *
- *    Copyright (c) 2006 Shamus Software Ltd.
  */
 
 #include "zzn6.h"
 
 using namespace std;
-
-void init_zzn6(Big &p)
-{
-   init_zzn3(p);
-}
 
 // Frobenius
 
@@ -27,29 +55,49 @@ ZZn6& ZZn6::powq(void)
 { 
     ZZn X;
     copy(get_mip()->sru,X.getzzn());
-    a.powq(); b.powq();
+    a.powq();     
+    b.powq();
     b*=X;
     return *this;
 }
 
-void ZZn6::get(ZZn3& x,ZZn3& y)  
+void ZZn6::get(ZZn3& x,ZZn3& y) const 
 {x=a; y=b;} 
 
-void ZZn6::get(ZZn3& x) 
+void ZZn6::get(ZZn3& x) const
 {x=a; }
+
+void ZZn6::geti(ZZn3& y) const
+{y=b; }
 
 ZZn6& ZZn6::operator*=(const ZZn6& x)
 { // optimized to reduce constructor/destructor calls
  if (&x==this)
  {
-    ZZn3 t=a; t+=b;
-    ZZn3 t2=a; t2+=tx(b);
-    t*=t2;
-    b*=a;
-    t-=b;
-    t-=tx(b);
-    b+=b;
-    a=t;
+/* See Stam & Lenstra, "Efficient subgroup exponentiation in Quadratic .. Extensions", CHES 2002 */
+    if (unitary)
+    {
+        ZZn3 t=b; t*=t;
+        b+=a; b*=b;
+        b-=t;
+        a=tx(t);
+        b-=a;
+        a+=a; a+=one();
+        b-=one();
+    //    cout << "unitary" << endl;
+    }
+    else 
+    {
+        ZZn3 t=a; t+=b;
+        ZZn3 t2=a; t2+=tx(b);
+        t*=t2;
+        b*=a;
+        t-=b;
+        t-=tx(b);
+        b+=b;
+        a=t;
+	//	cout << "not unitary" << endl;
+    }
  }
  else
  {
@@ -58,6 +106,8 @@ ZZn6& ZZn6::operator*=(const ZZn6& x)
     ZZn3 t=x.a; t+=x.b;
     b+=a; b*=t; b-=ac; b-=bd;
     a=ac; a+=tx(bd);
+
+    if (!x.unitary) unitary=FALSE;
  }
  return *this;
 }
@@ -65,34 +115,65 @@ ZZn6& ZZn6::operator*=(const ZZn6& x)
 ZZn6& ZZn6::operator/=(const ZZn3& x)
 {
     *this*=inverse(x);
+    unitary=FALSE;
     return *this;
 }
 
 ZZn6& ZZn6::operator/=(const ZZn& x)
 {
-    ZZn t=(ZZn)1/x;
+    ZZn t=one()/x;
     a*=t;
     b*=t;
+    unitary=FALSE;
     return *this;
 }
 
 ZZn6& ZZn6::operator/=(int i)
 {
-    ZZn t=(ZZn)1/i;
+    ZZn t=one()/i;
     a*=t;
     b*=t;
+    unitary=FALSE;
     return *this;
 }
 
 ZZn6& ZZn6::operator/=(const ZZn6& x)
 {
  *this*=inverse(x);
+ if (!x.unitary) unitary=FALSE;
  return *this;
+}
+
+ZZn6 tx(const ZZn6& x)
+{
+	ZZn3 t=tx(x.b);
+	ZZn6 u(t,x.a);
+	return u;
+}
+
+ZZn6 tx2(const ZZn6& x)
+{
+	ZZn6 u(tx(x.a),tx(x.b));
+	return u;	
+}
+
+ZZn6 tx4(const ZZn6& x)
+{
+	ZZn6 u(tx2(x.a),tx2(x.b));
+	return u;	
+}
+
+ZZn6 txd(const ZZn6& x)
+{
+    ZZn3 t=txd(x.a);
+    ZZn6 u(x.b,t);
+    return u;
 }
 
 ZZn6 inverse(const ZZn6& w)
 {
     ZZn6 y=conj(w);
+    if (w.unitary) return y;
     ZZn3 u=w.a;
     ZZn3 v=w.b;
     u*=u;
@@ -104,25 +185,25 @@ ZZn6 inverse(const ZZn6& w)
 }
 
 ZZn6 operator+(const ZZn6& x,const ZZn6& y) 
-{ZZn6 w=x; w.a+=y.a; w.b+=y.b; return w; } 
+{ZZn6 w=x; w+=y; return w; } 
 
 ZZn6 operator+(const ZZn6& x,const ZZn3& y) 
-{ZZn6 w=x; w.a+=y; return w; } 
+{ZZn6 w=x; w+=y; return w; } 
 
 ZZn6 operator+(const ZZn6& x,const ZZn& y) 
-{ZZn6 w=x; w.a+=y; return w; } 
+{ZZn6 w=x; w+=y; return w; } 
 
 ZZn6 operator-(const ZZn6& x,const ZZn6& y) 
-{ZZn6 w=x; w.a-=y.a; w.b-=y.b; return w; } 
+{ZZn6 w=x; w-=y; return w; } 
 
 ZZn6 operator-(const ZZn6& x,const ZZn3& y) 
-{ZZn6 w=x; w.a-=y; return w; } 
+{ZZn6 w=x; w-=y; return w; } 
 
 ZZn6 operator-(const ZZn6& x,const ZZn& y) 
-{ZZn6 w=x; w.a-=y; return w; } 
+{ZZn6 w=x; w-=y; return w; } 
 
 ZZn6 operator-(const ZZn6& x) 
-{ZZn6 w; w.a=-x.a; w.b=-x.b; return w; } 
+{ZZn6 w; w.a=-x.a; w.b=-x.b; w.unitary=FALSE; return w; } 
 
 ZZn6 operator*(const ZZn6& x,const ZZn6& y)
 {
@@ -163,8 +244,46 @@ ZZn6 operator/(const ZZn6& x,int i)
 {ZZn6 w=x; w/=i; return w;}
 #ifndef MR_NO_RAND
 ZZn6 randn6(void)
-{ZZn6 w; w.a=randn3(); w.b=randn3(); return w;}
+{ZZn6 w; w.a=randn3(); w.b=randn3(); w.unitary=FALSE; return w;}
 #endif
+
+ZZn6 rhs(const ZZn6& x)
+{
+	ZZn6 w,A,B;
+	miracl *mip=get_mip();
+	int twist=mip->TWIST;
+	w=x*x*x;
+	A=(ZZn6)getA(); B=(ZZn6)getB();
+	if (twist)
+	{
+	  if (twist==MR_QUARTIC_M)
+	  {
+			w+=tx(A)*x;
+	  }
+	  if (twist==MR_QUARTIC_D)
+	  {
+			w+=txd(A)*x;
+	  }
+	  if (twist==MR_SEXTIC_M)
+	  {
+			w+=tx(B);
+	  }
+	  if (twist==MR_SEXTIC_D)
+	  {
+			w+=txd(B);
+	  }
+	  if (twist==MR_QUADRATIC)
+	  {
+			w+=tx(tx(A))*x+tx(tx(tx(B)));
+	  }
+	}
+	else
+	{
+        w+=A*x+B;
+    }
+	return w;
+}
+
 BOOL qr(const ZZn6& x)
 {
     ZZn3 a,s;
@@ -190,18 +309,24 @@ ZZn6 sqrt(const ZZn6& x)
 
     ZZn6 w;
     ZZn3 a,s,t;
+
     if (x.iszero()) return w;
+
 
     if (x.b.iszero())
     {
-        if (qr(x.a))
+        w.unitary=x.unitary;
+		a=x.a;
+        if (qr(a))
         {
-            s=sqrt(x.a);
+			
+            s=sqrt(a);
             w.a=s; w.b=0;
         }
         else
         {
-            s=sqrt(txd(x.a));
+			a=txd(a);
+            s=sqrt(a);
             w.a=0; w.b=s;
         }
         return w;
@@ -213,7 +338,7 @@ ZZn6 sqrt(const ZZn6& x)
 
     if (s.iszero()) return w;
 
-
+    w.unitary=x.unitary;
     if (qr((x.a+s)/2))
     {
         a=sqrt((x.a+s)/2);
@@ -244,7 +369,7 @@ ZZn6 powu(const ZZn6& x,const Big& k)
     int i,j,nb,n,nbw,nzs;
     ZZn6 u,u2,t[11];
     Big k3;
-    if (k==0) return (ZZn6)1;
+    if (k==0) return (ZZn6)one();
     u=x;
     if (k==1) return u;
 //
@@ -260,7 +385,7 @@ ZZn6 powu(const ZZn6& x,const Big& k)
     nb=bits(k3);
     for (i=nb-2;i>=1;)
     {
-        n=naf_window(k,k3,i,&nbw,&nzs,5);
+        n=naf_window(k,k3,i,&nbw,&nzs,11);
 
         for (j=0;j<nbw;j++) u*=u;
         if (n>0) u*=t[n/2];
@@ -281,7 +406,7 @@ ZZn6 pow(const ZZn6& x,const Big& k)
 {
     int i,j,nb,n,nbw,nzs;
     ZZn6 u,u2,t[16];
-    if (k==0) return (ZZn6)1;
+    if (k==0) return (ZZn6)one();
     u=x;
     if (k==1) return u;
 //

@@ -17,9 +17,14 @@
 // (That is there may be suitable r(x) which are not of the form Phi_{nk}(x), so these curves are not
 // necessarily optimal).
 //
-// This progran uses the NTL number theoretic library available from http://www.shoup.net/ntl/
+// Omega indicates the degree of loop reduction possible compared to the Tate pairing, with the Ate 
+// or Eta pairing
+//
+// This program uses the NTL number theoretic library available from http://www.shoup.net/ntl/
+//
+// Nov. 2007 - modified to search for the best Ate or Eta Omega
 // 
-// Mike Scott (2005)
+// Mike Scott (2007)
 //
 
 #include <fstream>
@@ -96,7 +101,7 @@ void output(ZZX& p)
     }
 }
 
-void outputfactors(ZZX &f)
+int outputfactors(ZZX &f)
 {
     int i;
     ZZ c;
@@ -108,6 +113,7 @@ void outputfactors(ZZX &f)
         cout << "("; output(factors[i].a); cout << ")";
         if (factors[i].b>1) cout << "^" << factors[i].b;
     }
+	return factors.length();
 }
 
 //
@@ -119,15 +125,16 @@ ZZX compose(ZZX &g,ZZX &b)
     ZZX c;
     int i,d=deg(g);
 
-    vec_ZZX table(INIT_SIZE,d+1);
-    table(0)=1;
-    for (i=1;i<=d;i++) table(i)=(table(i-1)*b);
+//    vec_ZZX table(INIT_SIZE,d+1);
+	ZZX table[100];
+    table[0]=1;
+    for (i=1;i<=d;i++) table[i]=(table[i-1]*b);
     clear(c);
 
     for (i=0;i<=d;i++)
     {
-        c+=g.rep[i]*table(i);
-        table(i).kill();
+        c+=g.rep[i]*table[i];
+ //       table(i).kill();
     }
 
     return c;
@@ -228,6 +235,12 @@ int irreducible(ZZX &p,long W)
     return 0;
 }
 
+int negative(ZZX &f)
+{
+    if (LeadCoeff(f)<0 && deg(f)%2==0) return 1;
+    return 0;
+}
+
 // check a polynomial p(x)/W for a probable prime generator
 // and remove any common factor between p and W
 
@@ -235,7 +248,6 @@ int isap(ZZX& p,long& W)
 {
     int couldbe,mpj,cc;
     ZZ c,pp;
-    vec_pair_ZZX_long cm;
 
     c=content(p);
     p/=c;
@@ -341,10 +353,12 @@ int sqrt(ZZX& r,long n,long d,ZZX& phi)
 
 int main(int argc,char **argv)
 {
-    int nn,i,j,K,mode,min_K,max_K,fp,fast;
+    int nn,i,j,m,K,mode,min_K,max_K,fp,fast;
     long ww,d,W,x,bd,bn;
-    ZZ m;
+//    ZZ m;
     ZZX h,g,a,b,p,r,ff,q,kg;
+    ZZX pru,w,T,lambda;
+    int twist,small_ate,small_eta;
     unsigned int rho_n,rho_d,best_rho_n,best_rho_d,omega_n,omega_d,best_omega_n,best_omega_d,gcd;
     unsigned int delta_n,delta_d,best_delta_n,best_delta_d;
     argv++; argc--;
@@ -367,13 +381,24 @@ int main(int argc,char **argv)
             t *= phi(j);
       phi(i) = (ZZX(i, 1) - 1)/t;  // ZZX(i, a) == X^i * a
     }
+/*
+ZZX bnp=ZZX(4,36)+ZZX(3,36)+ZZX(2,24)+ZZX(1,6)+ZZX(0,1);
+ZZX bntm1=ZZX(2,6);
+ZZX bnq=bnp-bntm1;
 
+ZZX cof=(bnp*bnp*bnp*bnp-bnp*bnp+ZZX(0,1))/bnq;
+
+cout << "cof= ";outputfactors(cof); cout << endl;
+exit(0);
+*/
 	if (mode==0) 
 	{
+        cout << "Finds best Brezing and Weng families of pairing friendly elliptic curves" << endl;
 		cout << "To find all individual curves - bandw K, where 3<=K<=" << MAXK << endl;
         cout << "To just see best curves (smallest rho found so far) = bandw -K" << endl;
-        cout << "A smaller omega means a faster final exponentiation" << endl;
-        cout << "A smaller delta means a faster Ate pairing" << endl;
+        cout << "A smaller omega means a shorter Miller loop for ETA or ATE pairing" << endl;
+        cout << "Note that sometimes the ETA pairing is possible, as well as ATE" << endl;
+ //       cout << "A smaller delta means a faster Ate pairing" << endl;
 		min_K=3; 
 		max_K=MAXK;
 	}
@@ -423,8 +448,6 @@ int main(int argc,char **argv)
                     rho_n=deg(p); rho_d=deg(r);
 					gcd=igcd(rho_n,rho_d);
 					rho_n/=gcd;	rho_d/=gcd;
- 
-// comment out "mode==1" for faster calculation and display of only "best so far"
 
                     if ((!fast && mode==1) || rho_n*best_rho_d<best_rho_n*rho_d)
                     {
@@ -438,13 +461,70 @@ int main(int argc,char **argv)
 
 						    if (mode==1)
 						    {
-							    cout << "K= " << K << " D= " << d <<  " zeta_{" << K*nn << "}" << endl;
+							    cout << "\nK= " << K << " D= " << d <<  " zeta_{" << K*nn << "}" << endl;
 							    cout << "#define TRACE(x) ";output(a);cout << endl;
 							    cout << "#define PRIME(x) (";output(p);cout << ")/" << ww << endl;  
 							    cout << "#define ORDER(x) ";output(r);cout << endl;
                                 cout << "#define WW " << ww << endl;
 							    cout << "rho= " << rho_n << "/" << rho_d << endl;
-                                cout << "omega= " << omega_n << "/" << omega_d << endl;
+								int fl;
+								cout << "factors= ";fl=outputfactors(compose(phi(K),p)/r);cout << endl;
+								cout << "Number of factors= " << fl << endl;
+                            }
+                               
+                             w=g; 
+                             small_ate=deg(r);
+
+                             for (m=1;m<K;m++)
+                             {  
+                             //     cout << "m= " << m << "w= ";output(w);cout << endl;
+                                if (!negative(w) && deg(w)<small_ate)
+                                {
+                                    small_ate=deg(w);
+                                    T=w;
+                                }
+                                w=MulMod(w,g,r);
+                             }
+                             omega_n=small_ate; omega_d=deg(r); gcd=igcd(omega_n,omega_d);
+                             omega_n/=gcd; omega_d/=gcd;
+
+                             if (small_ate<deg(r) && mode==1)
+                             {
+                                 cout << "Best ATE Loop=";output(T); 
+                                 cout << ", omega= " << omega_d << "/" << omega_n << endl;
+                             }
+
+                             twist=0;
+                             if (K%3==0 && d==3) twist=3;
+                             if (K%4==0 && d==1) twist=4;
+                             if (K%6==0 && d==3) twist=6;
+
+                             if (twist)
+                             {   
+                                 lambda=g;
+                                 for (m=1;m<(K/twist);m++) lambda=MulMod(lambda,g,r);
+                                 w=lambda; 
+                                 small_eta=deg(r);
+                              
+                                 for (m=1;m<twist;m++)
+                                 {
+                                     if (!negative(w) && deg(w)<small_eta)
+                                     {
+                                         small_eta=deg(w);
+                                         T=w;
+                                     }
+                                     w=MulMod(w,lambda,r);
+                                 }
+                                 if (small_eta<deg(r) && mode==1)
+                                 {
+                                     cout << "Best ETA Loop=";output(T); 
+                                     cout << ", omega= " << omega_d/igcd(small_eta,omega_d) << "/" << small_eta/igcd(small_eta,omega_d) << endl;
+                                 }
+                                 if (small_eta<=small_ate)
+                                 {
+                                     omega_n=small_eta; omega_d=deg(r); gcd=igcd(omega_n,omega_d);
+                                     omega_n/=gcd; omega_d/=gcd;     
+                                 }
                            //     cout << "delta= " << delta_n << "/" << delta_d << endl << endl;
 						    }
 						    if (rho_n*best_rho_d<best_rho_n*rho_d)
@@ -477,7 +557,7 @@ int main(int argc,char **argv)
 				}
 			}
 		}
-		cout << "For K= " << K << " with D= " << bd << " best rho= " << best_rho_n << "/" << best_rho_d << " omega= " << best_omega_n << "/" << best_omega_d <<  /* " multiplier= " << bn << */ endl;
+		cout << "For K= " << K << " with D= " << bd << " best rho= " << best_rho_n << "/" << best_rho_d << " omega= " << best_omega_d << "/" << best_omega_n <<  /* " multiplier= " << bn << */ endl;
 	}
     return 0;
 }

@@ -1,4 +1,39 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
+ *
  *    MIRACL  C++ Header file ecn.h
  *
  *    AUTHOR  : M. Scott
@@ -12,12 +47,12 @@
  *              static or global ECn's (which are initialised before the 
  *              curve is set!). Uninitialised data is OK 
  *
- *    Copyright (c) 1988-2004 Shamus Software Ltd.
  */
 
 #ifndef ECN_H
 #define ECN_H
 
+#include <cstring>
 #include "big.h"
 
 #ifdef ZZNS
@@ -55,10 +90,11 @@ public:
     ECn& operator=(const ECn& b)  {epoint_copy(b.p,p);return *this;}
 
     ECn& operator+=(const ECn& b) {ecurve_add(b.p,p); return *this;}
-    big add(const ECn& b)         {return ecurve_add(b.p,p); } 
-                                  // returns line slope as a big
-    big sub(const ECn& b)         {return ecurve_sub(b.p,p); }
 
+    int add(const ECn&,big *,big *ex1=NULL,big *ex2=NULL) const; 
+                                  // returns line slope as a big
+    int sub(const ECn&,big *,big *ex1=NULL,big *ex2=NULL) const;         
+ 
     ECn& operator-=(const ECn& b) {ecurve_sub(b.p,p); return *this;}
 
   // Multiplication of a point by an integer. 
@@ -67,6 +103,10 @@ public:
 
     void clear() {epoint_set(NULL,NULL,0,p);}
     BOOL set(const Big& x,const Big& y)    {return epoint_set(x.getbig(),y.getbig(),0,p);}
+#ifndef MR_AFFINE_ONLY
+// use with care if at all
+	void setz(const Big& z) {nres(z.getbig(),p->Z); p->marker=MR_EPOINT_GENERAL;}
+#endif
     BOOL iszero() const;
     int get(Big& x,Big& y) const;
 
@@ -92,6 +132,7 @@ public:
     friend ECn mul(int, const Big *, ECn *);
   
     friend void normalise(ECn &e) {epoint_norm(e.p);}
+    friend void multi_norm(int,ECn *);
 
     friend BOOL operator==(const ECn& a,const ECn& b)
                                   {return epoint_comp(a.p,b.p);}    

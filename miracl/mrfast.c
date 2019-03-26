@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL fast fourier multiplication routine, using 3 prime method.
  *   mrfast.c  - only faster for very high precision multiplication
@@ -16,7 +50,6 @@
  *   by Victor Shoup, Jl. Symbolic Computation 1996
  *   Uses FFT method for fast arithmetic of large degree polynomials
  *
- *   Copyright (c) 1988-2003 Shamus Software Ltd.
  */
 
 #include <stdlib.h>
@@ -24,6 +57,10 @@
 
 #ifdef MR_FP
 #include <math.h>
+#endif
+
+#ifdef MR_WIN64
+#include <intrin.h>
 #endif
 
 #ifndef MR_STATIC
@@ -1061,6 +1098,9 @@ static BOOL init_it(_MIPD_ int logn)
 #ifdef MR_ITANIUM
     mr_small tm;
 #endif
+#ifdef MR_WIN64
+    mr_small tm;
+#endif
    
     zero(mr_mip->w15);
     mr_mip->w15->len=2; mr_mip->w15->w[0]=0; mr_mip->w15->w[1]=1;
@@ -1105,7 +1145,9 @@ void fft_mult(_MIPD_ big x,big y,big z)
 #ifdef MR_ITANIUM
     mr_small tm;
 #endif
-
+#ifdef MR_WIN64
+    mr_small tm;
+#endif
 #ifdef MR_FP
     mr_small dres;
 #endif

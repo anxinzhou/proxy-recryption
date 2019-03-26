@@ -16,8 +16,6 @@
  *   on the curve. 
  *
  *   Requires: big.cpp ecn.cpp
- *
- *   Copyright (c) 1997-2003 Shamus Software Ltd.
  */
 
 #include <iostream>
@@ -44,7 +42,7 @@ void strip(char *name)
     }
 }
 
-static Big hash(ifstream &fp)
+static Big Hash(ifstream &fp)
 { /* compute hash function */
     char ch,s[20];
     Big h;
@@ -67,7 +65,7 @@ int main()
     ifstream private_key("private.ecs");
     ifstream message;
     ofstream signature;
-    char ifname[13],ofname[13];
+    char ifname[50],ofname[50];
     ECn G;
     Big a,b,p,q,x,y,h,r,s,d,k;
     long seed;
@@ -109,7 +107,7 @@ int main()
         cout << "Unable to open file " << ifname << "\n";
         return 0;
     }
-    h=hash(message);
+    h=Hash(message);
 
 /* calculate s */
     k=inverse(k,q);

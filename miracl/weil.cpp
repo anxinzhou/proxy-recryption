@@ -31,8 +31,6 @@
  *   until a good curve is found.
  *
  *   Requires: big.cpp ecn.cpp
- *
- *   Copyright (c) 2004 Shamus Software Ltd.
  */
 
 #include <iostream>
@@ -106,6 +104,12 @@ int main(int argc,char **argv)
     cout << "Number of points on the extension curve #E(F_{p^" << k << "}) = " << np << endl;
     cout << "Number of points on the twisted curve  #E'(F_{p^" << k << "}) = " << npt << endl;
     cout << "which is " << bits(npt) << " bits long" << endl;
+
+
+ //   cout << "q= " << q << endl;
+ //   cout << "np%q= " << npt%q << endl;
+ //   cout << "np/q= " << npt/q << endl;
+
     if (prime(npt))
     { 
         cout << "..and is a prime!" << endl;

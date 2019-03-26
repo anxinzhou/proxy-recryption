@@ -1,3 +1,37 @@
+
+/*
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+*/
 /*
  *   MIRACL Karatsuba method for multiprecision multiplication combined with 
  *   Comba's method for high speed assembly language multiplication
@@ -35,7 +69,6 @@
  *
  *  **** This code does not like -fomit-frame-pointer using GCC  ***********
  *
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #include "miracl.h"
@@ -96,6 +129,9 @@
 static void mr_comba_mul(mr_small *x,mr_small *y,mr_small *z)
 { /* multiply two arrays of length MR_KCM */ 
     mr_small *a,*b,*c;
+#ifdef MR_WIN64
+    mr_small lo,hi,sumlo,sumhi,extra;
+#endif
 #ifdef MR_ITANIUM
     register mr_small lo1,hi1,lo2,hi2,ma,mb,sumlo,sumhi,extra;
 #endif
@@ -120,6 +156,9 @@ static void mr_comba_halfm(mr_small *x,mr_small *y,mr_small *z)
 #ifdef MR_ITANIUM
     register mr_small lo1,hi1,lo2,hi2,ma,mb,sumlo,sumhi,extra;
 #endif
+#ifdef MR_WIN64
+    mr_small lo,hi,sumlo,sumhi,extra;
+#endif
 #ifdef MR_NOASM
  #ifdef mr_qltype
     mr_large pp1;
@@ -140,6 +179,9 @@ static void mr_comba_sqr(mr_small *x,mr_small *z)
     mr_small *a,*c;
 #ifdef MR_ITANIUM
     register mr_small lo1,hi1,lo2,hi2,ma,mb,sumlo,sumhi,extra;
+#endif
+#ifdef MR_WIN64
+    mr_small lo,hi,sumlo,sumhi,extra,cy;
 #endif
 #ifdef MR_NOASM
  #ifdef mr_qltype
@@ -164,6 +206,9 @@ static int mr_addn(mr_small *x,mr_small *y,mr_small *z,int n)
 #ifdef MR_ITANIUM
     register mr_small ma,u;
 #endif
+#ifdef MR_WIN64
+    mr_small ma,u;
+#endif
 #ifdef MR_NOASM
     mr_large u;
 #endif
@@ -178,6 +223,9 @@ static int mr_incn(mr_small *y,mr_small *z,int n)
 { /* add to an array of length n*MR_KCM */
     mr_small *a,*b;
     mr_small carry;
+#ifdef MR_WIN64
+    mr_small ma,u;
+#endif
 #ifdef MR_ITANIUM
     register mr_small ma,u;
 #endif
@@ -196,6 +244,9 @@ static int mr_decn(mr_small *y,mr_small *z,int n)
 { /* subtract from an array of length n*MR_KCM */
     mr_small *a,*b;
     mr_small carry;
+#ifdef MR_WIN64
+    mr_small ma,u;
+#endif
 #ifdef MR_ITANIUM
     register mr_small ma,u;
 #endif
@@ -350,10 +401,10 @@ void kcm_mul(_MIPD_ big x,big y,big z)
 #endif
     int ml=(int)mr_mip->modulus->len;
     zero(mr_mip->w0);
-    for (i=2*ml;i<(mr_mip->w7->len&MR_OBITS);i++) mr_mip->w7->w[i]=0;
+    for (i=2*ml;i<(mr_mip->wt->len&MR_OBITS);i++) mr_mip->wt->w[i]=0;
 
-    mr_karmul(ml,mr_mip->w7->w,x->w,y->w,mr_mip->w0->w);
-    mr_mip->w0->len=mr_mip->w7->len=2*ml;
+    mr_karmul(ml,mr_mip->wt->w,x->w,y->w,mr_mip->w0->w);
+    mr_mip->w0->len=mr_mip->wt->len=2*ml;
     copy(mr_mip->w0,z);
 }
 
@@ -364,9 +415,9 @@ void kcm_multiply(_MIPD_ int n,big x,big y,big z)
     miracl *mr_mip=get_mip();
 #endif
     zero(mr_mip->w0);
-    for (i=2*n;i<(mr_mip->w7->len&MR_OBITS);i++) mr_mip->w7->w[i]=0;
-    mr_karmul(n,mr_mip->w7->w,x->w,y->w,mr_mip->w0->w);
-    mr_mip->w0->len=mr_mip->w7->len=2*n;
+    for (i=2*n;i<(mr_mip->wt->len&MR_OBITS);i++) mr_mip->wt->w[i]=0;
+    mr_karmul(n,mr_mip->wt->w,x->w,y->w,mr_mip->w0->w);
+    mr_mip->w0->len=mr_mip->wt->len=2*n;
     copy(mr_mip->w0,z);
 }
 
@@ -377,9 +428,9 @@ void kcm_square(_MIPD_ int n,big x,big z)
     miracl *mr_mip=get_mip();
 #endif
     zero(mr_mip->w0);
-    for (i=2*n;i<(mr_mip->w7->len&MR_OBITS);i++) mr_mip->w7->w[i]=0;
-    mr_karsqr(n,mr_mip->w7->w,x->w,mr_mip->w0->w);    
-    mr_mip->w0->len=mr_mip->w7->len=2*n;
+    for (i=2*n;i<(mr_mip->wt->len&MR_OBITS);i++) mr_mip->wt->w[i]=0;
+    mr_karsqr(n,mr_mip->wt->w,x->w,mr_mip->w0->w);    
+    mr_mip->w0->len=mr_mip->wt->len=2*n;
     copy(mr_mip->w0,z);
 }
 
@@ -400,10 +451,10 @@ BOOL kcm_top(_MIPD_ int n,big x,big y,big z)
     }
     else
     {
-        for (i=2*n;i<(mr_mip->w7->len&MR_OBITS);i++) mr_mip->w7->w[i]=0;
-        if (x==y)  mr_karsqr(n,mr_mip->w7->w,x->w,mr_mip->w0->w);
-        else       mr_karmul(n,mr_mip->w7->w,x->w,y->w,mr_mip->w0->w);
-        mr_mip->w0->len=mr_mip->w7->len=2*n;
+        for (i=2*n;i<(mr_mip->wt->len&MR_OBITS);i++) mr_mip->wt->w[i]=0;
+        if (x==y)  mr_karsqr(n,mr_mip->wt->w,x->w,mr_mip->w0->w);
+        else       mr_karmul(n,mr_mip->wt->w,x->w,y->w,mr_mip->w0->w);
+        mr_mip->w0->len=mr_mip->wt->len=2*n;
         mr_lzero(mr_mip->w0);
     }
     len=mr_lent(mr_mip->w0);
@@ -421,9 +472,9 @@ void kcm_sqr(_MIPD_ big x,big z)
     unsigned int i;
     int ml=(int)mr_mip->modulus->len;
     zero(mr_mip->w0);
-    for (i=2*ml;i<(mr_mip->w7->len&MR_OBITS);i++) mr_mip->w7->w[i]=0;
-    mr_karsqr(ml,mr_mip->w7->w,x->w,mr_mip->w0->w);
-    mr_mip->w0->len=mr_mip->w7->len=2*ml;
+    for (i=2*ml;i<(mr_mip->wt->len&MR_OBITS);i++) mr_mip->wt->w[i]=0;
+    mr_karsqr(ml,mr_mip->wt->w,x->w,mr_mip->w0->w);
+    mr_mip->w0->len=mr_mip->wt->len=2*ml;
     copy(mr_mip->w0,z);
 }
 
@@ -437,17 +488,17 @@ void kcm_redc(_MIPD_ big z,big w)
     m=ml/MR_KCM;
     copy(z,mr_mip->w0);
 
-    for (i=2*ml;i<(mr_mip->w7->len&MR_OBITS);i++) mr_mip->w7->w[i]=0;
+    for (i=2*ml;i<(mr_mip->wt->len&MR_OBITS);i++) mr_mip->wt->w[i]=0;
     mr_cpy(&(mr_mip->w0->w[ml]),w->w,m);
 
-    mr_karmul_lower(ml,mr_mip->w7->w,mr_mip->w0->w,mr_mip->big_ndash->w,mr_mip->ws->w);
+    mr_karmul_lower(ml,mr_mip->wt->w,mr_mip->w0->w,mr_mip->big_ndash->w,mr_mip->ws->w);
 
     for (i=ml;i<(w->len&MR_OBITS);i++) w->w[i]=0;
 
     mr_mip->ws->len=w->len=ml;
 
-    mr_karmul_upper(ml,mr_mip->w7->w,mr_mip->ws->w,mr_mip->modulus->w,mr_mip->w0->w);
-    mr_mip->w0->len=mr_mip->w7->len=2*ml;
+    mr_karmul_upper(ml,mr_mip->wt->w,mr_mip->ws->w,mr_mip->modulus->w,mr_mip->w0->w);
+    mr_mip->w0->len=mr_mip->wt->len=2*ml;
 
     if (mr_decn(&(mr_mip->w0->w[ml]),w->w,m))
         mr_incn(mr_mip->modulus->w,w->w,m);

@@ -1,4 +1,39 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
+ *
  *    MIRACL  C++ Header file zzn.h
  *
  *    AUTHOR  : M. Scott
@@ -10,8 +45,6 @@
  *              routine) - so beware the pitfalls implicit in declaring
  *              static or global ZZn's (which are initialised before n is 
  *              set!). Uninitialised data is OK 
- *                
- *    Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #ifndef ZZN_H
@@ -85,9 +118,9 @@ public:
 /* Use fast in-line code */
 
     ZZn& operator++() 
-        {ZZn one=1; nres_modadd(fn,one.fn,fn);return *this;}
+        {nres_modadd(fn,get_mip()->one,fn);return *this;}
     ZZn& operator--() 
-        {ZZn one=1; nres_modsub(fn,one.fn,fn);return *this;}
+        {nres_modsub(fn,get_mip()->one,fn);return *this;}
     ZZn& operator+=(int i) 
         {ZZn inc=i; nres_modadd(fn,inc.fn,fn);return *this;}
     ZZn& operator-=(int i) 
@@ -134,11 +167,13 @@ public:
     friend BOOL operator!=(const ZZn& b1,const ZZn& b2)
     { if (mr_compare(b1.fn,b2.fn)!=0) return TRUE; else return FALSE;}
 
+    friend ZZn  one(void);
     friend ZZn  pow( const ZZn&, const Big&);
     friend ZZn  pow( const ZZn&,int);
     friend ZZn  powl(const ZZn&, const Big&);
     friend ZZn  pow( const ZZn&, const Big&, const ZZn&, const Big&);
     friend ZZn  pow( int,ZZn *,Big *);    
+	friend int  jacobi(const ZZn&);
 #ifndef MR_NO_RAND
     friend ZZn  randn(void);      // random number < modulus
 #endif
@@ -148,7 +183,11 @@ public:
     friend ZZn getB(void);        // get B parameter of elliptic curve
 
     friend ZZn  sqrt(const ZZn&); // only works if modulus is prime
-    friend ZZn  luc( const ZZn&, const Big&, ZZn* b3=NULL);
+    friend ZZn  luc( const ZZn& b1, const Big& b2, ZZn* b3=NULL)
+{ZZn z; if (b3!=NULL) nres_lucas(b1.fn,b2.getbig(),b3->fn,z.fn); 
+        else          nres_lucas(b1.fn,b2.getbig(),z.fn,z.fn); 
+ return z;}
+
 
     big getzzn(void) const;
 
@@ -170,6 +209,7 @@ extern ZZn randn(void);
 #endif
 extern ZZn getA(void);  
 extern ZZn getB(void);    
+extern ZZn one(void);
 
 #endif
 

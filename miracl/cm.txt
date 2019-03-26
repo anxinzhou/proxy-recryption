@@ -34,7 +34,6 @@ For example on a PC use this mirdef.h file
 
 /*
  *   MIRACL compiler/hardware definitions - mirdef.h
- *   Copyright (c) 1988-2002 Shamus Software Ltd.
  */
 
 #define MR_LITTLE_ENDIAN
@@ -98,6 +97,7 @@ cl /c /O2 /W3 mrshs.c
 cl /c /O2 /W3 mrshs256.c
 cl /c /O2 /W3 mrshs512.c
 cl /c /O2 /W3 mraes.c
+cl /c /O2 /W3 mrgcm.c
 cl /c /O2 /W3 mrstrong.c
 cl /c /O2 /W3 mrbrick.c
 cl /c /O2 /W3 mrebrick.c
@@ -123,7 +123,7 @@ lib /OUT:miracl.lib miracl.lib mrdouble.obj mrflash.obj mrfrnd.obj mrround.obj m
 lib /OUT:miracl.lib miracl.lib mrio2.obj mrio1.obj mrrand.obj mrprime.obj mrcrt.obj mrscrt.obj mrbits.obj mrfast.obj
 lib /OUT:miracl.lib miracl.lib mrjack.obj mrxgcd.obj mrgcd.obj  mrarth3.obj mrarth2.obj mrpower.obj mrsroot.obj
 lib /OUT:miracl.lib miracl.lib mrmonty.obj mralloc.obj mrarth1.obj mrarth0.obj mrsmall.obj mrcore.obj mrmuldv.obj
-lib /OUT:miracl.lib miracl.lib mrcurve.obj mrshs.obj mraes.obj mrlucas.obj mrstrong.obj mrbrick.obj 
+lib /OUT:miracl.lib miracl.lib mrcurve.obj mrshs.obj mraes.obj mrlucas.obj mrstrong.obj mrbrick.obj mrgcm.obj
 lib /OUT:miracl.lib miracl.lib mrshs256.obj mrshs512.obj mrebrick.obj mrgf2m.obj mrec2m.obj mrkcm.obj
 del mr*.obj
 

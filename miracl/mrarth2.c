@@ -1,8 +1,41 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL arithmetic routines 2 - multiplying and dividing BIG NUMBERS.
  *   mrarth2.c
  *
- *   Copyright (c) 1988-2003 Shamus Software Ltd.
  */
 
 #include "miracl.h"
@@ -10,6 +43,11 @@
 #ifdef MR_FP
 #include <math.h>
 #endif
+
+#ifdef MR_WIN64
+#include <intrin.h>
+#endif
+
 
 /* If a number has more than this number of digits, then squaring is faster */
 
@@ -62,6 +100,9 @@ void multiply(_MIPD_ big x,big y,big z)
 
 #ifdef MR_ITANIUM
     mr_small tm;
+#endif
+#ifdef MR_WIN64
+    mr_small tm,tr;
 #endif
     mr_lentype sz;
     big w0;
@@ -834,6 +875,9 @@ void divide(_MIPD_ big x,big y,big z)
 #ifdef MR_ITANIUM
     mr_small tm;
 #endif
+#ifdef MR_WIN64
+    mr_small tm;
+#endif
 #ifdef MR_NOASM
     union doubleword dble;
     mr_large dbled;
@@ -1516,23 +1560,25 @@ void mad(_MIPD_ big x,big y,big z,big w,big q,big r)
 #ifdef MR_OS_THREADS
     miracl *mr_mip=get_mip();
 #endif
+    BOOL check;
     if (mr_mip->ERNUM) return;
 
     MR_IN(24)
-
-    mr_mip->check=OFF;           /* turn off some error checks */
     if (w==r)
     {
         mr_berror(_MIPP_ MR_ERR_BAD_PARAMETERS);
         MR_OUT
         return;
     }
+    check=mr_mip->check;
+    mr_mip->check=OFF;           /* turn off some error checks */
+
     multiply(_MIPP_ x,y,mr_mip->w0);
     if (x!=z && y!=z) add(_MIPP_ mr_mip->w0,z,mr_mip->w0);
 
     divide(_MIPP_ mr_mip->w0,w,q);
     if (q!=r) copy(mr_mip->w0,r);
-    mr_mip->check=ON;
+    mr_mip->check=check;
     MR_OUT
 }
 

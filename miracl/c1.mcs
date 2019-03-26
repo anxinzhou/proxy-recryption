@@ -211,6 +211,28 @@ ENDM
 MACRO ADD_END
 ENDM
 ;
+; DOUBLE_START macro
+;
+MACRO DOUBLE_START
+  u=(mr_large)a[0]+a[0];
+  a[0]=(mr_small)u;
+  carry=(mr_small)(u>>MIRACL);  
+ENDM
+;
+; DOUBLE macro
+;
+MACRO DOUBLE
+  u=(mr_large)a[%d];
+  u+=u;  u+=carry;
+  a[%d]=(mr_small)u;
+  carry=(mr_small)(u>>MIRACL);
+ENDM
+;
+; DOUBLE_END
+;
+MACRO DOUBLE_END
+ENDM
+;
 ; INC_START macro. Do first one.
 ;
 MACRO INC_START

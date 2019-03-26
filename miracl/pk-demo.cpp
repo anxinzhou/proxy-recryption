@@ -3,41 +3,38 @@
  *   and 168 bit Elliptic Curve Diffie-Hellman 
  *
  *   Requires: big.cpp ecn.cpp
- *
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #include <iostream>
 #include "ecn.h"
 #include "big.h"
-#include "crt.h"
 #include <ctime>
 
-using namespace std;
+//using namespace std;
 
 /* large 1024 bit prime p for which (p-1)/2 is also prime */
-char *primetext=
+char *primetext=(char *)
 "155315526351482395991155996351231807220169644828378937433223838972232518351958838087073321845624756550146945246003790108045940383194773439496051917019892370102341378990113959561895891019716873290512815434724157588460613638202017020672756091067223336194394910765309830876066246480156617492164140095427773547319";
 
 /* NIST p192 bit elliptic curve prime 2#192-2#64-1 */
 
-char *ecp="FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFF";
+char *ecp=(char *)"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFF";
 
 /* elliptic curve parameter B */
 
-char *ecb="64210519E59C80E70FA7E9AB72243049FEB8DEECC146B9B1";
+char *ecb=(char *)"64210519E59C80E70FA7E9AB72243049FEB8DEECC146B9B1";
 
 /* elliptic curve - point of prime order (x,y) */
 
-char *ecx="188DA80EB03090F67CBF20EB43A18800F4FF0AFD82FF1012";
-char *ecy="07192B95FFC8DA78631011ED6B24CDD573F977A11E794811";
+char *ecx=(char *)"188DA80EB03090F67CBF20EB43A18800F4FF0AFD82FF1012";
+char *ecy=(char *)"07192B95FFC8DA78631011ED6B24CDD573F977A11E794811";
 
-char *text="MIRACL - Best multi-precision library in the World!\n";
+char *text=(char *)"MIRACL - Best multi-precision library in the World!\n";
 
 #ifndef MR_NOFULLWIDTH
-Miracl precision(100,0);
+Miracl precision(50,0);
 #else 
-Miracl precision(100,MAXBASE);
+Miracl precision(50,MAXBASE);
 #endif
 
 // If MR_STATIC is defined in mirdef.h, it is assumed to be 100

@@ -30,6 +30,7 @@ gcc  -m64 -c -O2 mrarth1.c
 gcc  -m64 -c -O2 mrarth2.c
 gcc  -m64 -c -O2 mralloc.c
 gcc  -m64 -c -O2 mrsmall.c
+gcc  -m64 -c -O2 mrbits.c
 gcc  -m64 -c -O2 mrio1.c
 gcc  -m64 -c -O2 mrio2.c
 gcc  -m64 -c -O2 mrgcd.c
@@ -44,10 +45,15 @@ gcc  -m64 -c -O2 mrmonty.c
 gcc  -m64 -c -O2 mrpower.c
 gcc  -m64 -c -O2 mrcurve.c
 gcc  -m64 -c -O2 mrfast.c
+gcc  -m64 -c -O2 mrzzn2.c
+gcc  -m64 -c -O2 mrzzn2b.c
+gcc  -m64 -c -O2 mrzzn3.c
+gcc  -m64 -c -O2 mrecn2.c
 gcc  -m64 -c -O2 mrshs.c
 gcc  -m64 -c -O2 mrshs256.c
 gcc  -m64 -c -O2 mrshs512.c
 gcc  -m64 -c -O2 mraes.c
+gcc  -m64 -c -O2 mrgcm.c
 gcc  -m64 -c -O2 mrlucas.c
 gcc  -m64 -c -O2 mrstrong.c
 gcc  -m64 -c -O2 mrbrick.c
@@ -55,11 +61,11 @@ gcc  -m64 -c -O2 mrebrick.c
 gcc  -m64 -c -O2 mrgf2m.c
 gcc  -m64 -c -O2 mrec2m.c
 gcc  -m64 -c -O2 mrmuldv.c
-ar rc miracl.a mrcore.o mrarth0.o mrarth1.o mrarth2.o mralloc.o mrsmall.o
-ar r miracl.a mrio1.o mrio2.o mrjack.o mrgcd.o mrxgcd.o mrarth3.o
-ar r miracl.a mrrand.o mrprime.o mrcrt.o mrscrt.o mrmonty.o mrcurve.o
+ar rc miracl.a mrcore.o mrarth0.o mrarth1.o mrarth2.o mralloc.o mrsmall.o mrgcm.o
+ar r miracl.a mrio1.o mrio2.o mrjack.o mrgcd.o mrxgcd.o mrarth3.o mrbits.o mrzzn3.o
+ar r miracl.a mrrand.o mrprime.o mrcrt.o mrscrt.o mrmonty.o mrcurve.o mrzzn2.o mrzzn2b.o
 ar r miracl.a mrpower.o mrfast.o mrshs.o mrshs256.o mraes.o mrlucas.o mrstrong.o       
-ar r miracl.a mrbrick.o mrebrick.o mrec2m.o mrgf2m.o mrshs512.o mrmuldv.o
+ar r miracl.a mrbrick.o mrebrick.o mrec2m.o mrgf2m.o mrshs512.o mrmuldv.o mrecn2.o
 gcc -I. -O2 -m64 brent.c miracl.a -o brent
 rm mr*.o
 

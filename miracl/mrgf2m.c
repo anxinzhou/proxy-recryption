@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL routines for arithmetic over GF(2^m), 
  *   mrgf2m.c
@@ -16,15 +50,19 @@
  *   Use utility irp.cpp to generate optimal code for function reduce2(.) below
  *
  *   Space can be saved by removing unneeded functions and 
- *   deleting unrequired functionality 
- *
- *   Copyright (c) 2000-2007 Shamus Software Ltd.
+ *   deleting unrequired functionality. 
+ *   For example in reduce2(.) remove code for those irreducible polynomials
+ *   which will not be used by your code.
  */
 
 #include <stdlib.h> 
 #include "miracl.h"
 #ifdef MR_STATIC
 #include <string.h>
+#endif
+
+#ifdef MR_COUNT_OPS
+extern int fpm2,fpi2; 
 #endif
 
 /* must use /arch:SSE2 in compilation */
@@ -57,14 +95,6 @@
 
 #ifndef MR_NOFULLWIDTH
                      /* This does not make sense using floating-point! */
-
-#define M1 (MIRACL-1)
-#define M2 (MIRACL-2)
-#define M3 (MIRACL-3)
-#define TOPBIT ((mr_small)1<<M1)
-#define SECBIT ((mr_small)1<<M2)
-#define THDBIT ((mr_small)1<<M3)
-#define M8 (MIRACL-8)
 
 /* This is extremely time-critical, and expensive */
 
@@ -252,21 +282,23 @@ static mr_small mr_mul2(mr_small a,mr_small b,mr_small *r)
      0,14,28,18,56,54,36,42,112,126,108,98,72,70,84,90,
      0,15,30,17,60,51,34,45,120,119,102,105,68,75,90,85
     };
-    mr_small x0,x1,y0,y1,m,p,q;
-    x0=a&0x0f;
+
+    mr_small x1,y0,m,p,q;
     x1=a&0xf0;
     y0=b&0x0f;
-    y1=b&0xf0;
+    a<<=4;
+    b>>=4;
 
-    p=look[((x0<<4)|y0)];
-    m=look[(x1|y0)]^look[(y1|x0)];
-    q=look[(x1|(y1>>4))];
+    p=look[(a|y0)];
+	q=look[(x1|b)];
 
+	m=look[a^b^x1^y0]^p^q;  /* Karatsuba! */
+ 
     p^=(m<<4);
     q^=(m>>4);
 
     *r=p;
-    return q;
+    return q; 
 }
 
 #else
@@ -297,25 +329,50 @@ static mr_small mr_mul2(mr_small a,mr_small b,mr_small *r)
     tt[14]=_mm_xor_si128(tt[8],tt[6]);
     tt[15]=_mm_xor_si128(tt[14],tt[1]);
 
-    i=(int)(b&0xF); j=(int)((b>>4)&0xF);
-    pp=_mm_xor_si128(tt[i],  _mm_or_si128(_mm_slli_epi64(tt[j],4),_mm_srli_epi64(_mm_slli_si128(_mm_and_si128(m,tt[j]),1),4)) );
-    i=(int)((b>>8)&0xF); j=(int)((b>>12)&0xF);
-    pp=_mm_xor_si128(pp, _mm_slli_si128( _mm_xor_si128(tt[i], _mm_or_si128(_mm_slli_epi64(tt[j],4),_mm_srli_epi64(_mm_slli_si128(_mm_and_si128(m,tt[j]),1),4))  )   ,1) );
-    i=(int)((b>>16)&0xF); j=(int)((b>>20)&0xF);
-    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i], _mm_or_si128(_mm_slli_epi64(tt[j],4),_mm_srli_epi64(_mm_slli_si128(_mm_and_si128(m,tt[j]),1),4))   )   ,2) );
-    i=(int)((b>>24)&0xF); j=(int)((b>>28)&0xF);
-    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i], _mm_or_si128(_mm_slli_epi64(tt[j],4),_mm_srli_epi64(_mm_slli_si128(_mm_and_si128(m,tt[j]),1),4))   )   ,3) );
-    i=(int)((b>>32)&0xF); j=(int)((b>>36)&0xF);
-    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i], _mm_or_si128(_mm_slli_epi64(tt[j],4),_mm_srli_epi64(_mm_slli_si128(_mm_and_si128(m,tt[j]),1),4))   )   ,4) );
-    i=(int)((b>>40)&0xF); j=(int)((b>>44)&0xF);
-    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i],_mm_or_si128(_mm_slli_epi64(tt[j],4),_mm_srli_epi64(_mm_slli_si128(_mm_and_si128(m,tt[j]),1),4))    )   ,5) );
-    i=(int)((b>>48)&0xF); j=(int)((b>>52)&0xF);
-    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i], _mm_or_si128(_mm_slli_epi64(tt[j],4),_mm_srli_epi64(_mm_slli_si128(_mm_and_si128(m,tt[j]),1),4))   )   ,6) );
-    i=(int)((b>>56)&0xF); j=(int)(b>>60);
-    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i], _mm_or_si128(_mm_slli_epi64(tt[j],4),_mm_srli_epi64(_mm_slli_si128(_mm_and_si128(m,tt[j]),1),4))   )   ,7) );
+/* Thanks to Darrel Hankerson, who pointed out an optimization for this code ... */
 
-    *r=((unsigned long *)&pp)[0];
-    return ((unsigned long *)&pp)[1];
+    i=(int)(b&0xF); j=(int)((b>>4)&0xF);
+    pp=_mm_xor_si128(tt[i],  _mm_or_si128(_mm_slli_epi64(tt[j],4),
+        _mm_srli_epi64(_mm_slli_si128(tt[j],8), 60)) );
+    i=(int)((b>>8)&0xF); j=(int)((b>>12)&0xF);
+
+    pp=_mm_xor_si128(pp, _mm_slli_si128( _mm_xor_si128(tt[i], 
+        _mm_or_si128(_mm_slli_epi64(tt[j],4),
+        _mm_srli_epi64(_mm_slli_si128(tt[j],8), 60))  
+        )   ,1) );
+    i=(int)((b>>16)&0xF); j=(int)((b>>20)&0xF);
+    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i],
+        _mm_or_si128(_mm_slli_epi64(tt[j],4),
+        _mm_srli_epi64(_mm_slli_si128(tt[j],8), 60))   
+        )   ,2) );
+    i=(int)((b>>24)&0xF); j=(int)((b>>28)&0xF);
+    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i], 
+        _mm_or_si128(_mm_slli_epi64(tt[j],4),
+        _mm_srli_epi64(_mm_slli_si128(tt[j],8), 60))   
+        )   ,3) );
+    i=(int)((b>>32)&0xF); j=(int)((b>>36)&0xF);
+    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i], 
+        _mm_or_si128(_mm_slli_epi64(tt[j],4),
+        _mm_srli_epi64(_mm_slli_si128(tt[j],8), 60))   
+        )   ,4) );
+    i=(int)((b>>40)&0xF); j=(int)((b>>44)&0xF);
+    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i],
+        _mm_or_si128(_mm_slli_epi64(tt[j],4),
+        _mm_srli_epi64(_mm_slli_si128(tt[j],8), 60))    
+        )   ,5) );
+    i=(int)((b>>48)&0xF); j=(int)((b>>52)&0xF);
+    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i],
+        _mm_or_si128(_mm_slli_epi64(tt[j],4),
+        _mm_srli_epi64(_mm_slli_si128(tt[j],8), 60))   
+        )   ,6) );
+    i=(int)((b>>56)&0xF); j=(int)(b>>60);
+    pp=_mm_xor_si128(pp, _mm_slli_si128(_mm_xor_si128(tt[i], 
+        _mm_or_si128(_mm_slli_epi64(tt[j],4),
+        _mm_srli_epi64(_mm_slli_si128(tt[j],8), 60))  
+        )   ,7) );
+
+    *r=((unsigned long long *)&pp)[0];
+    return ((unsigned long long *)&pp)[1];
 }
 
 #else
@@ -413,7 +470,7 @@ static mr_small mr_mul2(mr_small a,mr_small b,mr_small *r)
     x=t[(b>>4)&0xf];  q^=x; p^=(x<<4);  q>>=4;
     x=t[(b>>8)&0xf];  q^=x; p^=(x<<8);  q>>=4;
     x=t[(b>>12)&0xf]; q^=x; p^=(x<<12); q>>=4;
-    x=t[(b>>16)&0xf]; q^=x; p^=(x<<16); q>>=4;
+	x=t[(b>>16)&0xf]; q^=x; p^=(x<<16); q>>=4;
     x=t[(b>>20)&0xf]; q^=x; p^=(x<<20); q>>=4;
     x=t[(b>>24)&0xf]; q^=x; p^=(x<<24); q>>=4;
     x=t[(b>>28)&0xf]; q^=x; p^=(x<<28); q>>=4;
@@ -820,62 +877,83 @@ static void mr_bottom3(mr_small *x,mr_small *y,mr_small *z)
 static void mr_bottom4(mr_small *x,mr_small *y,mr_small *z)
 { /* unwound 4x4 karatsuba multiplication - only 9 muls */
     mr_small q0,r0,q1,r1,q2,r2,tx,ty;
-    mr_small xx0,yy0,xx1,yy1,t0,t1,t2,t3;
+    mr_small t0,t1,t2,t3;
+    mr_small z0,z1,z2,z3,z4,z5,z6,z7;
+    mr_small x0,x1,x2,x3,y0,y1,y2,y3;
 
-    q0=mr_mul2(x[0],y[0],&r0);
-    q1=mr_mul2(x[1],y[1],&r1);
+    x0=x[0]; x1=x[1]; x2=x[2]; x3=x[3];
+    y0=y[0]; y1=y[1]; y2=y[2]; y3=y[3];
 
-    tx=x[0]^x[1];
-    ty=y[0]^y[1];
+    q0=mr_mul2(x0,y0,&r0);
+    q1=mr_mul2(x1,y1,&r1);
+
+    tx=x0^x1;
+    ty=y0^y1;
     q2=mr_mul2(tx,ty,&r2);
 
-    z[0]=r0;
-    z[1]=q0^r1^r0^r2;
-    z[2]=q0^r1^q1^q2;
-    z[3]=q1;
+    z0=r0;
+    q0^=r1;
+    z1=q0^r0^r2;
+    z2=q0^q1^q2;
+    z3=q1;
 
-    q0=mr_mul2(x[2],y[2],&r0);
+    q0=mr_mul2(x2,y2,&r0);
 
-    q1=mr_mul2(x[3],y[3],&r1);
+    q1=mr_mul2(x3,y3,&r1);
 
-    tx=x[2]^x[3];
-    ty=y[2]^y[3];
+    tx=x2^x3;
+    ty=y2^y3;
     q2=mr_mul2(tx,ty,&r2);
 
-    z[4]=r0;
-    z[5]=q0^r1^r0^r2;
-    z[6]=q0^r1^q1^q2;
-    z[7]=q1;
+    z4=r0;
+    q0^=r1;
+    z5=q0^r0^r2;
+    z6=q0^q1^q2;
+    z7=q1;
 
-    xx0=x[2]^x[0];
-    yy0=y[2]^y[0];
-    q0=mr_mul2(xx0,yy0,&r0);
+    x2^=x0;
+    y2^=y0;
+    q0=mr_mul2(x2,y2,&r0);
    
-    xx1=x[3]^x[1];
-    yy1=y[3]^y[1];
-    q1=mr_mul2(xx1,yy1,&r1);
+    x3^=x1;
+    y3^=y1;
+    q1=mr_mul2(x3,y3,&r1);
 
-    tx=xx0^xx1;
-    ty=yy0^yy1;
-    q2=mr_mul2(tx,ty,&r2);
+    x2^=x3;
+    y2^=y3;
+    q2=mr_mul2(x2,y2,&r2);
 
-    t0=z[0]^z[4]^r0;
-    t1=z[1]^z[5]^q0^r1^r0^r2;
-    t2=z[2]^z[6]^q0^r1^q1^q2;
-    t3=z[3]^z[7]^q1; 
+    q0^=r1;
+    t0=z0^z4^r0;
+    t1=z1^z5^q0^r0^r2;
+    t2=z2^z6^q0^q1^q2;
+    t3=z3^z7^q1; 
 
-    z[2]^=t0;
-    z[3]^=t1;
-    z[4]^=t2;
-    z[5]^=t3;
+    z2^=t0;
+    z3^=t1;
+    z4^=t2;
+    z5^=t3;
+
+    z[0]=z0;
+    z[1]=z1;
+	z[2]=z2;
+	z[3]=z3;
+	z[4]=z4;
+	z[5]=z5;
+	z[6]=z6;
+	z[7]=z7;
 }
 
 static void mr_bottom5(mr_small *x,mr_small *y,mr_small *z)
 { /* Montgomery's 5x5 formula. Requires 13 mr_muls.... */
     mr_small u0,v0,u1,v1,u2,v2,s0,t0,q,r,t;
 	mr_small z1,z2,z3,z4,z5,z6,z7,z8;
+    mr_small x0,x1,x2,x3,x4,y0,y1,y2,y3,y4;
 
-	q=mr_mul2(x[0],y[0],&r);
+    x0=x[0]; x1=x[1]; x2=x[2]; x3=x[3]; x4=x[4];
+    y0=y[0]; y1=y[1]; y2=y[2]; y3=y[3]; y4=y[4];
+
+	q=mr_mul2(x0,y0,&r);
 	t=q^r;
 	z[0]=r;
 	z1=t;
@@ -885,17 +963,17 @@ static void mr_bottom5(mr_small *x,mr_small *y,mr_small *z)
 	z5=t;
 	z6=t;
 	z7=q;
-	q=mr_mul2(x[1],y[1],&r);
+	q=mr_mul2(x1,y1,&r);
 	z1^=r;
 	z2^=q;
 	z4^=r;
 	z5^=q;
-	q=mr_mul2(x[3],y[3],&r);
+	q=mr_mul2(x3,y3,&r);
 	z4^=r;
 	z5^=q;
 	z7^=r;
 	z8=q;
-	q=mr_mul2(x[4],y[4],&r);
+	q=mr_mul2(x4,y4,&r);
 	t=q^r;
 	z2^=r;
 	z3^=t;
@@ -906,8 +984,8 @@ static void mr_bottom5(mr_small *x,mr_small *y,mr_small *z)
     z8^=t;
 	z[9]=q;
 
-	u0=x[0]^x[4];   /* u0=a0+a4 */
-	v0=y[0]^y[4];   /* v0=b0+b4 */
+	u0=x0^x4;   /* u0=a0+a4 */
+	v0=y0^y4;   /* v0=b0+b4 */
 	q=mr_mul2(u0,v0,&r);
 	t=q^r;
 	z2^=r;
@@ -917,8 +995,8 @@ static void mr_bottom5(mr_small *x,mr_small *y,mr_small *z)
 	z6^=t;
 	z7^=q;
 
-	u1=x[0]^x[1];  /* u1=a0+a1 */
-	v1=y[0]^y[1];  /* v1=b0+b1 */
+	u1=x0^x1;  /* u1=a0+a1 */
+	v1=y0^y1;  /* v1=b0+b1 */
 	q=mr_mul2(u1,v1,&r);
 	t=q^r;
 	z1^=r;
@@ -928,8 +1006,8 @@ static void mr_bottom5(mr_small *x,mr_small *y,mr_small *z)
 	z5^=t;
 	z6^=q;
 
-	u2=x[3]^x[4]; /* u2=a3+a4 */
-	v2=y[3]^y[4]; /* v2=b3+b4 */
+	u2=x3^x4; /* u2=a3+a4 */
+	v2=y3^y4; /* v2=b3+b4 */
 	q=mr_mul2(u2,v2,&r);
 	t=q^r;
 	z3^=r;
@@ -947,10 +1025,10 @@ static void mr_bottom5(mr_small *x,mr_small *y,mr_small *z)
 	z5^=r;
 	z6^=q;
 
-	s0=u1^x[2];  /* s0=a0+a1+a2 */
-	t0=v1^y[2];   /* t0=b0+b1+b2 */
-	u2^=x[2];    /* u2=a2+a3+a4 */
-	v2^=y[2];    /* v2=b2+b3+b4 */
+	s0=u1^x2;  /* s0=a0+a1+a2 */
+	t0=v1^y2;   /* t0=b0+b1+b2 */
+	u2^=x2;    /* u2=a2+a3+a4 */
+	v2^=y2;    /* v2=b2+b3+b4 */
 	u1^=u2;        /* u1=a0+a1+a2+a3+a4 */
 	v1^=v2;        /* v1=b0+b1+b2+b3+b4 */
 	q=mr_mul2(u1,v1,&r);
@@ -960,32 +1038,32 @@ static void mr_bottom5(mr_small *x,mr_small *y,mr_small *z)
 	z5^=t;
 	z6^=q;
 
-	u2^=x[0];  /* s1=a0+a2+a3+a4 */
-	v2^=y[0];   /* t1=b0+b2+b3+b4 */
+	u2^=x0;  /* s1=a0+a2+a3+a4 */
+	v2^=y0;   /* t1=b0+b2+b3+b4 */
 	q=mr_mul2(u2,v2,&r);
 	z3^=r;
 	z4^=q;
 	z6^=r;
 	z7^=q;
 
-	s0^=x[4];  /* s0=a0+a1+a2+a4 */
-	t0^=y[4];   /* t0=b0+b1+b2+b4 */
+	s0^=x4;  /* s0=a0+a1+a2+a4 */
+	t0^=y4;   /* t0=b0+b1+b2+b4 */
 	q=mr_mul2(s0,t0,&r);
 	z2^=r;
 	z3^=q;
 	z5^=r;
 	z6^=q;
 
-	u2^=x[4]; /* u2=a0+a2+a3 */
-	v2^=y[4];  /* v2=b0+b2+b3 */
+	u2^=x4; /* u2=a0+a2+a3 */
+	v2^=y4;  /* v2=b0+b2+b3 */
 	q=mr_mul2(u2,v2,&r);
 	z4^=r;
 	z5^=q;
 	z6^=r;
 	z7^=q;
 
-	s0^=x[0]; /* s0=a1+a2+a4 */
-	t0^=y[0];  /* t0=b1+b2+b4 */
+	s0^=x0; /* s0=a1+a2+a4 */
+	t0^=y0;  /* t0=b1+b2+b4 */
 	q=mr_mul2(s0,t0,&r);
 	z2^=r;
 	z3^=q;
@@ -1447,6 +1525,23 @@ void reduce2(_MIPD_ big y,big x)
 
 #if MIRACL == 32
 
+    if (M==127 && A==63)
+    {
+        for (i=xl-1;i>=4;i--)
+        {
+            w=gx[i]; gx[i]=0;
+            gx[i-2]^=w;
+            gx[i-3]^=(w>>31);
+            gx[i-4]^=(w<<1);
+        }   /* XORs= 3 shifts= 2 */
+        top=gx[3]>>31; gx[0]^=top; top<<=31;
+        gx[1]^=top;
+        gx[3]^=top;
+        x->len=4;
+        if (gx[3]==0) mr_lzero(x);
+        return;
+    }
+
     if (M==163 && A==7 && B==6 && C==3)
     {
         for (i=xl-1;i>=6;i--)
@@ -1638,23 +1733,21 @@ void reduce2(_MIPD_ big y,big x)
         return;
     }
 
-    if (M==379 && A==317 && B==315 && C==283)
+    if (M==379 && A==253 && B==251 && C==59)
     {
         for (i=xl-1;i>=12;i--)
         {
             w=gx[i]; gx[i]=0;
-            gx[i-1]^=(w>>30);
-            gx[i-2]^=(w<<2)^w;
-            gx[i-3]^=w;
+            gx[i-3]^=(w>>30);
+            gx[i-4]^=(w<<2)^w;
+            gx[i-10]^=w;
             gx[i-11]^=(w>>27);
             gx[i-12]^=(w<<5);
         }   /* XORs= 6 shifts= 4 */
-        top=gx[11]>>27;
-        gx[0]^=top;
-        top<<=27;
-        gx[8]^=top;
-        gx[9]^=(top<<2)^top;
-        gx[10]^=(top>>30);
+        top=gx[11]>>27; gx[0]^=top; top<<=27;
+        gx[1]^=top;
+        gx[7]^=(top<<2)^top;
+        gx[8]^=(top>>30);
         gx[11]^=top;
         x->len=12;
         if (gx[11]==0) mr_lzero(x);
@@ -1743,6 +1836,26 @@ void reduce2(_MIPD_ big y,big x)
         gx[19]^=top;
         x->len=20;
         if (gx[19]==0) mr_lzero(x);
+        return;
+    }
+
+    if (M==379 && A==253 && B==251 && C==59)
+    {
+        for (i=xl-1;i>=6;i--)
+        {
+            w=gx[i]; gx[i]=0;
+            gx[i-1]^=(w>>62);
+            gx[i-2]^=(w<<2)^w;
+            gx[i-5]^=(w>>59)^w;
+            gx[i-6]^=(w<<5);
+        }   /* XORs= 6 shifts= 4 */
+        top=gx[5]>>59; gx[0]^=top; top<<=59;
+        gx[0]^=top;
+        gx[3]^=(top<<2)^top;
+        gx[4]^=(top>>62);
+        gx[5]^=top;
+        x->len=6;
+        if (gx[5]==0) mr_lzero(x);
         return;
     }
 #endif
@@ -1908,6 +2021,10 @@ void modmult2(_MIPD_ big x,big y,big w)
         zero(w);
         return;
     }
+
+#ifdef MR_COUNT_OPS
+fpm2++; 
+#endif
 
     m=_mm_set_epi32(0,0,0xff<<24,0);    /* shifting mask */
 
@@ -2099,7 +2216,9 @@ void modmult2(_MIPD_ big x,big y,big w)
         modsquare2(_MIPP_ x,w);
         return;
     }
-    
+#ifdef MR_COUNT_OPS
+fpm2++; 
+#endif    
     if (x->len==0 || y->len==0)
     {
         zero(w);
@@ -2284,6 +2403,10 @@ void modmult2(_MIPD_ big x,big y,big w)
             return;
         }
     }    
+
+#ifdef MR_COUNT_OPS
+fpm2++; 
+#endif
 
     multiply2(_MIPP_ x,y,mr_mip->w0);
     reduce2(_MIPP_ mr_mip->w0,mr_mip->w0);
@@ -2512,7 +2635,6 @@ void sqroot2(_MIPD_ big x,big y)
 
 #endif
 
-
     k=1+(M/MIRACL);
     h=(k+1)/2;
 
@@ -2674,6 +2796,10 @@ BOOL inverse2(_MIPD_ big x,big w)
 
     n3=numbits(mr_mip->w3);
     n4=mr_mip->M+1;
+
+#ifdef MR_COUNT_OPS
+fpi2++; 
+#endif
 
     while (n3!=1)
     {
@@ -2910,8 +3036,6 @@ BOOL inverse2(_MIPD_ big x,big w)
 
 */
 
-#ifndef MR_STATIC
-
 BOOL multi_inverse2(_MIPD_ int m,big *x,big *w)
 { /* find w[i]=1/x[i] mod f, for i=0 to m-1 */
     int i;
@@ -2961,6 +3085,8 @@ BOOL multi_inverse2(_MIPD_ int m,big *x,big *w)
     }
     return TRUE;
 }
+
+#ifndef MR_STATIC
 
 int trace2(_MIPD_ big x)
 {
@@ -3118,6 +3244,7 @@ BOOL prepare_basis(_MIPD_ int m,int a,int b,int c,BOOL check)
     mr_mip->BB=0;
     mr_mip->CC=0;
     zero(mr_mip->modulus);
+    convert(_MIPP_ 1,mr_mip->one);
 
     k=1+m/MIRACL;
 

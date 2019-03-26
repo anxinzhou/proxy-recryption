@@ -1,4 +1,4 @@
-If you have a modern Pentium 4 or clone processor that supports the SSE2 
+If you have a Pentium 4 or clone processor that supports the SSE2 
 extensions, then using these instructions can be faster.
 
 The file sse2.mcs is provided as a plug-in alternative for ms86.mcs, and 

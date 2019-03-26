@@ -267,6 +267,40 @@ MACRO ADD_END
   );
 ENDM
 ;
+; DOUBLE_START macro
+;
+MACRO DOUBLE_START
+  ASM (
+  "PUSH r28\n"
+  "PUSH r29\n"
+  "MOVW r28,%%1\n"
+  "LD r0,Y\n"  
+  "ADD r0,r0\n"
+  "ST Y,r0\n"  
+ENDM
+;
+; DOUBLE macro
+;
+MACRO DOUBLE
+  "LDD r0,Y+%d\n"
+  "ADC r0,r0\n"
+  "STD Y+%d,r0\n" 
+ENDM
+;
+; DOUBLE_END
+;
+MACRO DOUBLE_END
+  "CLR r0\n"
+  "ADC r0,r0\n"
+  "MOV %%0,r0\n"
+  "POP r29\n"
+  "POP r28\n"
+  :"=r"(carry)
+  :"w"(a)
+  :"memory"
+  );
+ENDM
+;
 ; INC_START macro. Do first one.
 ;
 MACRO INC_START

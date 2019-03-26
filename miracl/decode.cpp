@@ -2,8 +2,6 @@
  *   Program to decode message using RSA private key.
  *
  *   Requires: big.cpp crt.cpp
- *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <iostream>

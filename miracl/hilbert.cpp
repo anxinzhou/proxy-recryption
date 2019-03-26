@@ -5,7 +5,6 @@
  *
  * Requires: flash.cpp
  *
- *      Copyright (c) Shamus Software 1988-1997
  */
 
 #include <iostream>

@@ -1,7 +1,40 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   Benchmarking program for PK implementations
  *
- *   Copyright (c) 1988-1999 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -154,7 +187,7 @@ double powers(int gb,int eb,big p)
     double elapsed;
     char *mem;
 
-    mem=memalloc(3);
+    mem=(char *)memalloc(3);
     g=mirvar_mem(mem,0);
     e=mirvar_mem(mem,1);
     w=mirvar_mem(mem,2);
@@ -188,8 +221,8 @@ double mults(int eb,epoint *g)
     char *mem1;
     char *mem2;
 
-    mem1=memalloc(1);
-    mem2=ecp_memalloc(2);
+    mem1=(char *)memalloc(1);
+    mem2=(char *)ecp_memalloc(2);
 
     e=mirvar_mem(mem1,0);
     w=epoint_init_mem(mem2,0);
@@ -228,8 +261,8 @@ double mults2(int eb,epoint *g)
     char *mem1;
     char *mem2;
 
-    mem1=memalloc(1);
-    mem2=ecp_memalloc(2);
+    mem1=(char *)memalloc(1);
+    mem2=(char *)ecp_memalloc(2);
 
     e=mirvar_mem(mem1,0);
     w=epoint_init_mem(mem2,0);
@@ -266,7 +299,7 @@ double powers_small_base(int g,int eb,big p)
     double elapsed;
     char *mem;
 
-    mem=memalloc(2);
+    mem=(char *)memalloc(2);
 
     e=mirvar_mem(mem,0);
     w=mirvar_mem(mem,1);
@@ -295,7 +328,7 @@ double powers_double(int gb,int eb,big p)
     big g1,e1,g2,e2,w;
     char *mem;
 
-    mem=memalloc(5);
+    mem=(char *)memalloc(5);
     g1=mirvar_mem(mem,0);
     e1=mirvar_mem(mem,1);
     g2=mirvar_mem(mem,2);
@@ -333,8 +366,8 @@ double mult_double(int eb,epoint *g)
     epoint *r1;
     epoint *r2;
 
-    mem1=memalloc(2);
-    mem2=ecp_memalloc(3);
+    mem1=(char *)memalloc(2);
+    mem2=(char *)ecp_memalloc(3);
 
     e1=mirvar_mem(mem1,0);
     e2=mirvar_mem(mem1,1);
@@ -380,8 +413,8 @@ double mult2_double(int eb,epoint *g)
     epoint *r1;
     epoint *r2;
 
-    mem1=memalloc(2);
-    mem2=ecp_memalloc(3);
+    mem1=(char *)memalloc(2);
+    mem2=(char *)ecp_memalloc(3);
 
     e1=mirvar_mem(mem1,0);
     e2=mirvar_mem(mem1,1);
@@ -424,7 +457,7 @@ double powers_precomp(int gb,int eb,big p)
     big g,e,w;
     char *mem;
 
-    mem=memalloc(3);
+    mem=(char *)memalloc(3);
     g=mirvar_mem(mem,0);
     e=mirvar_mem(mem,1);
     w=mirvar_mem(mem,2);
@@ -461,7 +494,7 @@ double mult_precomp(int eb,big x,big y,big a,big b,big p)
     double elapsed;
     char *mem;
 
-    mem=memalloc(3);
+    mem=(char *)memalloc(3);
     e=mirvar_mem(mem,0);
     c=mirvar_mem(mem,1);
     d=mirvar_mem(mem,2);
@@ -496,7 +529,7 @@ double mult2_precomp(int eb,big x,big y,big a2,big a6,int M,int A,int B,int C)
     double elapsed;
     char *mem;
 
-    mem=memalloc(3);
+    mem=(char *)memalloc(3);
     e=mirvar_mem(mem,0);
     c=mirvar_mem(mem,1);
     d=mirvar_mem(mem,2);
@@ -530,7 +563,7 @@ double powers_small_exp(int gb,long ex,big p)
     double elapsed;
     char *mem;
 
-    mem=memalloc(3);
+    mem=(char *)memalloc(3);
     g=mirvar_mem(mem,0);
     e=mirvar_mem(mem,1);
     w=mirvar_mem(mem,2);

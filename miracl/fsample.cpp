@@ -3,7 +3,6 @@
  *
  *   Requires: floating.cpp big.cpp 
  *
- *   Copyright (c) 2003 Shamus Software Ltd.
  */
 
 #include <iostream>

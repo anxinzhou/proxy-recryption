@@ -21,16 +21,19 @@
  *   (x,y) point, itself a large prime. The number of points on the curve is 
  *   cf.q where cf is the "co-factor", normally 2 or 4.
  * 
- *   Copyright (c) 2000-2003 Shamus Software Ltd.
  */
 
 #include <stdio.h>
 #include "miracl.h"
 
+#ifdef MR_COUNT_OPS
+int fpm2,fpi2,lpz; 
+#endif
+
 int main()
 {
     FILE *fp;
-    int ep,m,a,b,c;
+    int i,ep,m,a,b,c;
     miracl *mip;
     epoint *g,*w;
     big a2,a6,q,x,y,d;
@@ -43,7 +46,7 @@ int main()
     }
     fscanf(fp,"%d\n",&m);
 
-    mip=mirsys(MR_ROUNDUP(abs(m),4),16);  /* MR_ROUNDUP rounds up m/MIRACL */
+    mip=mirsys(MR_ROUNDUP(mr_abs(m),4),16);  /* MR_ROUNDUP rounds up m/MIRACL */
     a2=mirvar(0);
     a6=mirvar(0);
     q=mirvar(0);
@@ -67,6 +70,7 @@ int main()
     scanf("%ld",&seed);
     getchar();
     
+    mip->IOBASE=16;
     irand(seed);
     ecurve2_init(m,a,b,c,a2,a6,FALSE,MR_BEST);  /* initialise curve */
 
@@ -90,10 +94,21 @@ int main()
 /* generate public/private keys */
 
     bigrand(q,d);
+#ifdef MR_COUNT_OPS
+fpm2=fpi2=0; lpz=1000;
+for (i=0;i<lpz;i++)
+{
+#endif
+
 
     ecurve2_mult(d,g,g);
     
+#ifdef MR_COUNT_OPS
+}
+printf("Number of muls= %d\n",fpm2/lpz);
+printf("Number of invs= %d\n",fpi2/lpz);
 
+#endif
     ep=epoint2_get(g,x,x); /* compress point */
 
     printf("public key = %d ",ep);

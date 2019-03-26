@@ -1,5 +1,7 @@
 /* RSA program for comparison
 
+Use this mirdef.h file
+
 #define MIRACL 32
 #define MR_LITTLE_ENDIAN  
 #define mr_utype int
@@ -8,13 +10,47 @@
 #define MR_LBITS      32    
 #define MR_STATIC     16 
 #define MR_GENERIC_MT
-#define MR_KCM  8                          
+#define MR_COMBA 16                          
 #define MR_ALWAYS_BINARY
 #define mr_dltype long long   
 #define mr_unsign64 unsigned long long
-#define MAXBASE ((mr_small)1<<(MIRACL-1))
+#define MAXBASE ((mr_small)1<<(MIRACL-1)) 
+
+For some compilers replace long long with __int64
+If I/O is not wanted add these lines as well
+
 #define MR_NO_STANDARD_IO
-#define MR_NO_FILE_IO
+#define MR_NO_FILE_IO 
+
+To build on a PC using Microsoft C, execute this batch file
+(the modules mrio1.c and mrio2.c can be removed if no I/O required)
+
+mex 16 ms86 mrcomba
+cl /c /O2 /W3 mrcomba.c
+cl /c /O2 /W3 mrcore.c
+cl /c /O2 /W3 mrarth0.c
+cl /c /O2 /W3 mrarth1.c
+cl /c /O2 /W3 mrarth2.c
+cl /c /O2 /W3 mrio1.c
+cl /c /O2 /W3 mrio2.c
+cl /c /O2 /W3 mrbits.c
+cl /c /O2 /W3 mrxgcd.c
+cl /c /O2 /W3 mrmonty.c
+cl /c /O2 /W3 mrpower.c
+copy mrmuldv.c32 mrmuldv.c
+cl /c /O2 /W3 mrmuldv.c
+
+rem
+rem Create library 'miracl.lib'
+del miracl.lib
+
+lib /OUT:miracl.lib mrio2.obj mrio1.obj mrcomba.obj mrbits.obj
+lib /OUT:miracl.lib miracl.lib mrarth2.obj mrpower.obj mrxgcd.obj
+lib /OUT:miracl.lib miracl.lib mrmonty.obj mrarth1.obj mrarth0.obj mrcore.obj mrmuldv.obj
+
+del mr*.obj
+
+cl /O2 rsat.c miracl.lib
 
 */
 

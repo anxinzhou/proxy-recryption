@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *    MIRACL  C++ Implementation file zzn12.cpp
  *
@@ -10,11 +44,11 @@
  * applications
  *
  *    NOTE: - The irreducible polynomial is assumed to be of the form 
- *            x^6+i, where i is either 
- *      sqrt(-1) or 1+sqrt(-1) if p=3 mod 8
- *   or sqrt(-2), 1+sqrt(-2) if p=5 mod 8 or 7 mod 8
+ *            x^6-i, where i is  
+ *            1+sqrt(-1) if p=3 mod 8
+ *            or sqrt(-2) if p=5 mod 8 
+ *            or sqrt(2+sqrt(-1)), for p=7 mod 8 and p=2,3 mod 5 
  *
- *    Copyright (c) 2006 Shamus Software Ltd.
  */
 
 #include "zzn12.h"
@@ -23,31 +57,49 @@ using namespace std;
 
 // Frobenius...
 
-ZZn12& ZZn12::powq(const ZZn12& X)
+ZZn12& ZZn12::powq(const ZZn2& X)
 {
-    ZZn6 W=real(X*X);
-    *this=a.powq(W)+X*b.powq(W);
+    ZZn2 W=X*X;
+    BOOL ku=unitary;
+	a.powq(W); b.powq(W);
+    b*=X;
+    unitary=ku;
     return *this;
 }
 
-void ZZn12::get(ZZn6 &x,ZZn6 &y)  
+void ZZn12::get(ZZn6 &x,ZZn6 &y) const 
 {x=a; y=b; } 
 
-void ZZn12::get(ZZn6& x) 
+void ZZn12::get(ZZn6& x) const
 {x=a; }
 
 ZZn12& ZZn12::operator*=(const ZZn12& x)
 { 
     if (&x==this)
     {  
-        ZZn6 t=a; t+=b;
-        ZZn6 t2=a; t2+=tx(b);
-        t*=t2;
-        b*=a;
-        t-=b;
-        t-=tx(b);
-        b+=b;
-        a=t;  
+/* See Stam & Lenstra, "Efficient subgroup exponentiation in Quadratic .. Extensions", CHES 2002 */
+        if (unitary)
+        {
+            ZZn6 t=b; t*=t;
+            b+=a; b*=b;
+            b-=t;
+            a=tx(t);
+            b-=a;
+            a+=a; a+=one();
+            b-=one();
+       // cout << "in here" << endl;
+        }
+        else 
+        {
+            ZZn6 t=a; t+=b;
+            ZZn6 t2=a; t2+=tx(b);
+            t*=t2;
+            b*=a;
+            t-=b;
+            t-=tx(b);
+            b+=b;
+            a=t;
+        }
     }
     else
     { // Karatsuba multiplication
@@ -56,6 +108,8 @@ ZZn12& ZZn12::operator*=(const ZZn12& x)
         ZZn6 t=x.a; t+=x.b;
         b+=a; b*=t; b-=ac; b-=bd;
         a=ac; a+=tx(bd);
+        
+        if (!x.unitary) unitary=FALSE;
     }
 
     return *this;
@@ -71,6 +125,7 @@ ZZn12 conj(const ZZn12& x)
 ZZn12 inverse(const ZZn12 &w)
 {
     ZZn12 y=conj(w);
+    if (w.unitary) return y;
     ZZn6 u=w.a;
     ZZn6 v=w.b;
     u*=u;
@@ -84,23 +139,31 @@ ZZn12 inverse(const ZZn12 &w)
 ZZn12& ZZn12::operator/=(const ZZn12& x)
 { // inversion 
  *this *= inverse(x);
+ if (!x.unitary) unitary=FALSE;
+ return *this;
+}
+
+ZZn12& ZZn12::operator/=(const ZZn6& x)
+{ // inversion 
+ *this *= inverse(x);
+ unitary=FALSE;
  return *this;
 }
 
 ZZn12 operator+(const ZZn12& x,const ZZn12& y) 
-{ZZn12 w=x; w.a+=y.a; w.b+=y.b; return w;} 
+{ZZn12 w=x; w+=y; return w;} 
 
 ZZn12 operator+(const ZZn12& x,const ZZn6& y) 
-{ZZn12 w=x; w.a+=y; return w; } //
+{ZZn12 w=x; w+=y; return w; } //
 
 ZZn12 operator-(const ZZn12& x,const ZZn12& y) 
-{ZZn12 w=x; w.a-=y.a; w.b-=y.b; return w; } 
+{ZZn12 w=x; w-=y; return w; } 
 
 ZZn12 operator-(const ZZn12& x,const ZZn6& y) 
-{ZZn12 w=x; w.a-=y; return w; } //
+{ZZn12 w=x; w-=y; return w; } //
 
 ZZn12 operator-(const ZZn12& x) 
-{ZZn12 w; w.a=-x.a; w.b=-x.b; return w; } 
+{ZZn12 w; w.a=-x.a; w.b=-x.b; w.unitary=FALSE; return w; } 
 
 ZZn12 operator*(const ZZn12& x,const ZZn12& y)
 {
@@ -111,25 +174,26 @@ ZZn12 operator*(const ZZn12& x,const ZZn12& y)
 }
 
 ZZn12 operator*(const ZZn12& x,const ZZn6& y)
-{ZZn12 w=x; w.a*=y; w.b*=y; return w;} //
+{ZZn12 w=x; w*=y; return w;} //
 
 ZZn12 operator*(const ZZn6& y,const ZZn12& x)
-{ZZn12 w=x; w.a*=y; w.b*=y; return w;} //
+{ZZn12 w=x; w*=y; return w;} //
 
 ZZn12 operator*(const ZZn12& x,int y)
-{ZZn12 w=x; w.a*=y; w.b*=y; return w;}
+{ZZn12 w=x; w*=y; return w;}
                                          
 ZZn12 operator*(int y,const ZZn12& x)
-{ZZn12 w=x; w.a*=y; w.b*=y; return w;}
+{ZZn12 w=x; w*=y; return w;}
 
 ZZn12 operator/(const ZZn12& x,const ZZn12& y)
 {ZZn12 w=x; w/=y; return w;}
 
 ZZn12 operator/(const ZZn12& x,const ZZn6& y)
-{ZZn12 w=x; ZZn6 j=inverse(y); w.a*=j; w.b*=j; return w;} //
+{ZZn12 w=x; ZZn6 j=inverse(y); w.a*=j; w.b*=j; w.unitary=FALSE; return w;} //
+
 #ifndef MR_NO_RAND
 ZZn12 randn12(void)
-{ZZn12 w; w.a=randn6(); w.b=randn6(); return w;}
+{ZZn12 w; w.a=randn6(); w.b=randn6(); w.unitary=FALSE; return w;}
 #endif
 #ifndef MR_NO_STANDARD_IO
 
@@ -151,7 +215,7 @@ ZZn12 pow(const ZZn12* t,const ZZn12& x,const Big& k)
     int i,j,nb,n,nbw,nzs;
     ZZn12 u=x;
 
-    if (k==0) return (ZZn12)1;
+    if (k==0) return (ZZn12)one();
     if (k==1) return u;
 
     nb=bits(k);
@@ -187,7 +251,7 @@ ZZn12 pow(const ZZn12& x,const Big& k)
 {
     ZZn12 u,t[16];
 
-    if (k==0) return (ZZn12)1;
+    if (k==0) return (ZZn12)one();
     u=x;
     if (k==1) return u;
 //
@@ -202,18 +266,27 @@ ZZn12 pow(const ZZn12& x,const Big& k)
 
 ZZn12 pow(const ZZn12& x,const Big& k)
 {
-    int i,j,nb,n,nbw,nzs;
+    int i,j,nb,n;
     ZZn12 u=x;
+    Big e=k;
+    BOOL invert_it=FALSE;
 
-    if (k==0) return (ZZn12)1;
-    if (k==1) return u;
+    if (e==0) return (ZZn12)one();
 
-    nb=bits(k);
+    if (e<0) 
+    {
+        e=-e;
+        invert_it=TRUE;
+    }
+
+    nb=bits(e);
     if (nb>1) for (i=nb-2;i>=0;i--)
     {
         u*=u;
-        if (bit(k,i)) u*=x;
+        if (bit(e,i)) u*=x;
     }
+
+    if (invert_it) u=inverse(u);
 
     return u;
 }

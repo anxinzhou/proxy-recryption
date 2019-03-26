@@ -1,18 +1,110 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL Jacobi symbol routine
  *   mrjack.c
  *
- *   See "Efficient Algorithms for Computing the Jacobi Symbol"
- *   Meyer & Sorenson
- *
- *   Copyright (c) 2007 Shamus Software Ltd.
+ *   See "A binary algorithm for the Jacobi symbol"
+ *   Shallit and Sorenson
  */
-
+#include <stdlib.h>
 #include "miracl.h"
+
+int jack(_MIPD_ big a,big n)
+{ /* find jacobi symbol (a/n), for positive odd n */
+    big w;
+    int nm8,onm8,t;
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+    if (mr_mip->ERNUM || size(a)==0 || size(n) <1) return 0;
+    MR_IN(3)
+
+    t=1;
+    copy(n,mr_mip->w2);
+    nm8=remain(_MIPP_ mr_mip->w2,8);
+    if (nm8%2==0) 
+    {
+        MR_OUT
+        return 0;
+    }
+    
+    if (size(a)<0)
+    {
+        if (nm8%4==3) t=-1;
+        negify(a,mr_mip->w1);
+    }
+    else copy(a,mr_mip->w1);
+
+    while (size(mr_mip->w1)!=0)
+    {
+        while (remain(_MIPP_ mr_mip->w1,2)==0)
+        {
+            subdiv(_MIPP_ mr_mip->w1,2,mr_mip->w1);
+            if (nm8==3 || nm8==5) t=-t; 
+        }
+        if (mr_compare(mr_mip->w1,mr_mip->w2)<0)
+        {
+            onm8=nm8;
+            w=mr_mip->w1; mr_mip->w1=mr_mip->w2; mr_mip->w2=w;
+            nm8=remain(_MIPP_ mr_mip->w2,8);
+            if (onm8%4==3 && nm8%4==3) t=-t;
+        }
+        mr_psub(_MIPP_ mr_mip->w1,mr_mip->w2,mr_mip->w1);
+        subdiv(_MIPP_ mr_mip->w1,2,mr_mip->w1);
+ 
+        if (nm8==3 || nm8==5) t=-t; 
+    }
+
+    MR_OUT
+    if (size(mr_mip->w2)==1) return t;
+    return 0;
+}
+
+/*
+ *   See "Efficient Algorithms for Computing the Jacobi Symbol"
+ *   Eikenberry & Sorenson
+ *
+ *   Its turns out this is slower than the binary method above for reasonable sizes
+ *   of parameters (and takes up a lot more space!)
+
 
 #ifdef MR_FP
 #include <math.h>
 #endif
+
 
 static void rfind(mr_small u,mr_small v,mr_small k,mr_small sk,mr_utype *a,mr_utype *b)
 {
@@ -28,7 +120,7 @@ static void rfind(mr_small u,mr_small v,mr_small k,mr_small sk,mr_utype *a,mr_ut
     x1=k; x2=0;
     y1=w; y2=1;
 
-/* NOTE: x1 and y1 are always +ve. x2 and y2 are always small */
+// NOTE: x1 and y1 are always +ve. x2 and y2 are always small 
 
     while (y1>=sk)
     {
@@ -45,8 +137,8 @@ static void rfind(mr_small u,mr_small v,mr_small k,mr_small sk,mr_utype *a,mr_ut
 }
 
 int jack(_MIPD_ big U,big V)
-{ /* find jacobi symbol for U wrt V. Only defined for *
-   * positive V, V odd. Otherwise returns 0           */
+{ // find jacobi symbol for U wrt V. Only defined for 
+  // positive V, V odd. Otherwise returns 0           
     int i,e,r,m,t,v8,u4;
     mr_utype a,b;
     mr_small u,v,d,g,k,sk,s;
@@ -67,7 +159,7 @@ int jack(_MIPD_ big U,big V)
     MR_IN(3)
 
     if (remain(_MIPP_ mr_mip->w2,2)==0)
-    { /* V is even */
+    { // V is even 
         MR_OUT
         return 0;
     }
@@ -105,7 +197,7 @@ int jack(_MIPD_ big U,big V)
             if (v8%4==3) t=-t;
         }
 
-        do { /* oddify */
+        do { // oddify 
 
 #ifndef MR_ALWAYS_BINARY
             if (mr_mip->base==mr_mip->base2) 
@@ -222,7 +314,7 @@ int jack(_MIPD_ big U,big V)
             return 0;
         }
 
-/* printf("a= %I64d b=%I64d %d\n",a,b,(int)b); */
+// printf("a= %I64d b=%I64d %d\n",a,b,(int)b); 
 
         if (a>1) mr_pmul(_MIPP_ mr_mip->w1,a,mr_mip->w1);
         if (b>=0)
@@ -233,7 +325,7 @@ int jack(_MIPD_ big U,big V)
             mr_pmul(_MIPP_ mr_mip->w2,b,mr_mip->w3);
             negify(mr_mip->w3,mr_mip->w3);
         }
-       /* premult(_MIPP_ mr_mip->w2,(int)b,mr_mip->w3); <- nasty bug - potential loss of precision in b */
+       // premult(_MIPP_ mr_mip->w2,(int)b,mr_mip->w3); <- nasty bug - potential loss of precision in b 
         add(_MIPP_ mr_mip->w1,mr_mip->w3,mr_mip->w1);
         if (k==mr_mip->base) mr_shift(_MIPP_ mr_mip->w1,-1,mr_mip->w1);
 #ifdef MR_FP_ROUNDING
@@ -247,3 +339,4 @@ int jack(_MIPD_ big U,big V)
     return 0; 
 } 
 
+*/

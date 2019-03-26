@@ -27,8 +27,6 @@
  *   The system parameters can be found in the file common2.ecs
  *   Assumes MR_GENERIC_MT is defined in mirdef.h
  *
- *
- *   Copyright (c) 2000-2007 Shamus Software Ltd.
  */
 
 #include <stdio.h>

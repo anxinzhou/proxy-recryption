@@ -1,7 +1,5 @@
 /*
  *   Program to calculate square roots
- *
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #include <stdio.h>

@@ -7,7 +7,9 @@
 //
 // Requires: big.cpp 
 //
-// Copyright Shamus Software Ltd. 2002
+// cl /O2 trans.cpp big.cpp miracl.lib
+// g++ -O2 trans.cpp big.cpp miracl.a -o trans
+//
 //
 
 

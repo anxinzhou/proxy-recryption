@@ -38,3 +38,9 @@ For a 64-bit build, on for example an AMD64 or a Core 2 processor (x86-64), use
 
 bash linux64
 
+
+IMPORTANT
+
+Some files might have to be changed from Windows File format, to Unix file format
+in order for programs to work correctly.
+

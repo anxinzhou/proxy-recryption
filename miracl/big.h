@@ -1,4 +1,39 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
+ *
  *    MIRACL  C++ Header file big.h
  *
  *    AUTHOR  :    N.Coghlan
@@ -49,8 +84,6 @@
  *   len=to_binary(x,100,c,FALSE); // converts Big x to len bytes binary in c[100] 
  *   len=to_binary(x,100,c,TRUE);  // converts Big x to len bytes binary in c[100] 
  *                                 // (right justified with leading zeros)
- *                              
- *   Copyright (c) 1988-2001 Shamus Software Ltd.
  */
 
 #ifndef BIG_H
@@ -60,10 +93,16 @@
 //#include <cmath>
 #include <cstdio>
 
+#include "mirdef.h"
+
+#ifdef MR_CPP
+#include "miracl.h"
+#else
 extern "C"                    
 {
     #include "miracl.h"
 }
+#endif
 
 #ifndef MR_NO_STANDARD_IO
 #include <iostream>
@@ -134,36 +173,58 @@ public:
     Big()        {MR_INIT_BIG } 
     Big(int j)   {MR_INIT_BIG convert(j,fn); }
     Big(unsigned int j) {MR_INIT_BIG uconvert(j,fn); }
-    
+    Big(long lg) {MR_INIT_BIG lgconv(lg,fn);}
+    Big(unsigned long lg) {MR_INIT_BIG ulgconv(lg,fn);}
+
+#ifdef MR_UTYPE_NOT_INT_OR_LONG
+	Big(mr_utype ut) {MR_INIT_BIG tconvert(ut,fn);}
+#endif
+
 #ifdef mr_dltype
   #ifndef MR_DLTYPE_IS_INT
+  #ifndef MR_DLTYPE_IS_LONG
     Big(mr_dltype dl) {MR_INIT_BIG dlconv(dl,fn);}
   #endif
-#else
-    Big(long lg) {MR_INIT_BIG lgconv(lg,fn);}
+  #endif
 #endif
+
+#ifndef MR_SIMPLE_IO
+#ifdef MR_SIMPLE_BASE
+    Big(char* s) {MR_INIT_BIG instr(fn,s);}
+#else
     Big(char* s) {MR_INIT_BIG cinstr(fn,s);}
+#endif
+#endif
     Big(big& c)  {MR_INIT_BIG copy(c,fn);}
     Big(const Big& c)  {MR_INIT_BIG copy(c.fn,fn);}
     Big(big* c)  { fn=*c; }
 
     Big& operator=(int i)  {convert(i,fn); return *this;}
+    Big& operator=(long lg){lgconv(lg,fn); return *this;}
+
+#ifdef MR_UTYPE_NOT_INT_OR_LONG
+	Big& operator=(mr_utype ut){tconvert(ut,fn); return *this;}
+#endif
 
 #ifdef mr_dltype
   #ifndef MR_DLTYPE_IS_INT
+  #ifndef MR_DLTYPE_IS_LONG
     Big& operator=(mr_dltype dl){dlconv(dl,fn); return *this;}
   #endif
-#else
-    Big& operator=(long lg){lgconv(lg,fn); return *this;}
+  #endif
 #endif
 
     Big& operator=(mr_small s) {fn->len=1; fn->w[0]=s; return *this;}
     Big& operator=(const Big& b) {copy(b.fn,fn); return *this;}
     Big& operator=(big& b) {copy(b,fn); return *this;}
     Big& operator=(big* b) {fn=*b; return *this;}
-
+#ifndef MR_SIMPLE_IO
+#ifdef MR_SIMPLE_BASE
+	Big& operator=(char* s){instr(fn,s);return *this;}
+#else
     Big& operator=(char* s){cinstr(fn,s);return *this;}
-
+#endif
+#endif
     Big& operator++()      {incr(fn,1,fn); return *this;}
     Big& operator--()      {decr(fn,1,fn); return *this;}
     Big& operator+=(int i) {incr(fn,i,fn); return *this;}
@@ -198,7 +259,7 @@ public:
     big getbig() const;
 
     friend class Flash;
-
+	
     friend Big operator-(const Big&);
 
     friend Big operator+(const Big&,int);
@@ -238,15 +299,20 @@ public:
               {if (mr_compare(b1.fn,b2.fn)>0) return TRUE; else return FALSE;}
 
     friend Big from_binary(int,char *);
-    friend int to_binary(const Big&,int,char *,BOOL justify=FALSE);
+    friend int to_binary(const Big& b,int max,char *ptr,BOOL justify=FALSE)
+{ return big_to_bytes(max,b.fn,ptr,justify);}
     friend Big modmult(const Big&,const Big&,const Big&);
     friend Big mad(const Big&,const Big&,const Big&,const Big&,Big&);
     friend Big norm(const Big&);
     friend Big sqrt(const Big&);
     friend Big root(const Big&,int);
     friend Big gcd(const Big&,const Big&);
+    friend void set_zzn3(int cnr,Big& sru)  {get_mip()->cnr=cnr; nres(sru.fn,get_mip()->sru);}
+	friend int recode(const Big& e,int t,int w,int i) {return recode(e.fn,t,w,i);}
+
 #ifndef MR_FP
     friend Big land(const Big&,const Big&);  // logical AND
+    friend Big lxor(const Big&,const Big&);   // logical XOR
 #endif
     friend Big pow(const Big&,int);               // x^m
     friend Big pow(const Big&, int, const Big&);  // x^m mod n
@@ -256,16 +322,22 @@ public:
                                                          // x^m.y^k mod n 
     friend Big pow(int,Big *,Big *,Big);  // x[0]^m[0].x[1].m[1]... mod n
 
-    friend Big luc(const Big& ,const Big&, const Big&, Big *b4=NULL);
+    friend Big luc(const Big& b1,const Big& b2, const Big& b3, Big *b4=NULL)
+{Big z; if (b4!=NULL) lucas(b1.fn,b2.fn,b3.fn,b4->fn,z.fn); 
+        else          lucas(b1.fn,b2.fn,b3.fn,z.fn,z.fn);
+return z;}
+	friend Big moddiv(const Big&,const Big&,const Big&);
     friend Big inverse(const Big&, const Big&);
     friend void multi_inverse(int,Big*,const Big&,Big *);
 #ifndef MR_NO_RAND
     friend Big rand(const Big&);     // 0 < rand < parameter
-    friend Big rand(int,int);        // (digits,base) e.g. (1024,2)
+    friend Big rand(int,int);        // (digits,base) e.g. (32,16)
+    friend Big randbits(int);        // n random bits
     friend Big strong_rand(csprng *,const Big&);
     friend Big strong_rand(csprng *,int,int);
 #endif
     friend Big abs(const Big&);
+// This next only works if MIRACL is using a binary base...
     friend int bit(const Big& b,int i)  {return mr_testbit(b.fn,i);}
     friend int bits(const Big& b) {return logb2(b.fn);}
     friend int ham(const Big& b)  {return hamming(b.fn);}
@@ -285,8 +357,17 @@ public:
     friend void modulo(const Big&);
     friend BOOL modulo(int,int,int,int,BOOL);
     friend Big get_modulus(void);
-    friend int window(const Big&,int,int*,int*,int window_size=5);
-    friend int naf_window(const Big&,const Big&,int,int*,int*,int window_size=5);
+    friend int window(const Big& x,int i,int* nbs,int *nzs,int window_size=5)
+{
+return mr_window(x.fn,i,nbs,nzs,window_size);
+
+}
+    friend int naf_window(const Big& x,const Big& x3,int i,int *nbs,int *nzs,int store=11)
+{
+return mr_naf_window(x.fn,x3.fn,i,nbs,nzs,store);
+}
+
+    friend void jsf(const Big&,const Big&,Big&,Big&,Big&,Big&);
 
 /* Montgomery stuff */
 
@@ -351,8 +432,9 @@ extern Big get_modulus(void);
 extern Big rand(int,int); 
 extern Big strong_rand(csprng *,int,int);
 extern Big from_binary(int,char *);
-extern int to_binary(const Big&,int,char *,BOOL);
+//extern int to_binary(const Big&,int,char *,BOOL);
 
+using namespace std;
 
 #endif
 

@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /* mex.c
  *
  * Updated to allow emission of scheduled code. 
@@ -5,7 +39,6 @@
  * Macro EXpansion program.
  * Expands Macros from a .mcs file into a .tpl file to create a .c file
  *
- *  Copyright (c) 2002 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -33,6 +66,7 @@ typedef int BOOL;
 #define ADDITION2 12
 #define SUBTRACTION2 13
 #define PMULT 14
+#define DOUBLEIT 15
 
 
 /* Define Macros */
@@ -118,33 +152,47 @@ typedef int BOOL;
 #define H4_MULB_END     78
 #define H4_MBFIN        79
 #define H4_STEPB        80
-#define LAST_ONE        81
+#define H2_REDC_START   81
+#define H2_RFINU        82
+#define H2_RFIND        83
+#define H2_REDC_END     84
+#define H4_REDC_START   85
+#define H4_RFINU        86
+#define H4_RFIND        87
+#define H4_REDC_END     88
+#define DOUBLE_START    89
+#define DOUBLE          90
+#define DOUBLE_END      91
+#define LAST_ONE        92
 
 BOOL scheduled;
-int hybrid,hybrid_b,pmp;
+int hybrid,hybrid_b,pmp,hybrid_r;
 
 int PARAM;
 char *macro[LAST_ONE]; /* macro text */ 
 
-char *functions[]={"MULTIPLY","MULTUP","SQUARE","REDC","ADDITION","INCREMENT",
-                 "SUBTRACTION","DECREMENT","SUMMATION","INCREMENTATION",
-                 "DECREMENTATION","MULTIPLY2","ADDITION2","SUBTRACTION2","PMULT",NULL};
+char *functions[]={(char *)"MULTIPLY",(char *)"MULTUP",(char *)"SQUARE",(char *)"REDC",(char *)"ADDITION",(char *)"INCREMENT",
+                 (char *)"SUBTRACTION",(char *)"DECREMENT",(char *)"SUMMATION",(char *)"INCREMENTATION",
+                 (char *)"DECREMENTATION",(char *)"MULTIPLY2",(char *)"ADDITION2",(char *)"SUBTRACTION2",(char *)"PMULT",(char *)"DOUBLEIT",NULL};
 
-char *names[]={"MUL_START","STEP","STEP1M","STEP1A","STEP2M",
-               "STEP2A","MFIN","MUL_END","LAST","SQR_START","DSTEP",
-               "DSTEP1M","DSTEP1A","DSTEP2M","DSTEP2A","SELF",
-               "SFIN","SQR_END","REDC_START","RFINU","RFIND",
-               "REDC_END","ADD_START","ADD","ADD_END","SUB_START","SUB",
-               "SUB_END","INC_START","INC","INC_END","DEC_START","DEC",
-               "DEC_END","KADD_START","KASL","KADD_END","KINC_START","KIDL",
-               "KINC_END","KDEC_START","KDEC_END","STEPB","STEPB1M","STEPB1A","STEPB2M","STEPB2A",
-               "H2_MUL_START","H2_STEP","H2_MFIN","H2_MUL_END",
-               "H2_SQR_START","H2_DSTEP","H2_SELF","H2_SFIN","H2_SQR_END",
-               "H4_MUL_START","H4_STEP","H4_MFIN","H4_MUL_END",
-               "H4_SQR_START","H4_DSTEP","H4_SELF","H4_SFIN","H4_SQR_END","H2_LAST","H4_LAST",
-                "PMUL_START","PMUL","PMUL_END","MULB_START","MULB_END","MBFIN",
-                "H2_MULB_START","H2_MULB_END","H2_MBFIN","H2_STEPB",
-                "H4_MULB_START","H4_MULB_END","H4_MBFIN","H4_STEPB",NULL};
+char *names[]={(char *)"MUL_START",(char *)"STEP",(char *)"STEP1M",(char *)"STEP1A",(char *)"STEP2M",
+               (char *)"STEP2A",(char *)"MFIN",(char *)"MUL_END",(char *)"LAST",(char *)"SQR_START",(char *)"DSTEP",
+               (char *)"DSTEP1M",(char *)"DSTEP1A",(char *)"DSTEP2M",(char *)"DSTEP2A",(char *)"SELF",
+               (char *)"SFIN",(char *)"SQR_END",(char *)"REDC_START",(char *)"RFINU",(char *)"RFIND",
+               (char *)"REDC_END",(char *)"ADD_START",(char *)"ADD",(char *)"ADD_END",(char *)"SUB_START",(char *)"SUB",
+               (char *)"SUB_END",(char *)"INC_START",(char *)"INC",(char *)"INC_END",(char *)"DEC_START",(char *)"DEC",
+               (char *)"DEC_END",(char *)"KADD_START",(char *)"KASL",(char *)"KADD_END",(char *)"KINC_START",(char *)"KIDL",
+               (char *)"KINC_END",(char *)"KDEC_START",(char *)"KDEC_END",(char *)"STEPB",(char *)"STEPB1M",(char *)"STEPB1A",(char *)"STEPB2M",(char *)"STEPB2A",
+               (char *)"H2_MUL_START",(char *)"H2_STEP",(char *)"H2_MFIN",(char *)"H2_MUL_END",
+               (char *)"H2_SQR_START",(char *)"H2_DSTEP",(char *)"H2_SELF",(char *)"H2_SFIN",(char *)"H2_SQR_END",
+               (char *)"H4_MUL_START",(char *)"H4_STEP",(char *)"H4_MFIN",(char *)"H4_MUL_END",
+               (char *)"H4_SQR_START",(char *)"H4_DSTEP",(char *)"H4_SELF",(char *)"H4_SFIN",(char *)"H4_SQR_END",(char *)"H2_LAST",(char *)"H4_LAST",
+                (char *)"PMUL_START",(char *)"PMUL",(char *)"PMUL_END",(char *)"MULB_START",(char *)"MULB_END",(char *)"MBFIN",
+                (char *)"H2_MULB_START",(char *)"H2_MULB_END",(char *)"H2_MBFIN",(char *)"H2_STEPB",
+                (char *)"H4_MULB_START",(char *)"H4_MULB_END",(char *)"H4_MBFIN",(char *)"H4_STEPB",
+                (char *)"H2_REDC_START",(char *)"H2_RFINU",(char *)"H2_RFIND",(char *)"H2_REDC_END",
+                (char *)"H4_REDC_START",(char *)"H4_RFINU",(char *)"H4_RFIND",(char *)"H4_REDC_END",
+                (char *)"DOUBLE_START",(char *)"DOUBLE",(char *)"DOUBLE_END",NULL};
 
 BOOL white(char c)
 {
@@ -248,7 +296,7 @@ void s_schedule(FILE *dotc,int x,int k,int m)
 
 void insert(int index,FILE *dotc)
 {
-    int i,j,k,m,n,x,inc;
+    int i,k,m,n,x,inc;
     switch (index)
     {
     case PMULT:
@@ -634,10 +682,28 @@ void insert(int index,FILE *dotc)
         else fprintf(dotc,macro[SQR_END],2*PARAM-1);
         break;
     case REDC:  
-        fprintf(dotc,macro[REDC_START]);
-        fprintf(dotc,macro[RFINU],0,0);
+        inc=1;
+        if (hybrid_r)
+        {
+            inc=hybrid_r;
+            if (hybrid_r==2)
+            {    
+                fprintf(dotc,macro[H2_REDC_START]);
+                fprintf(dotc,macro[H2_RFINU],0,0,0,0);
+            }
+            if (hybrid_r==4)
+            {    
+                fprintf(dotc,macro[H4_REDC_START]);
+                fprintf(dotc,macro[H4_RFINU],0,0,0,0,0,0,0,0);
+            }
+        }
+        else 
+        {    
+            fprintf(dotc,macro[REDC_START]);
+            fprintf(dotc,macro[RFINU],0,0);
+        }
 
-        for (i=n=1;i<PARAM;i++,n++)
+        for (i=n=inc;i<PARAM;i+=inc,n+=inc)
         {
             k=0; m=i;
 
@@ -658,13 +724,28 @@ void insert(int index,FILE *dotc)
             else
             {
                 while (k<i)
-                    fprintf(dotc,macro[STEP],k++,m--);
+                {
+                   if (hybrid_r)
+                    {
+                        if (hybrid_r==2) fprintf(dotc,macro[H2_STEP],k,k,m,m);
+                        if (hybrid_r==4) fprintf(dotc,macro[H4_STEP],k,k,k,k,m,m,m,m);
+                    }
+                    else fprintf(dotc,macro[STEP],k,m);
+                    k+=inc; m-=inc;
+                }
             }
-            fprintf(dotc,macro[RFINU],n,n);
+
+            if (hybrid_r) 
+            {
+                if (hybrid_r==2) fprintf(dotc,macro[H2_RFINU],n,n,n,n);
+                if (hybrid_r==4) fprintf(dotc,macro[H4_RFINU],n,n,n,n,n,n,n,n);
+            }
+            else fprintf(dotc,macro[RFINU],n,n);
         }
-        for (i=0;i<PARAM-1;i++,n++)
+
+        for (i=0;i<PARAM-inc;i+=inc,n+=inc)
         {
-            k=i+1; m=PARAM-1;
+            k=i+inc; m=PARAM-inc;
 
             if (scheduled)
             {
@@ -682,13 +763,34 @@ void insert(int index,FILE *dotc)
             }
             else
             {
-                while (k<=PARAM-1)
-                    fprintf(dotc,macro[STEP],k++,m--);
+               while (k<=PARAM-inc)
+                {
+                    if (hybrid_r)
+                    {
+                        if (hybrid_r==2) fprintf(dotc,macro[H2_STEP],k,k,m,m);
+                        if (hybrid_r==4) fprintf(dotc,macro[H4_STEP],k,k,k,k,m,m,m,m);
+                    }
+                    else fprintf(dotc,macro[STEP],k,m);
+                    k+=inc; m-=inc;
+                }
             }
-            fprintf(dotc,macro[RFIND],n,n);
+
+            if (hybrid_r) 
+            {
+                if (hybrid_r==2) fprintf(dotc,macro[H2_RFIND],n,n,n,n);
+                if (hybrid_r==4) fprintf(dotc,macro[H4_RFIND],n,n,n,n,n,n,n,n);
+            }
+            else fprintf(dotc,macro[RFIND],n,n);
         }
-        fprintf(dotc,macro[REDC_END],2*PARAM-1,2*PARAM-1);
+        if (hybrid_r)
+        {
+            if (hybrid_r==2) fprintf(dotc,macro[H2_REDC_END],2*PARAM-inc,2*PARAM-inc,2*PARAM-inc);
+            if (hybrid_r==4) fprintf(dotc,macro[H4_REDC_END],2*PARAM-inc,2*PARAM-inc,2*PARAM-inc,2*PARAM-inc,2*PARAM-inc);
+        }
+        else fprintf(dotc,macro[REDC_END],2*PARAM-1,2*PARAM-1);
+
         break;
+
     case ADDITION:    
         fprintf(dotc,macro[ADD_START]);
         for (i=1;i<PARAM;i++)
@@ -707,6 +809,23 @@ void insert(int index,FILE *dotc)
             fprintf(dotc,macro[INC],i,i,i);
         fprintf(dotc,macro[INC_END]);
         break;
+    case DOUBLEIT:
+        if (macro[DOUBLE_START]!=NULL)
+        {
+            fprintf(dotc,macro[DOUBLE_START]);
+            for (i=1;i<PARAM;i++)
+                fprintf(dotc,macro[DOUBLE],i,i);
+            fprintf(dotc,macro[DOUBLE_END]);
+        }
+        else
+        {
+            fprintf(dotc,macro[INC_START]);
+            for (i=1;i<PARAM;i++)
+                fprintf(dotc,macro[INC],i,i,i);
+            fprintf(dotc,macro[INC_END]);
+        }
+        break;
+
     case SUBTRACTION:
         fprintf(dotc,macro[SUB_START]);
         for (i=1;i<PARAM;i++)
@@ -753,7 +872,7 @@ void insert(int index,FILE *dotc)
 
 int main(int argc,char **argv)
 {
-    FILE *template,*macros,*dotc;
+    FILE *templat,*macros,*dotc;
     int i,ip,ptr,index,size;
     BOOL open,error;
     char fname[80],tmpl[80],name[20];
@@ -794,8 +913,8 @@ int main(int argc,char **argv)
 
     strcpy(tmpl,argv[ip+2]);
     strcat(tmpl,".tpl");
-    template=fopen(tmpl,"rt");
-    if (template==NULL)
+    templat=fopen(tmpl,"rt");
+    if (templat==NULL)
     {
         printf("Template file %s file not found\n",tmpl);
         exit(0);
@@ -841,7 +960,7 @@ int main(int argc,char **argv)
                 macro[index][0]='\0';
         }
 
-        if (open) size+=strlen(line);
+        if (open) size+=(int)strlen(line);
     }
     fclose(macros);
     if (error)
@@ -875,7 +994,7 @@ int main(int argc,char **argv)
 
     if (macro[PMUL]==NULL)
     {
-        printf("Pseudo Mersenne Primes not (yet) supported for this architecture in file %s\n",fname);
+       /* printf("Pseudo Mersenne Primes not (yet) supported for this architecture in file %s\n",fname); */
         pmp=0;
     }
     else pmp=1;
@@ -892,6 +1011,10 @@ int main(int argc,char **argv)
     hybrid_b=0;
     if (macro[H2_STEPB]!=NULL) hybrid_b=2; 
     if (macro[H4_STEPB]!=NULL) hybrid_b=4;
+
+    hybrid_r=0;
+    if (macro[H2_RFINU]!=NULL) hybrid_r=2;
+    if (macro[H4_RFINU]!=NULL) hybrid_r=4;
 
     if (hybrid)
     {
@@ -923,7 +1046,7 @@ int main(int argc,char **argv)
     
     while (1)
     {
-        if (fgets(line,132,template)==NULL) break;
+        if (fgets(line,132,templat)==NULL) break;
         fputs(line,dotc);
         if (strncmp(line,"/***",4)==0)
         {
@@ -933,7 +1056,7 @@ int main(int argc,char **argv)
                 name[i]='\0';
 
                 index=which(name,functions);
-             /*   printf("Recognize %s index %d\n",name,index);    */
+              /*  printf("Recognize %s index %d\n",name,index);  */ 
                 if (index<0)
                 {
                     error=TRUE;
@@ -946,7 +1069,7 @@ int main(int argc,char **argv)
     if (error)
         printf("no such function - %s\n",name);
    
-    fclose(template);
+    fclose(templat);
     fclose(dotc);
     return 0;
 }

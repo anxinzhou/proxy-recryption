@@ -9,7 +9,6 @@
  *   This program generates one set of public and private keys in files 
  *   public.dss and private.dss respectively
  *
- *   Copyright (c) 1988-2003 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -53,7 +52,7 @@ int main()
     if (size(y)!=1)
     {
         printf("Problem - generator g is not of order q\n");
-        exit(0);
+        return 0;
     }
 
 /* generate public/private keys */

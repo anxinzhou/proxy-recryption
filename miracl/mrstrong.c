@@ -1,8 +1,40 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL cryptographic strong random number generator 
  *   mrstrong.c
- *
- *   Copyright (c) 1988-2002 Shamus Software Ltd.
  *
  *   Unguessable seed -> SHA -> PRNG internal state -> SHA -> random numbers
  *   Slow - but secure
@@ -56,10 +88,10 @@ static void sirand(csprng* rng,mr_unsign32 seed)
 static void fill_pool(csprng *rng)
 { /* hash down output of RNG to re-fill the pool */
     int i;
-    sha sh;
-    shs_init(&sh);
-    for (i=0;i<128;i++) shs_process(&sh,sbrand(rng));
-    shs_hash(&sh,rng->pool);
+    sha256 sh;
+    shs256_init(&sh);
+    for (i=0;i<128;i++) shs256_process(&sh,sbrand(rng));
+    shs256_hash(&sh,rng->pool);
     rng->pool_ptr=0;
 }
 
@@ -68,15 +100,15 @@ void strong_init(csprng *rng,int rawlen,char *raw,mr_unsign32 tod)
    * random (keyboard?) input, and 32-bit time-of-day */
     int i;
     mr_unsign32 hash[MR_HASH_BYTES/4];
-    sha sh;
+    sha256 sh;
     rng->pool_ptr=0;
     for (i=0;i<NK;i++) rng->ira[i]=0;
     if (rawlen>0)
     {
-        shs_init(&sh);
+        shs256_init(&sh);
         for (i=0;i<rawlen;i++)
-            shs_process(&sh,raw[i]);
-        shs_hash(&sh,(char *)hash);
+            shs256_process(&sh,raw[i]);
+        shs256_hash(&sh,(char *)hash);
 
 /* initialise PRNG from distilled randomness */
 
@@ -108,6 +140,8 @@ int strong_rng(csprng *rng)
 
 void strong_bigrand(_MIPD_ csprng *rng,big w,big x)
 {
+	int i, m;
+	mr_small r;
     unsigned int ran;
     unsigned int ch;
 
@@ -115,21 +149,26 @@ void strong_bigrand(_MIPD_ csprng *rng,big w,big x)
     miracl *mr_mip=get_mip();
 #endif
     if (mr_mip->ERNUM) return;
-    MR_IN(139)
+    MR_IN(20)
+	
+	m = 0;
     zero(mr_mip->w1);
+	
     do
     {
-        if (mr_mip->ERNUM) break;
-        ch=(unsigned char)strong_rng(rng);
-        ran=ch; 
-#if MIRACL==8
-        mr_shift(_MIPP_ mr_mip->w1,1,mr_mip->w1);
-#else
-        premult(_MIPP_ mr_mip->w1,256,mr_mip->w1);
-#endif
-        incr(_MIPP_ mr_mip->w1,(int)ran,mr_mip->w1);
+		m++;
+		mr_mip->w1->len=m;
+		for (r = 0, i = 0; i < sizeof(mr_small); i++) {
+			ch=(unsigned char)strong_rng(rng);
+			ran=ch;
+			r = (r << 8) ^ ran;
+		}
+        if (mr_mip->base==0) mr_mip->w1->w[m-1]=r;
+        else                 mr_mip->w1->w[m-1]=MR_REMAIN(r,mr_mip->base);
     } while (mr_compare(mr_mip->w1,w)<0);
+	mr_lzero(mr_mip->w1);
     divide(_MIPP_ mr_mip->w1,w,w);
+	
     copy(mr_mip->w1,x);
     MR_OUT
 }
@@ -172,9 +211,9 @@ void strong_bigdig(_MIPD_ csprng *rng,int n,int b,big x)
 void main()
 {
     int i;
-    char raw[256],bytes[25];
+    char raw[256];
     big x,w;
-    long seed;
+    time_t seed;
     csprng rng;
     miracl *mip=mirsys(200,256);
     x=mirvar(0);
@@ -183,7 +222,7 @@ void main()
     scanf("%s",raw);
     getchar();
     time(&seed);
-    strong_init(&rng,strlen(raw),raw,seed);
+    strong_init(&rng,strlen(raw),raw,(long)seed);
     mip->IOBASE=16;
     expint(2,256,w);
     cotnum(w,stdout);

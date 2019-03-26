@@ -1,6 +1,40 @@
-/* 
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
+
+/*
  * MIRACL-based implementation of the IEEE 1363 standard 
- * Version 1.4 December 2005
+ * Version 1.6 July 2010
  *
  * NEW 1.1 - Elliptic curve points now stored in a single OCTET as recommended
  *           in P1363a. Such octets will be 2*fs+1 in length, where fs is
@@ -11,6 +45,8 @@
  *           New mirvar_mem function used for extra speed 
  *
  * NEW 1.3 - Cryptographically strong RNG interface improved
+ *
+ * NEW 1.6 - Support for .NET applications. See below
  *
  * Implements most of the cryptographic primitives, message encoding methods, 
  * key derivation functions and auxiliary functions necessary for realising the 
@@ -50,7 +86,7 @@
  * is the MIRACL Error Code (see miracl.h)
  *
  * quick start:-
- * cl /O2 test1363.c p1363.c ms32.lib
+ * cl /O2 test1363.c p1363.c miracl.lib
  *
  * Recommended for use with a (32-bit) MIRACL library built 
  * from a mirdef.h file that looks something like this:-
@@ -84,8 +120,8 @@
  * length plus 1" if compression is used)
  *
  * A test driver main() function is provided in test1363.c to test all the 
- * functions, and to implement five of the recommended methods, IFSSA, IFSSR, 
- * DLSSR, DLSSR-PV and ECIES 
+ * functions, and to implement many of the recommended methods, ECDSA, IFSSA, 
+ * IFSSR, DLSSR, DLSSR-PV and ECIES 
  *
  * In Win32 MS C:-
  * cl /O2 /MT test1363.c p1363.c miracl.lib  /link /NODEFAULTLIB:libc.lib
@@ -101,6 +137,16 @@
  * To run the test program to use the DLL, compile as
  * cl /O2 /MT /DMR_P1363_DLL test1363.c p1363.lib
  * 
+ * In .NET MS C:-
+ * Build miracl library as described in managed.txt - but perhaps include 
+ * #define MR_GENERIC_MT
+ * #define MR_STRIPPED_DOWN
+ *
+ * To create a DLL compile as
+ * cl /clr /O2 /DMR_P1363_DLL /LD /Tp p1363.c miracl.lib
+ * To run the test program to use the DLL, compile as
+ * cl /clr /O2 /DMR_P1363_DLL /Tp test1363.c p1363.lib
+ *
  * Discrete Logarithm/GF(p) Elliptic Curve/GF(2^m) Elliptic Curve Domain 
  * details are read from the files common.dss, common.ecs and common2.ecs 
  * respectively. Suitable files are included in the standard MIRACL 
@@ -132,7 +178,6 @@
  * NOTE: Certain methods employed in the IEEE-1363 may be subject to US patent protection.
  * Check http://grouper.ieee.org/groups/1363/index.html for more details
  *
- * Copyright (c) 2000-2004 Shamus Software Ltd.
  */
 
 /* define this next to create Windows DLL */   
@@ -150,9 +195,10 @@
 /* Hash IDs for supported EMSA3 hash functions. <hashIDlen>,<hash ID> */
 
 static unsigned char SHA160ID[]={15,0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0e,0x03,0x02,0x1a,0x05,0x00,0x04,0x14};
-static unsigned char SHA256ID[]={19,0x30,0x21,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x01,0x05,0x00,0x04,0x20};
-static unsigned char SHA384ID[]={19,0x30,0x21,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x02,0x05,0x00,0x04,0x30};
-static unsigned char SHA512ID[]={19,0x30,0x21,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x03,0x05,0x00,0x04,0x40};
+static unsigned char SHA256ID[]={19,0x30,0x31,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x01,0x05,0x00,0x04,0x20};
+static unsigned char SHA384ID[]={19,0x30,0x41,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x02,0x05,0x00,0x04,0x30};
+static unsigned char SHA512ID[]={19,0x30,0x51,0x30,0x0d,0x06,0x09,0x60,0x86,0x48,0x01,0x65,0x03,0x04,0x02,0x03,0x05,0x00,0x04,0x40};
+
 
 /* IDs for SHA1,RIPEMD,SHA256,SHA384 and SHA512 */
 /* NOTE ripemd is not implemented               */
@@ -252,6 +298,13 @@ P1363_API BOOL OCTET_INIT(octet *w,int bytes)
 #else
     return TRUE;
 #endif
+}
+
+P1363_API void OCTET_INIT_FROM_ARRAY(octet *w,int bytes,char *array)
+{
+	w->len=0;
+	w->max=bytes;
+	w->val=array;
 }
 
 /* clear an octet string */
@@ -402,31 +455,22 @@ P1363_API void OCTET_JOIN_OCTET(octet *x,octet *y)
 }
 
 /* OCTET_JOIN_LONG primitive */
-/* appends long x to OCTET string of length len */
-/* if more than len bytes required, string is increased > len */
+/* appends long x of length len bytes to OCTET string */
 
-P1363_API void OCTET_JOIN_LONG(long x, int len,octet *y)
-{
-   int i,j,n;
-   n=y->len+len;
-   if (n>y->max || len<=0) return;
-   for (i=y->len;i<n;i++) y->val[i]=0; 
-   y->len=n;
+P1363_API void OCTET_JOIN_LONG(long x, int len,octet *y) {
+    int i,j,n;
+    n=y->len+len;
+    if (n>y->max || len<=0) return;
+    for (i=y->len;i<n;i++) y->val[i]=0;
+    y->len=n;
 
-   i=len;
-   while (x>0)
-   {
-       if (i==0)
-       {
-           for (j=y->len;j>0;j--) y->val[j]=y->val[j-1];
-           y->len++;
-           if (y->len>y->max) break;
-           i=1;
-       }
-       i--;
-       y->val[i]=x%256;
-       x/=256;
-   }    
+    i=y->len;
+    while (x>0 && i>0)
+    {
+        i--;
+        y->val[i]=x%256;
+        x/=256;
+    }
 }
 
 /* Convert C string to octet format - truncates if no room  */
@@ -808,7 +852,7 @@ P1363_API BOOL EMSA3(octet *x,FILE *fp,int bits,int hash_type,octet *w)
     OCTET_JOIN_BYTE(0x01,1,w);
     OCTET_JOIN_BYTE(0xff,olen-hashIDlen-hlen-2,w);
     OCTET_JOIN_BYTE(0x00,1,w);
-    OCTET_JOIN_BYTES(idptr,hashIDlen,w);
+    OCTET_JOIN_BYTES((char *)idptr,hashIDlen,w);
     OCTET_JOIN_OCTET(&h,w);
 
     OCTET_KILL(&h);
@@ -1370,7 +1414,7 @@ P1363_API BOOL MAC1(octet *m,FILE *fp,octet *k,int olen,int hash_type,octet *tag
     if (k->len > b) hash(k,NULL,NULL,NULL,NULL,hash_type,&k0);
     else            OCTET_COPY(k,&k0);
 
-    OCTET_JOIN_BYTE(0,b-k->len,&k0);
+    OCTET_JOIN_BYTE(0,b-k0.len,&k0);
 
     OCTET_XOR_BYTE(&k0,0x36);
     hash(&k0,NULL,m,fp,NULL,hash_type,&h);
@@ -1523,9 +1567,10 @@ P1363_API void DL_DOMAIN_KILL(dl_domain *DOM)
     OCTET_KILL(&DOM->G);
     OCTET_KILL(&DOM->K);
     OCTET_KILL(&DOM->IK);
-
+#ifndef MR_STATIC
     if (DOM->PC.window!=0) 
-        brick_end(&DOM->PC);        
+        brick_end(&DOM->PC); 
+#endif
     DOM->words=DOM->fsize=0; DOM->H=DOM->rbits=0;
 }
 
@@ -1546,6 +1591,9 @@ P1363_API int DL_DOMAIN_INIT(dl_domain *DOM,char *fname,char **params,int precom
    * precompute is 0 for no precomputation, or else window size for Comb method */ 
     FILE *fp;
     BOOL tt1,fileinput=TRUE;
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+#endif
     miracl *mr_mip;
     big q,r,g,k;
     int bits,rbits,bytes,rbytes,err,res=0;
@@ -1570,15 +1618,19 @@ P1363_API int DL_DOMAIN_INIT(dl_domain *DOM,char *fname,char **params,int precom
         sscanf(params[0],"%d\n",&bits); 
 
     DOM->words=MR_ROUNDUP(bits,MIRACL);
-        
+#ifdef MR_GENERIC_AND_STATIC  
+	mr_mip=mirsys(&instance,MR_ROUNDUP(bits,4),16);
+#else
     mr_mip=mirsys(MR_ROUNDUP(bits,4),16);
-    if (mr_mip==NULL) 
+#endif
+	if (mr_mip==NULL) 
     {
         if (fileinput) fclose(fp);
         return MR_P1363_OUT_OF_MEMORY;
     }
+
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 4);
+    mem=(char *)memalloc(_MIPP_ 4);
     if (mem==NULL)
     {
         if (fileinput) fclose(fp);
@@ -1601,8 +1653,7 @@ P1363_API int DL_DOMAIN_INIT(dl_domain *DOM,char *fname,char **params,int precom
         {
             innum(_MIPP_ q,fp);
             innum(_MIPP_ r,fp);
-            innum(_MIPP_ g,fp);
-            
+            innum(_MIPP_ g,fp);  
             fclose(fp);
         }
         else
@@ -1614,7 +1665,7 @@ P1363_API int DL_DOMAIN_INIT(dl_domain *DOM,char *fname,char **params,int precom
          
         rbits=logb2(_MIPP_ r);       /* r is usually much smaller than q */
         rbytes=MR_ROUNDUP(rbits,8);
-        
+
         OCTET_INIT(&DOM->Q,bytes);
         OCTET_INIT(&DOM->R,rbytes);
         OCTET_INIT(&DOM->G,bytes);
@@ -1633,9 +1684,11 @@ P1363_API int DL_DOMAIN_INIT(dl_domain *DOM,char *fname,char **params,int precom
         xgcd(_MIPP_ k,r,k,k,k);
         convert_big_octet(_MIPP_ k,&DOM->IK);
         DOM->PC.window=0;
+#ifndef MR_STATIC
         if (precompute)
             brick_init(_MIPP_ &DOM->PC,g,q,precompute,logb2(_MIPP_ r));
-    }
+#endif
+	}
 #ifndef MR_STATIC
     memkill(_MIPP_ mem,4);
 #else
@@ -1656,7 +1709,12 @@ P1363_API int DL_DOMAIN_INIT(dl_domain *DOM,char *fname,char **params,int precom
 
 P1363_API int DL_DOMAIN_VALIDATE(BOOL (*idle)(void),dl_domain *DOM)
 { /* do domain checks - IEEE P1363 A16.2 */
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,g,t;
     int err,res=0;
 #ifndef MR_STATIC
@@ -1672,21 +1730,21 @@ P1363_API int DL_DOMAIN_VALIDATE(BOOL (*idle)(void),dl_domain *DOM)
     mr_mip->NTRY=50;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 4);
+    mem=(char *)memalloc(_MIPP_ 4);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
-    if (res==0)
+
+	if (res==0)
     {
         q=mirvar_mem(_MIPP_ mem,0);
         r=mirvar_mem(_MIPP_ mem,1);
         g=mirvar_mem(_MIPP_ mem,2);
         t=mirvar_mem(_MIPP_ mem,3);
-
         OS2FEP(_MIPP_ &DOM->Q,q);
         OS2FEP(_MIPP_ &DOM->R,r);
         OS2FEP(_MIPP_ &DOM->G,g);
         if (size(g)<2 || size(q)<=2 || size(r)<=2) res=MR_P1363_DOMAIN_ERROR; 
-        if (compare(g,q)>=0) res=MR_P1363_DOMAIN_ERROR;
+        if (mr_compare(g,q)>=0) res=MR_P1363_DOMAIN_ERROR;
     }
     if (res==0)
     {
@@ -1724,7 +1782,12 @@ P1363_API int DL_DOMAIN_VALIDATE(BOOL (*idle)(void),dl_domain *DOM)
 
 P1363_API int DL_KEY_PAIR_GENERATE(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG, octet *S,octet *W)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,g,s,w;
     int err,res=0;
 #ifndef MR_STATIC
@@ -1738,7 +1801,7 @@ P1363_API int DL_KEY_PAIR_GENERATE(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 5);
+    mem=(char *)memalloc(_MIPP_ 5);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -1787,7 +1850,12 @@ P1363_API int DL_KEY_PAIR_GENERATE(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG
 
 P1363_API int DL_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),dl_domain *DOM,BOOL full,octet *W)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,w,t;
     int err,res=0;
 #ifndef MR_STATIC
@@ -1801,7 +1869,7 @@ P1363_API int DL_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),dl_domain *DOM,BOOL full
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 4);
+    mem=(char *)memalloc(_MIPP_ 4);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -1814,7 +1882,7 @@ P1363_API int DL_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),dl_domain *DOM,BOOL full
         OS2FEP(_MIPP_ &DOM->Q,q);
         OS2FEP(_MIPP_ &DOM->R,r);
         OS2FEP(_MIPP_ W,w);
-        if (size(w)<2 || compare(w,q)>=0) res=MR_P1363_INVALID_PUBLIC_KEY;
+        if (size(w)<2 || mr_compare(w,q)>=0) res=MR_P1363_INVALID_PUBLIC_KEY;
     }
     if (res==0 && full) 
     {
@@ -1839,7 +1907,12 @@ P1363_API int DL_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),dl_domain *DOM,BOOL full
 
 P1363_API int DLSVDP_DH(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *WD,octet *Z) 
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,s,wd,z;
     int err,res=0;
 #ifndef MR_STATIC
@@ -1853,7 +1926,7 @@ P1363_API int DLSVDP_DH(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *WD,oct
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 4);
+    mem=(char *)memalloc(_MIPP_ 4);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -1887,7 +1960,12 @@ P1363_API int DLSVDP_DH(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *WD,oct
 
 P1363_API int DLSVDP_DHC(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *WD,BOOL compatible,octet *Z)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,k,ik,s,wd,t,z;
     int sz;
     int err,res=0;
@@ -1903,7 +1981,7 @@ P1363_API int DLSVDP_DHC(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *WD,BO
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 8);
+    mem=(char *)memalloc(_MIPP_ 8);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -1951,7 +2029,12 @@ P1363_API int DLSVDP_DHC(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *WD,BO
 
 P1363_API int DLSVDP_MQV(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,octet *V,octet *WD,octet *VD,octet *Z)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     int h;
     int err,res=0;
     big q,r,s,u,v,wd,vd,e,t,td,z;
@@ -1966,7 +2049,7 @@ P1363_API int DLSVDP_MQV(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,oct
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 11);
+    mem=(char *)memalloc(_MIPP_ 11);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2024,7 +2107,12 @@ P1363_API int DLSVDP_MQV(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,oct
 
 P1363_API int DLSVDP_MQVC(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,octet *V,octet *WD,octet *VD,BOOL compatible,octet *Z)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     int sz,h;
     big q,r,s,u,v,wd,vd,e,t,td,z,k,ik;
     int err,res=0;
@@ -2039,7 +2127,7 @@ P1363_API int DLSVDP_MQVC(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,oc
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 13);
+    mem=(char *)memalloc(_MIPP_ 13);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2107,7 +2195,12 @@ P1363_API int DLSVDP_MQVC(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,oc
 
 P1363_API int DLVP_NR(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet *D,octet *F)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,g,w,f,c,d;
     int err,res=0;
 #ifndef MR_STATIC
@@ -2121,7 +2214,7 @@ P1363_API int DLVP_NR(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet 
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 7);
+    mem=(char *)memalloc(_MIPP_ 7);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2140,7 +2233,7 @@ P1363_API int DLVP_NR(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet 
         OS2FEP(_MIPP_ W,w);
         OS2FEP(_MIPP_ C,c);
         OS2FEP(_MIPP_ D,d);
-        if (size(c)<1 || compare(c,r)>=0 || size(d)<0 || compare(d,r)>=0) 
+        if (size(c)<1 || mr_compare(c,r)>=0 || size(d)<0 || mr_compare(d,r)>=0) 
             res=MR_P1363_INVALID;
     }
     if (res==0)
@@ -2166,7 +2259,12 @@ P1363_API int DLVP_NR(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet 
 
 P1363_API int DLSP_NR(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG,octet *S,octet *F,octet *C,octet *D)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,g,s,f,c,d,u,v;
     int err,res=0;
 #ifndef MR_STATIC
@@ -2180,7 +2278,7 @@ P1363_API int DLSP_NR(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG,octet *S,oct
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 9);
+    mem=(char *)memalloc(_MIPP_ 9);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2200,7 +2298,7 @@ P1363_API int DLSP_NR(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG,octet *S,oct
         OS2FEP(_MIPP_ &DOM->G,g);
         OS2FEP(_MIPP_ S,s);
         OS2FEP(_MIPP_ F,f);
-        if (compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (mr_compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
     }
     if (res==0)
     {
@@ -2241,7 +2339,12 @@ P1363_API int DLSP_NR(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG,octet *S,oct
 
 P1363_API int DLVP_DSA(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet *D,octet *F)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,g,w,f,c,d,h2;
     int err,res=0;
 #ifndef MR_STATIC
@@ -2255,7 +2358,7 @@ P1363_API int DLVP_DSA(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 8);
+    mem=(char *)memalloc(_MIPP_ 8);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2276,7 +2379,7 @@ P1363_API int DLVP_DSA(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet
         OS2FEP(_MIPP_ C,c);
         OS2FEP(_MIPP_ D,d);
         OS2FEP(_MIPP_ F,f);
-        if (size(c)<1 || size(d)<1 || compare(c,r)>=0 || compare(d,r)>=0) 
+        if (size(c)<1 || size(d)<1 || mr_compare(c,r)>=0 || mr_compare(d,r)>=0) 
             res=MR_P1363_INVALID;
     }
     if (res==0)
@@ -2286,7 +2389,7 @@ P1363_API int DLVP_DSA(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet
         mad(_MIPP_ c,d,c,r,r,h2);
         powmod2(_MIPP_ g,f,w,h2,q,d);
         divide(_MIPP_ d,r,r);
-        if (compare(d,c)!=0) res=MR_P1363_INVALID;
+        if (mr_compare(d,c)!=0) res=MR_P1363_INVALID;
     }
 #ifndef MR_STATIC
     memkill(_MIPP_ mem,8);
@@ -2303,7 +2406,12 @@ P1363_API int DLVP_DSA(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet
 
 P1363_API int DLSP_DSA(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG,octet *S,octet *F,octet *C,octet *D)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,g,s,f,c,d,u,v;
     int err,res=0;
 #ifndef MR_STATIC
@@ -2317,7 +2425,7 @@ P1363_API int DLSP_DSA(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG,octet *S,oc
     mr_mip->ERCON=FALSE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 9);
+    mem=(char *)memalloc(_MIPP_ 9);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2375,7 +2483,12 @@ P1363_API int DLSP_DSA(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG,octet *S,oc
 
 P1363_API int DLPSP_NR2PV(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG,octet *U,octet *V)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,g,u,v;
     int err,res=0;
 #ifndef MR_STATIC
@@ -2389,7 +2502,7 @@ P1363_API int DLPSP_NR2PV(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG,octet *U
     mr_mip->ERCON=FALSE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 5);
+    mem=(char *)memalloc(_MIPP_ 5);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2428,7 +2541,12 @@ P1363_API int DLPSP_NR2PV(BOOL (*idle)(void),dl_domain *DOM,csprng *RNG,octet *U
 
 P1363_API int DLSP_NR2(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,octet *V,octet *F,octet *C,octet *D)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,u,v,c,d,s,f;
     int err,res=0;
 #ifndef MR_STATIC
@@ -2441,7 +2559,7 @@ P1363_API int DLSP_NR2(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,octet
     mr_mip->ERCON=FALSE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 8);
+    mem=(char *)memalloc(_MIPP_ 8);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2461,9 +2579,9 @@ P1363_API int DLSP_NR2(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,octet
         OS2FEP(_MIPP_ F,f);
         OS2FEP(_MIPP_ U,u);
         OS2FEP(_MIPP_ V,v);
-        if (compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
-        if (size(u)<1 || compare(u,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
-        if (size(v)<1 || compare(v,q)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (mr_compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (size(u)<1 || mr_compare(u,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (size(v)<1 || mr_compare(v,q)>=0) res=MR_P1363_BAD_ASSUMPTION;
     }
 
     if (res==0)
@@ -2498,7 +2616,12 @@ P1363_API int DLSP_NR2(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,octet
 
 P1363_API int DLVP_NR2(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet *D,octet *F,octet *V)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,g,c,d,w,f,v;
     int err,res=0;
 #ifndef MR_STATIC
@@ -2512,7 +2635,7 @@ P1363_API int DLVP_NR2(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet
     mr_mip->ERCON=FALSE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 8);
+    mem=(char *)memalloc(_MIPP_ 8);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2532,7 +2655,7 @@ P1363_API int DLVP_NR2(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet
         OS2FEP(_MIPP_ W,w);
         OS2FEP(_MIPP_ C,c);
         OS2FEP(_MIPP_ D,d);
-        if (size(c)<1 || compare(c,r)>=0 || compare(d,r)>=0) res=MR_P1363_INVALID;
+        if (size(c)<1 || mr_compare(c,r)>=0 || mr_compare(d,r)>=0) res=MR_P1363_INVALID;
     }
 
     if (res==0)
@@ -2560,7 +2683,12 @@ P1363_API int DLVP_NR2(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *C,octet
 
 P1363_API int DLSP_PV(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,octet *H,octet *D)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,h,u,d,s;
     int err,res=0;
 #ifndef MR_STATIC
@@ -2574,7 +2702,7 @@ P1363_API int DLSP_PV(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,octet 
     mr_mip->ERCON=FALSE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 6);
+    mem=(char *)memalloc(_MIPP_ 6);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2591,7 +2719,7 @@ P1363_API int DLSP_PV(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,octet 
         OS2FEP(_MIPP_ S,s);
         OS2FEP(_MIPP_ U,u);
         OS2FEP(_MIPP_ H,h);
-        if (compare(u,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (mr_compare(u,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
     }
 
     if (res==0)
@@ -2619,7 +2747,12 @@ P1363_API int DLSP_PV(BOOL (*idle)(void),dl_domain *DOM,octet *S,octet *U,octet 
 
 P1363_API int DLVP_PV(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *H,octet *D,octet *V)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,g,d,w,h,v;
     int err,res=0;
 #ifndef MR_STATIC
@@ -2633,7 +2766,7 @@ P1363_API int DLVP_PV(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *H,octet 
     mr_mip->ERCON=FALSE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 7);
+    mem=(char *)memalloc(_MIPP_ 7);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2652,7 +2785,7 @@ P1363_API int DLVP_PV(BOOL (*idle)(void),dl_domain *DOM,octet *W,octet *H,octet 
         OS2FEP(_MIPP_ W,w);
         OS2FEP(_MIPP_ D,d);
         OS2FEP(_MIPP_ H,h);
-        if (compare(d,r)>=0) res=MR_P1363_INVALID;
+        if (mr_compare(d,r)>=0) res=MR_P1363_INVALID;
     }
 
     if (res==0)
@@ -2686,9 +2819,10 @@ P1363_API void ECP_DOMAIN_KILL(ecp_domain *DOM)
     OCTET_KILL(&DOM->Gy);
     OCTET_KILL(&DOM->K);
     OCTET_KILL(&DOM->IK);
-
+#ifndef MR_STATIC
     if (DOM->PC.window!=0) 
         ebrick_end(&DOM->PC);  
+#endif
     DOM->words=DOM->fsize=0; DOM->H=DOM->rbits=0;
 }
 
@@ -2708,6 +2842,9 @@ P1363_API int ECP_DOMAIN_INIT(ecp_domain *DOM,char *fname,char **params,int prec
   /* return max. size in bytes of octet strings */
   /* precompute is 0 for no precomputation, or else window size for Comb method */ 
     FILE *fp;
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+#endif
     miracl *mr_mip;
     BOOL fileinput=TRUE;
     big q,r,gx,gy,a,b,k;
@@ -2732,16 +2869,19 @@ P1363_API int ECP_DOMAIN_INIT(ecp_domain *DOM,char *fname,char **params,int prec
         sscanf(params[0],"%d\n",&bits);
     
     DOM->words=MR_ROUNDUP(bits,MIRACL);
-
+#ifdef MR_GENERIC_AND_STATIC
+	mr_mip=mirsys(&instance,MR_ROUNDUP(bits,4),16);
+#else
     mr_mip=mirsys(MR_ROUNDUP(bits,4),16);
-    if (mr_mip==NULL) 
+#endif
+	if (mr_mip==NULL) 
     {
         if (fileinput) fclose(fp);
         return MR_P1363_OUT_OF_MEMORY;
     }
     mr_mip->ERCON=TRUE;
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 7);
+    mem=(char *)memalloc(_MIPP_ 7);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2804,12 +2944,15 @@ P1363_API int ECP_DOMAIN_INIT(ecp_domain *DOM,char *fname,char **params,int prec
         convert_big_octet(_MIPP_ r,&DOM->R);
         convert_big_octet(_MIPP_ gx,&DOM->Gx);
         convert_big_octet(_MIPP_ gy,&DOM->Gy);
+
         convert_big_octet(_MIPP_ k,&DOM->K);
         xgcd(_MIPP_ k,r,k,k,k);
         convert_big_octet(_MIPP_ k,&DOM->IK);
         DOM->PC.window=0;
+#ifndef MR_STATIC
         if (precompute) ebrick_init(_MIPP_ &DOM->PC,gx,gy,a,b,q,precompute,logb2(_MIPP_ r));
-    }
+#endif
+	}
 #ifndef MR_STATIC
     memkill(_MIPP_ mem,7);
 #else
@@ -2829,7 +2972,12 @@ P1363_API int ECP_DOMAIN_INIT(ecp_domain *DOM,char *fname,char **params,int prec
 
 P1363_API int ECP_DOMAIN_VALIDATE(BOOL (*idle)(void),ecp_domain *DOM)
 { /* do domain checks - A16.8 */
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,r,gx,gy,t,w;
     epoint *G;
     int i,err,res=0;
@@ -2849,9 +2997,9 @@ P1363_API int ECP_DOMAIN_VALIDATE(BOOL (*idle)(void),ecp_domain *DOM)
     mr_mip->NTRY=50;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 8);
+    mem=(char *)memalloc(_MIPP_ 8);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 1);
+    mem1=(char *)ecp_memalloc(_MIPP_ 1);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -2875,11 +3023,12 @@ P1363_API int ECP_DOMAIN_VALIDATE(BOOL (*idle)(void),ecp_domain *DOM)
         nroot(_MIPP_ q,2,t);
         premult(_MIPP_ t,4,t);
 
-        if (compare(r,t)<=0) res=MR_P1363_DOMAIN_ERROR;
-        if (compare(b,q)>=0) res=MR_P1363_DOMAIN_ERROR; 
-        if (compare(r,q)==0) res=MR_P1363_DOMAIN_ERROR;
+        if (mr_compare(r,t)<=0) res=MR_P1363_DOMAIN_ERROR;
+        if (mr_compare(b,q)>=0) res=MR_P1363_DOMAIN_ERROR; 
+        if (mr_compare(r,q)==0) res=MR_P1363_DOMAIN_ERROR;
         if (size(r)<3 || size(q)<3) res=MR_P1363_DOMAIN_ERROR;
     }
+
     if (res==0)
     {
         gprime(_MIPP_ 10000);
@@ -2909,8 +3058,10 @@ P1363_API int ECP_DOMAIN_VALIDATE(BOOL (*idle)(void),ecp_domain *DOM)
     {
         ecurve_init(_MIPP_ a,b,q,MR_AFFINE);   
         G=epoint_init_mem(_MIPP_ mem1,0);
+
         if (!epoint_set(_MIPP_ gx,gy,0,G)) res=MR_P1363_DOMAIN_ERROR;
-        if (G->marker==MR_EPOINT_INFINITY) res=MR_P1363_DOMAIN_ERROR;
+
+		if (G->marker==MR_EPOINT_INFINITY) res=MR_P1363_DOMAIN_ERROR;
         else
         {
             ecurve_mult(_MIPP_ r,G,G);
@@ -2954,7 +3105,12 @@ P1363_API int ECP_DOMAIN_VALIDATE(BOOL (*idle)(void),ecp_domain *DOM)
 
 P1363_API int ECP_KEY_PAIR_GENERATE(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet* S,BOOL compress,octet *W)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,r,gx,gy,s,wx,wy;
     epoint *G,*WP;
     int bit,err,res=0;
@@ -2972,9 +3128,9 @@ P1363_API int ECP_KEY_PAIR_GENERATE(BOOL (*idle)(void),ecp_domain *DOM,csprng *R
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 9);
+    mem=(char *)memalloc(_MIPP_ 9);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 2);
+    mem1=(char *)ecp_memalloc(_MIPP_ 2);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -3041,7 +3197,12 @@ P1363_API int ECP_KEY_PAIR_GENERATE(BOOL (*idle)(void),ecp_domain *DOM,csprng *R
 
 P1363_API int ECP_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),ecp_domain *DOM,BOOL full,octet *W)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,r,wx,wy;
     epoint *WP;
     BOOL valid,compressed;
@@ -3060,9 +3221,9 @@ P1363_API int ECP_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),ecp_domain *DOM,BOOL fu
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 6);
+    mem=(char *)memalloc(_MIPP_ 6);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 1);
+    mem1=(char *)ecp_memalloc(_MIPP_ 1);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -3081,7 +3242,7 @@ P1363_API int ECP_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),ecp_domain *DOM,BOOL fu
 
         compressed=OS2ECP(_MIPP_ W,wx,wy,DOM->fsize,&bit);
         if (W->len<DOM->fsize+1 || W->len>2*DOM->fsize+1) res=MR_P1363_INVALID_PUBLIC_KEY;
-        if (compare(wx,q)>=0 || compare (wy,q)>=0) res=MR_P1363_INVALID_PUBLIC_KEY; 
+        if (mr_compare(wx,q)>=0 || mr_compare (wy,q)>=0) res=MR_P1363_INVALID_PUBLIC_KEY; 
     }
     if (res==0)
     {
@@ -3121,7 +3282,12 @@ P1363_API int ECP_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),ecp_domain *DOM,BOOL fu
 
 P1363_API int ECPSVDP_DH(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *WD,octet *Z)    
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,s,wx,wy,z;
     BOOL valid,compressed;
     epoint *W;
@@ -3140,9 +3306,9 @@ P1363_API int ECPSVDP_DH(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *WD,o
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 7);
+    mem=(char *)memalloc(_MIPP_ 7);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 1);
+    mem1=(char *)ecp_memalloc(_MIPP_ 1);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -3197,7 +3363,12 @@ P1363_API int ECPSVDP_DH(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *WD,o
 
 P1363_API int ECPSVDP_DHC(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *WD,BOOL compatible,octet *Z)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,r,s,wx,wy,z,k,ik,t;
     BOOL compressed,valid;
     epoint *W;
@@ -3216,9 +3387,9 @@ P1363_API int ECPSVDP_DHC(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *WD,
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 11);
+    mem=(char *)memalloc(_MIPP_ 11);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 1);
+    mem1=(char *)ecp_memalloc(_MIPP_ 1);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -3289,7 +3460,12 @@ P1363_API int ECPSVDP_DHC(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *WD,
 
 P1363_API int ECPSVDP_MQV(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,octet *V,octet *WD,octet *VD,octet *Z)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,r,s,u,vx,wdx,wdy,vdx,vdy,z,e,t,td;
     epoint *P,*WDP,*VDP;
     BOOL compressed,valid;
@@ -3308,9 +3484,9 @@ P1363_API int ECPSVDP_MQV(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,o
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 15);
+    mem=(char *)memalloc(_MIPP_ 15);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -3400,10 +3576,14 @@ P1363_API int ECPSVDP_MQV(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,o
     return res;
 }
 
-P1363_API int ECPSVDP_MQVC(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet 
-*U,octet *V,octet *WD,octet *VD,BOOL compatible,octet *Z)
+P1363_API int ECPSVDP_MQVC(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,octet *V,octet *WD,octet *VD,BOOL compatible,octet *Z)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,r,s,u,vx,wdx,wdy,vdx,vdy,z,e,t,td,k,ik;
     epoint *P,*WDP,*VDP;
     BOOL compressed,valid;
@@ -3422,9 +3602,9 @@ P1363_API int ECPSVDP_MQVC(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 17);
+    mem=(char *)memalloc(_MIPP_ 17);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -3525,7 +3705,12 @@ P1363_API int ECPSVDP_MQVC(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet
 
 P1363_API int ECPSP_NR(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet *S,octet *F,octet *C,octet *D)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,gx,gy,r,s,f,c,d,u,vx;
     epoint *G,*V;
     int err,res=0;
@@ -3542,9 +3727,9 @@ P1363_API int ECPSP_NR(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet *S,o
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 12);
+    mem=(char *)memalloc(_MIPP_ 12);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 2);
+    mem1=(char *)ecp_memalloc(_MIPP_ 2);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -3570,7 +3755,7 @@ P1363_API int ECPSP_NR(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet *S,o
         OS2FEP(_MIPP_ &DOM->A,a);
         OS2FEP(_MIPP_ S,s);
         OS2FEP(_MIPP_ F,f);
-        if (compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (mr_compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
     }
     if (res==0)
     {
@@ -3624,7 +3809,12 @@ P1363_API int ECPSP_NR(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet *S,o
 
 P1363_API int ECPVP_NR(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,octet *D,octet *F)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,a,b,gx,gy,wx,wy,f,c,d;
     int bit,err,res=0;
     epoint *G,*WP,*P;
@@ -3642,9 +3832,9 @@ P1363_API int ECPVP_NR(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,octe
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 11);
+    mem=(char *)memalloc(_MIPP_ 11);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -3669,7 +3859,7 @@ P1363_API int ECPVP_NR(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,octe
         OS2FEP(_MIPP_ &DOM->B,b);
         OS2FEP(_MIPP_ C,c);
         OS2FEP(_MIPP_ D,d);
-        if (size(c)<1 || compare(c,r)>=0 || size(d)<0 || compare(d,r)>=0) 
+        if (size(c)<1 || mr_compare(c,r)>=0 || size(d)<0 || mr_compare(d,r)>=0) 
             res=MR_P1363_INVALID;
     }
 
@@ -3718,7 +3908,12 @@ P1363_API int ECPVP_NR(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,octe
 
 P1363_API int ECPPSP_NR2PV(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet *U,octet *V)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,gx,gy,r,u,vx;
     epoint *G,*VP;
     int err,res=0;
@@ -3735,9 +3930,9 @@ P1363_API int ECPPSP_NR2PV(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet 
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 8);
+    mem=(char *)memalloc(_MIPP_ 8);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 2);
+    mem1=(char *)ecp_memalloc(_MIPP_ 2);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -3794,7 +3989,12 @@ P1363_API int ECPPSP_NR2PV(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet 
 
 P1363_API int ECPSP_NR2(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,octet *V,octet *F,octet *C,octet *D)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,u,v,s,c,d,f;
     int err,res=0;
 #ifndef MR_STATIC
@@ -3807,7 +4007,7 @@ P1363_API int ECPSP_NR2(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,oct
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 8);
+    mem=(char *)memalloc(_MIPP_ 8);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -3827,9 +4027,9 @@ P1363_API int ECPSP_NR2(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,oct
         OS2FEP(_MIPP_ F,f);
         OS2FEP(_MIPP_ U,u);
         OS2FEP(_MIPP_ V,v);
-        if (size(u)<1 || compare(u,r)>=0)  res=MR_P1363_BAD_ASSUMPTION;
-        if (size(v)<1 || compare(v,q)>=0) res=MR_P1363_BAD_ASSUMPTION;  
-        if (compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION; 
+        if (size(u)<1 || mr_compare(u,r)>=0)  res=MR_P1363_BAD_ASSUMPTION;
+        if (size(v)<1 || mr_compare(v,q)>=0) res=MR_P1363_BAD_ASSUMPTION;  
+        if (mr_compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION; 
     }
     if (res==0)
     {
@@ -3863,7 +4063,12 @@ P1363_API int ECPSP_NR2(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,oct
 
 P1363_API int ECPVP_NR2(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,octet *D,octet *F,octet *V)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,a,b,gx,gy,v,wx,wy,c,d,f;
     epoint *G,*WP,*P;
     BOOL compressed,valid;
@@ -3881,9 +4086,9 @@ P1363_API int ECPVP_NR2(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,oct
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 12);
+    mem=(char *)memalloc(_MIPP_ 12);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -3909,7 +4114,7 @@ P1363_API int ECPVP_NR2(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,oct
         OS2FEP(_MIPP_ &DOM->A,a);
         OS2FEP(_MIPP_ C,c);
         OS2FEP(_MIPP_ D,d);
-        if (size(c)<1 || compare(c,r)>=0 || compare(d,r)>=0) res=MR_P1363_INVALID;
+        if (size(c)<1 || mr_compare(c,r)>=0 || mr_compare(d,r)>=0) res=MR_P1363_INVALID;
     }
     if (res==0)
     {
@@ -3958,7 +4163,12 @@ P1363_API int ECPVP_NR2(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,oct
 
 P1363_API int ECPSP_PV(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,octet *H,octet *D)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,u,s,d,h;
     int err,res=0;
 #ifndef MR_STATIC
@@ -3971,7 +4181,7 @@ P1363_API int ECPSP_PV(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,octe
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 6);
+    mem=(char *)memalloc(_MIPP_ 6);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -3988,7 +4198,7 @@ P1363_API int ECPSP_PV(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,octe
         OS2FEP(_MIPP_ S,s);
         OS2FEP(_MIPP_ U,u);
         OS2FEP(_MIPP_ H,h);
-        if (size(u)<1 || compare(u,r)>=0)  res=MR_P1363_BAD_ASSUMPTION;
+        if (size(u)<1 || mr_compare(u,r)>=0)  res=MR_P1363_BAD_ASSUMPTION;
     }
 
     if (res==0)
@@ -4016,7 +4226,12 @@ P1363_API int ECPSP_PV(BOOL (*idle)(void),ecp_domain *DOM,octet *S,octet *U,octe
 
 P1363_API int ECPVP_PV(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *H,octet *D,octet *V)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,a,b,gx,gy,v,wx,wy,d,h;
     epoint *G,*WP,*P;
     BOOL compressed,valid;
@@ -4034,9 +4249,9 @@ P1363_API int ECPVP_PV(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *H,octe
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 11);
+    mem=(char *)memalloc(_MIPP_ 11);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -4061,7 +4276,7 @@ P1363_API int ECPVP_PV(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *H,octe
         OS2FEP(_MIPP_ &DOM->A,a);
         OS2FEP(_MIPP_ H,h);
         OS2FEP(_MIPP_ D,d);
-        if (compare(d,r)>=0) res=MR_P1363_INVALID;
+        if (mr_compare(d,r)>=0) res=MR_P1363_INVALID;
     }
     if (res==0)
     {
@@ -4105,7 +4320,12 @@ P1363_API int ECPVP_PV(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *H,octe
 
 P1363_API int ECPSP_DSA(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet *S,octet *F,octet *C,octet *D)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,gx,gy,r,s,f,c,d,u,vx;
     epoint *G,*V;
     int err,res=0;
@@ -4122,9 +4342,9 @@ P1363_API int ECPSP_DSA(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet *S,
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 12);
+    mem=(char *)memalloc(_MIPP_ 12);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 2);
+    mem1=(char *)ecp_memalloc(_MIPP_ 2);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -4200,7 +4420,12 @@ P1363_API int ECPSP_DSA(BOOL (*idle)(void),ecp_domain *DOM,csprng *RNG,octet *S,
 
 P1363_API int ECPVP_DSA(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,octet *D,octet *F)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,r,a,b,gx,gy,wx,wy,f,c,d,h2;
     int bit,err,res=0;
     epoint *G,*WP,*P;
@@ -4218,9 +4443,9 @@ P1363_API int ECPVP_DSA(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,oct
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 12);
+    mem=(char *)memalloc(_MIPP_ 12);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -4247,7 +4472,7 @@ P1363_API int ECPVP_DSA(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,oct
         OS2FEP(_MIPP_ C,c);
         OS2FEP(_MIPP_ D,d);
         OS2FEP(_MIPP_ F,f);
-        if (size(c)<1 || compare(c,r)>=0 || size(d)<1 || compare(d,r)>=0) 
+        if (size(c)<1 || mr_compare(c,r)>=0 || size(d)<1 || mr_compare(d,r)>=0) 
             res=MR_P1363_INVALID;
     }
 
@@ -4276,7 +4501,7 @@ P1363_API int ECPVP_DSA(BOOL (*idle)(void),ecp_domain *DOM,octet *W,octet *C,oct
             {
                 epoint_get(_MIPP_ P,d,d);
                 divide(_MIPP_ d,r,r);
-                if (compare(d,c)!=0) res=MR_P1363_INVALID;
+                if (mr_compare(d,c)!=0) res=MR_P1363_INVALID;
             }
         }
     }
@@ -4308,9 +4533,10 @@ P1363_API void EC2_DOMAIN_KILL(ec2_domain *DOM)
     OCTET_KILL(&DOM->Gy);
     OCTET_KILL(&DOM->K);
     OCTET_KILL(&DOM->IK);
-
+#ifndef MR_STATIC
     if (DOM->PC.window!=0) 
-        ebrick2_end(&DOM->PC);        
+        ebrick2_end(&DOM->PC);   
+#endif
 
     DOM->words=DOM->fsize=0; DOM->H=DOM->rbits=0;
     DOM->a=0; DOM->b=0; DOM->c=0;
@@ -4331,6 +4557,9 @@ P1363_API int EC2_DOMAIN_INIT(ec2_domain *DOM,char *fname,char **params,int prec
   /* If input from a file, params=NULL, if input from strings, fname=NULL  */
   /* return max. size in bytes of octet strings */
     FILE *fp;
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+#endif
     miracl *mr_mip;
     BOOL fileinput=TRUE;
     big q,r,gx,gy,a,b,k;
@@ -4353,17 +4582,20 @@ P1363_API int EC2_DOMAIN_INIT(ec2_domain *DOM,char *fname,char **params,int prec
     else
         sscanf(params[0],"%d\n",&bits);
 
-    DOM->words=MR_ROUNDUP(bits,MIRACL);
-
-    mr_mip=mirsys(MR_ROUNDUP(bits,4),16);
-    if (mr_mip==NULL) 
+    DOM->words=MR_ROUNDUP(mr_abs(bits),MIRACL);
+#ifdef MR_GENERIC_AND_STATIC
+	mr_mip=mirsys(&instance,MR_ROUNDUP(mr_abs(bits),4),16);
+#else
+    mr_mip=mirsys(MR_ROUNDUP(mr_abs(bits),4),16);
+#endif
+	if (mr_mip==NULL) 
     {
         if (fileinput) fclose(fp);
         return MR_P1363_OUT_OF_MEMORY;
     }
     mr_mip->ERCON=TRUE;
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 7);
+    mem=(char *)memalloc(_MIPP_ 7);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -4376,7 +4608,7 @@ P1363_API int EC2_DOMAIN_INIT(ec2_domain *DOM,char *fname,char **params,int prec
         b=mirvar_mem(_MIPP_ mem, 5);
         k=mirvar_mem(_MIPP_ mem, 6);
 
-        bytes=MR_ROUNDUP(bits,8);
+        bytes=MR_ROUNDUP(mr_abs(bits),8);
 
         if (fileinput)
         {
@@ -4414,7 +4646,7 @@ P1363_API int EC2_DOMAIN_INIT(ec2_domain *DOM,char *fname,char **params,int prec
         DOM->fsize=bytes;
         DOM->rbits=rbits; 
         DOM->a=aa; DOM->b=bb; DOM->c=cc;
-        expb2(_MIPP_ bits,q);    /* q=2^m */
+        expb2(_MIPP_ mr_abs(bits),q);    /* q=2^m */
 
         nroot(_MIPP_ q,2,k);
         premult(_MIPP_ k,2,k);
@@ -4433,9 +4665,11 @@ P1363_API int EC2_DOMAIN_INIT(ec2_domain *DOM,char *fname,char **params,int prec
         convert_big_octet(_MIPP_ k,&DOM->IK);
 
         DOM->PC.window=0;
+#ifndef MR_STATIC
         if (precompute) 
             ebrick2_init(_MIPP_ &DOM->PC,gx,gy,a,b,bits,aa,bb,cc,precompute,logb2(_MIPP_ r));
-    }
+#endif
+	}
 #ifndef MR_STATIC
     memkill(_MIPP_ mem,7);
 #else
@@ -4455,7 +4689,12 @@ P1363_API int EC2_DOMAIN_INIT(ec2_domain *DOM,char *fname,char **params,int prec
 
 P1363_API int EC2_DOMAIN_VALIDATE(BOOL (*idle)(void),ec2_domain *DOM)
 { /* do domain checks - A16.8 */
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big q,a,b,r,gx,gy,t;
     epoint *G;
     int i,aa,bb,cc,err,res=0;
@@ -4474,9 +4713,9 @@ P1363_API int EC2_DOMAIN_VALIDATE(BOOL (*idle)(void),ec2_domain *DOM)
     mr_mip->NTRY=50;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 7);
+    mem=(char *)memalloc(_MIPP_ 7);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 1);
+    mem1=(char *)ecp_memalloc(_MIPP_ 1);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -4502,7 +4741,7 @@ P1363_API int EC2_DOMAIN_VALIDATE(BOOL (*idle)(void),ec2_domain *DOM)
         nroot(_MIPP_ q,2,t);
         premult(_MIPP_ t,4,t);
 
-        if (compare(r,t)<=0) res=MR_P1363_DOMAIN_ERROR;
+        if (mr_compare(r,t)<=0) res=MR_P1363_DOMAIN_ERROR;
         if (size(r)<3 || size(b)==0) res=MR_P1363_DOMAIN_ERROR;
     }
 
@@ -4562,7 +4801,12 @@ P1363_API int EC2_DOMAIN_VALIDATE(BOOL (*idle)(void),ec2_domain *DOM)
 
 P1363_API int EC2_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),ec2_domain *DOM,BOOL full,octet *W)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big a,b,r,wx,wy;
     epoint *WP;
     BOOL compressed,valid;
@@ -4580,9 +4824,9 @@ P1363_API int EC2_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),ec2_domain *DOM,BOOL fu
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 5);
+    mem=(char *)memalloc(_MIPP_ 5);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 1);
+    mem1=(char *)ecp_memalloc(_MIPP_ 1);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -4645,7 +4889,12 @@ P1363_API int EC2_PUBLIC_KEY_VALIDATE(BOOL (*idle)(void),ec2_domain *DOM,BOOL fu
 
 P1363_API int EC2_KEY_PAIR_GENERATE(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet*S,BOOL compress,octet *W)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big a,b,r,gx,gy,s,wx,wy;
     epoint *G,*WP;
     int M,aa,bb,cc;
@@ -4663,9 +4912,9 @@ P1363_API int EC2_KEY_PAIR_GENERATE(BOOL (*idle)(void),ec2_domain *DOM,csprng *R
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 8);
+    mem=(char *)memalloc(_MIPP_ 8);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 2);
+    mem1=(char *)ecp_memalloc(_MIPP_ 2);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -4737,7 +4986,12 @@ P1363_API int EC2_KEY_PAIR_GENERATE(BOOL (*idle)(void),ec2_domain *DOM,csprng *R
 
 P1363_API int EC2SVDP_DH(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *WD,octet *Z)    
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big a,b,s,wx,wy,z;
     BOOL compress,valid;
     epoint *WP;
@@ -4755,9 +5009,9 @@ P1363_API int EC2SVDP_DH(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *WD,o
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 6);
+    mem=(char *)memalloc(_MIPP_ 6);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 1);
+    mem1=(char *)ecp_memalloc(_MIPP_ 1);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -4816,7 +5070,12 @@ P1363_API int EC2SVDP_DH(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *WD,o
 
 P1363_API int EC2SVDP_DHC(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *WD,BOOL compatible,octet *Z)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big a,b,r,s,wx,wy,z,k,ik,t;
     BOOL compress,valid;
     epoint *WP;
@@ -4834,9 +5093,9 @@ P1363_API int EC2SVDP_DHC(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *WD,
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 10);
+    mem=(char *)memalloc(_MIPP_ 10);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 1);
+    mem1=(char *)ecp_memalloc(_MIPP_ 1);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -4907,7 +5166,12 @@ P1363_API int EC2SVDP_DHC(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *WD,
 
 P1363_API int EC2SVDP_MQV(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,octet *V,octet *WD,octet *VD,octet *Z)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big a,b,r,s,u,vx,wdx,wdy,vdx,vdy,z,e,t,td;
     epoint *P,*WDP,*VDP;
     BOOL compress,valid;
@@ -4925,9 +5189,9 @@ P1363_API int EC2SVDP_MQV(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,o
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 14);
+    mem=(char *)memalloc(_MIPP_ 14);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -5019,7 +5283,12 @@ P1363_API int EC2SVDP_MQV(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,o
 
 P1363_API int EC2SVDP_MQVC(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,octet *V,octet *WD,octet *VD,BOOL compatible,octet *Z)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big a,b,r,s,u,vx,wdx,wdy,vdx,vdy,z,e,t,td,k,ik;
     epoint *P,*WDP,*VDP;
     BOOL compress,valid;
@@ -5037,9 +5306,9 @@ P1363_API int EC2SVDP_MQVC(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 16);
+    mem=(char *)memalloc(_MIPP_ 16);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -5136,7 +5405,12 @@ P1363_API int EC2SVDP_MQVC(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,
 
 P1363_API int EC2SP_NR(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet *S,octet *F,octet *C,octet *D)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big a,b,gx,gy,r,s,f,c,d,u,vx;
     epoint *G,*V;
     int M,aa,bb,cc,err,res=0;
@@ -5153,9 +5427,9 @@ P1363_API int EC2SP_NR(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet *S,o
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 11);
+    mem=(char *)memalloc(_MIPP_ 11);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 2);
+    mem1=(char *)ecp_memalloc(_MIPP_ 2);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -5181,7 +5455,7 @@ P1363_API int EC2SP_NR(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet *S,o
         OS2FEP(_MIPP_ &DOM->A,a);
         OS2FEP(_MIPP_ S,s);
         OS2FEP(_MIPP_ F,f);
-        if (compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (mr_compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION;
     }
     if (res==0)
     {
@@ -5232,7 +5506,12 @@ P1363_API int EC2SP_NR(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet *S,o
 
 P1363_API int EC2VP_NR(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,octet *D,octet *F)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big r,a,b,gx,gy,wx,wy,f,c,d;
     int bit,M,aa,bb,cc,err,res=0;
     epoint *G,*WP,*P;
@@ -5250,9 +5529,9 @@ P1363_API int EC2VP_NR(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,octe
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 10);
+    mem=(char *)memalloc(_MIPP_ 10);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -5277,7 +5556,7 @@ P1363_API int EC2VP_NR(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,octe
         OS2FEP(_MIPP_ &DOM->A,a);
         OS2FEP(_MIPP_ C,c);
         OS2FEP(_MIPP_ D,d);
-        if (size(c)<1 || compare(c,r)>=0 || size(d)<0 || compare(d,r)>=0) 
+        if (size(c)<1 || mr_compare(c,r)>=0 || size(d)<0 || mr_compare(d,r)>=0) 
             res=MR_P1363_INVALID;
     }
 
@@ -5326,7 +5605,12 @@ P1363_API int EC2VP_NR(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,octe
 
 P1363_API int EC2SP_DSA(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet *S,octet *F,octet *C,octet *D)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big a,b,gx,gy,r,s,f,c,d,u,vx;
     epoint *G,*V;
     int M,aa,bb,cc,err,res=0;
@@ -5343,9 +5627,9 @@ P1363_API int EC2SP_DSA(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet *S,
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 11);
+    mem=(char *)memalloc(_MIPP_ 11);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 2);
+    mem1=(char *)ecp_memalloc(_MIPP_ 2);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -5421,7 +5705,12 @@ P1363_API int EC2SP_DSA(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet *S,
 
 P1363_API int EC2VP_DSA(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,octet *D,octet *F)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big r,a,b,gx,gy,wx,wy,f,c,d,h2;
     int bit,M,aa,bb,cc,err,res=0;
     epoint *G,*WP,*P;
@@ -5439,9 +5728,9 @@ P1363_API int EC2VP_DSA(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,oct
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 11);
+    mem=(char *)memalloc(_MIPP_ 11);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -5468,7 +5757,7 @@ P1363_API int EC2VP_DSA(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,oct
         OS2FEP(_MIPP_ C,c);
         OS2FEP(_MIPP_ D,d);
         OS2FEP(_MIPP_ F,f);
-        if (size(c)<1 || compare(c,r)>=0 || size(d)<1 || compare(d,r)>=0) 
+        if (size(c)<1 || mr_compare(c,r)>=0 || size(d)<1 || mr_compare(d,r)>=0) 
             res=MR_P1363_INVALID;
     }
 
@@ -5497,7 +5786,7 @@ P1363_API int EC2VP_DSA(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,oct
             {
                 epoint2_get(_MIPP_ P,d,d);
                 divide(_MIPP_ d,r,r);
-                if (compare(d,c)!=0) res=MR_P1363_INVALID;
+                if (mr_compare(d,c)!=0) res=MR_P1363_INVALID;
             }
         }
     }
@@ -5518,8 +5807,13 @@ P1363_API int EC2VP_DSA(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,oct
 
 P1363_API int EC2PSP_NR2PV(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet *U,octet *V)
 {
-    miracl *mr_mip=mirsys(DOM->words,0);
-    big a,b,gx,gy,r,u,vx;
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
+	miracl *mr_mip=mirsys(DOM->words,0);
+#endif
+	big a,b,gx,gy,r,u,vx;
     epoint *G,*VP;
     int M,aa,bb,cc,err,res=0;
 #ifndef MR_STATIC
@@ -5535,9 +5829,9 @@ P1363_API int EC2PSP_NR2PV(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet 
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 7);
+    mem=(char *)memalloc(_MIPP_ 7);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -5593,8 +5887,13 @@ P1363_API int EC2PSP_NR2PV(BOOL (*idle)(void),ec2_domain *DOM,csprng *RNG,octet 
 
 P1363_API int EC2SP_NR2(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,octet *V,octet *F,octet *C,octet *D)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
     miracl *mr_mip=mirsys(DOM->words,0);
-    big r,u,v,s,c,d,f;
+#endif
+	big r,u,v,s,c,d,f;
     int err,res=0;
 #ifndef MR_STATIC
     char *mem;
@@ -5606,7 +5905,7 @@ P1363_API int EC2SP_NR2(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,oct
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 7);
+    mem=(char *)memalloc(_MIPP_ 7);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -5624,9 +5923,9 @@ P1363_API int EC2SP_NR2(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,oct
         OS2FEP(_MIPP_ F,f);
         OS2FEP(_MIPP_ U,u);
         OS2FEP(_MIPP_ V,v);
-        if (size(u)<1 || compare(u,r)>=0)  res=MR_P1363_BAD_ASSUMPTION;
+        if (size(u)<1 || mr_compare(u,r)>=0)  res=MR_P1363_BAD_ASSUMPTION;
         if (size(v)<1) res=MR_P1363_BAD_ASSUMPTION;  
-        if (compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION; 
+        if (mr_compare(f,r)>=0) res=MR_P1363_BAD_ASSUMPTION; 
     }
     if (res==0)
     {
@@ -5660,7 +5959,12 @@ P1363_API int EC2SP_NR2(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,oct
 
 P1363_API int EC2VP_NR2(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,octet *D,octet *F,octet *V)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
     miracl *mr_mip=mirsys(DOM->words,0);
+#endif
     big r,a,b,gx,gy,v,wx,wy,c,d,f;
     epoint *G,*WP,*P;
     BOOL compressed,valid;
@@ -5678,9 +5982,9 @@ P1363_API int EC2VP_NR2(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,oct
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 11);
+    mem=(char *)memalloc(_MIPP_ 11);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -5706,7 +6010,7 @@ P1363_API int EC2VP_NR2(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,oct
         OS2FEP(_MIPP_ &DOM->A,a);
         OS2FEP(_MIPP_ C,c);
         OS2FEP(_MIPP_ D,d);
-        if (size(c)<1 || compare(c,r)>=0 || compare(d,r)>=0) res=MR_P1363_INVALID;
+        if (size(c)<1 || mr_compare(c,r)>=0 || mr_compare(d,r)>=0) res=MR_P1363_INVALID;
     }
     if (res==0)
     {
@@ -5754,8 +6058,13 @@ P1363_API int EC2VP_NR2(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *C,oct
 
 P1363_API int EC2SP_PV(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,octet *H,octet *D)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
     miracl *mr_mip=mirsys(DOM->words,0);
-    big r,u,s,d,h;
+#endif
+	big r,u,s,d,h;
     int err,res=0;
 #ifndef MR_STATIC
     char *mem;
@@ -5767,7 +6076,7 @@ P1363_API int EC2SP_PV(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,octe
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 5);
+    mem=(char *)memalloc(_MIPP_ 5);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -5782,7 +6091,7 @@ P1363_API int EC2SP_PV(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,octe
         OS2FEP(_MIPP_ S,s);
         OS2FEP(_MIPP_ U,u);
         OS2FEP(_MIPP_ H,h);
-        if (size(u)<1 || compare(u,r)>=0)  res=MR_P1363_BAD_ASSUMPTION;
+        if (size(u)<1 || mr_compare(u,r)>=0)  res=MR_P1363_BAD_ASSUMPTION;
     }
 
     if (res==0)
@@ -5810,8 +6119,13 @@ P1363_API int EC2SP_PV(BOOL (*idle)(void),ec2_domain *DOM,octet *S,octet *U,octe
 
 P1363_API int EC2VP_PV(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *H,octet *D,octet *V)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,DOM->words,0);
+#else
     miracl *mr_mip=mirsys(DOM->words,0);
-    big r,a,b,gx,gy,v,wx,wy,d,h;
+#endif
+	big r,a,b,gx,gy,v,wx,wy,d,h;
     epoint *G,*WP,*P;
     BOOL compressed,valid;
     int bit,M,aa,bb,cc,err,res=0;
@@ -5828,9 +6142,9 @@ P1363_API int EC2VP_PV(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *H,octe
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 10);
+    mem=(char *)memalloc(_MIPP_ 10);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
-    mem1=ecp_memalloc(_MIPP_ 3);
+    mem1=(char *)ecp_memalloc(_MIPP_ 3);
     if (mem1==NULL) res=MR_P1363_OUT_OF_MEMORY; 
 #endif
     if (res==0)
@@ -5855,7 +6169,7 @@ P1363_API int EC2VP_PV(BOOL (*idle)(void),ec2_domain *DOM,octet *W,octet *H,octe
         OS2FEP(_MIPP_ &DOM->A,a);
         OS2FEP(_MIPP_ H,h);
         OS2FEP(_MIPP_ D,d);
-        if (compare(d,r)>=0) res=MR_P1363_INVALID;
+        if (mr_compare(d,r)>=0) res=MR_P1363_INVALID;
     }
     if (res==0)
     {
@@ -5923,6 +6237,9 @@ P1363_API void IF_PRIVATE_KEY_KILL(if_private_key *PRIV)
 
 P1363_API int IF_KEY_PAIR(BOOL (*idle)(void),csprng *RNG,int bits,int E,if_private_key *PRIV,if_public_key *PUB)
 { /* A16.11/A16.12 more or less */
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+#endif
     miracl *mr_mip;
     int hE,m,r,bytes,hbytes,words,err,res=0;
     big p,q,dp,dq,c,n,t,p1,q1;
@@ -5934,13 +6251,17 @@ P1363_API int IF_KEY_PAIR(BOOL (*idle)(void),csprng *RNG,int bits,int E,if_priva
     memset(mem,0,MR_BIG_RESERVE(9));
 #endif
     words=MR_ROUNDUP(bits,MIRACL);
-    mr_mip=mirsys(words,0);
+#ifdef MR_GENERIC_AND_STATIC
+	mr_mip=mirsys(&instance,words,0);
+#else
+	mr_mip=mirsys(words,0);
+#endif
     if (mr_mip==NULL) return MR_P1363_OUT_OF_MEMORY;
     mr_mip->ERCON=TRUE;
     mr_mip->NTRY=50;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 9);
+    mem=(char *)memalloc(_MIPP_ 9);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -6017,7 +6338,7 @@ P1363_API int IF_KEY_PAIR(BOOL (*idle)(void),csprng *RNG,int bits,int E,if_priva
             {
                 if (mr_mip->ERNUM) break;
                 strong_bigrand(_MIPP_ RNG,t,q);
-            } while (compare(q,c)<0);
+            } while (mr_compare(q,c)<0);
             if (remain(_MIPP_ q,2)==0) incr(_MIPP_ q,1,q);
 
             if (RW) 
@@ -6088,7 +6409,7 @@ static void private_key_op(_MIPD_ big p,big q,big dp,big dq,big c,big i,big s)
     memset(mem,0,MR_BIG_RESERVE(2));
 #endif    
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 2);
+    mem=(char *)memalloc(_MIPP_ 2);
 #endif
     jp=mirvar_mem(_MIPP_ mem,0);
     jq=mirvar_mem(_MIPP_ mem,1);
@@ -6111,8 +6432,13 @@ static void private_key_op(_MIPD_ big p,big q,big dp,big dq,big c,big i,big s)
 
 P1363_API int IFEP_RSA(BOOL (*idle)(void),if_public_key *PUB,octet *F,octet *G)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,PUB->words,0);
+#else
     miracl *mr_mip=mirsys(PUB->words,0);
-    int e,err,res=0;
+#endif
+	int e,err,res=0;
     big f,g,n;
 #ifndef MR_STATIC
     char *mem;
@@ -6124,7 +6450,7 @@ P1363_API int IFEP_RSA(BOOL (*idle)(void),if_public_key *PUB,octet *F,octet *G)
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 3);
+    mem=(char *)memalloc(_MIPP_ 3);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -6135,7 +6461,7 @@ P1363_API int IFEP_RSA(BOOL (*idle)(void),if_public_key *PUB,octet *F,octet *G)
 
         OS2FEP(_MIPP_ &PUB->N,n);
         OS2FEP(_MIPP_ F,f);
-        if (compare(f,n)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (mr_compare(f,n)>=0) res=MR_P1363_BAD_ASSUMPTION;
     }
     if (res==0)
     {    
@@ -6158,8 +6484,13 @@ P1363_API int IFEP_RSA(BOOL (*idle)(void),if_public_key *PUB,octet *F,octet *G)
 
 P1363_API int IFDP_RSA(BOOL (*idle)(void),if_private_key *PRIV,octet *G,octet *F)
 {
-    miracl *mr_mip=mirsys(PRIV->words,0);
-    int err,res=0;
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,PRIV->words,0);
+#else
+	miracl *mr_mip=mirsys(PRIV->words,0);
+#endif
+	int err,res=0;
     big f,g,p,q,dp,dq,c,n;
 #ifndef MR_STATIC
     char *mem;
@@ -6171,7 +6502,7 @@ P1363_API int IFDP_RSA(BOOL (*idle)(void),if_private_key *PRIV,octet *G,octet *F
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 8);
+    mem=(char *)memalloc(_MIPP_ 8);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -6192,7 +6523,7 @@ P1363_API int IFDP_RSA(BOOL (*idle)(void),if_private_key *PRIV,octet *G,octet *F
         OS2FEP(_MIPP_ &PRIV->C,c);
         OS2FEP(_MIPP_ G,g);
         multiply(_MIPP_ p,q,n);
-        if (compare(g,n)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (mr_compare(g,n)>=0) res=MR_P1363_BAD_ASSUMPTION;
     }
     if (res==0)
     {    
@@ -6214,8 +6545,13 @@ P1363_API int IFDP_RSA(BOOL (*idle)(void),if_private_key *PRIV,octet *G,octet *F
 
 P1363_API int IFSP_RSA1(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *S)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,PRIV->words,0);
+#else
     miracl *mr_mip=mirsys(PRIV->words,0);
-    int err,res=0;
+#endif
+	int err,res=0;
     big f,s,p,q,dp,dq,c,n;
 #ifndef MR_STATIC
     char *mem;
@@ -6227,7 +6563,7 @@ P1363_API int IFSP_RSA1(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 8);
+    mem=(char *)memalloc(_MIPP_ 8);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -6248,7 +6584,7 @@ P1363_API int IFSP_RSA1(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *
         OS2FEP(_MIPP_ &PRIV->C,c);
         OS2FEP(_MIPP_ F,f);
         multiply(_MIPP_ p,q,n);
-        if (compare(f,n)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (mr_compare(f,n)>=0) res=MR_P1363_BAD_ASSUMPTION;
     }
     if (res==0)
     {    
@@ -6270,8 +6606,13 @@ P1363_API int IFSP_RSA1(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *
 
 P1363_API int IFVP_RSA1(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,PUB->words,0);
+#else
     miracl *mr_mip=mirsys(PUB->words,0);
-    int e,err,res=0;
+#endif
+	int e,err,res=0;
     big f,s,n;
 #ifndef MR_STATIC
     char *mem;
@@ -6283,7 +6624,7 @@ P1363_API int IFVP_RSA1(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 3);
+    mem=(char *)memalloc(_MIPP_ 3);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -6294,7 +6635,7 @@ P1363_API int IFVP_RSA1(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
 
         OS2FEP(_MIPP_ &PUB->N,n);
         OS2FEP(_MIPP_ S,s);
-        if (compare(s,n)>=0) res=MR_P1363_INVALID;
+        if (mr_compare(s,n)>=0) res=MR_P1363_INVALID;
     }
     if (res==0)
     {        
@@ -6317,8 +6658,13 @@ P1363_API int IFVP_RSA1(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
 
 P1363_API int IFSP_RSA2(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *S)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,PRIV->words,0);
+#else
     miracl *mr_mip=mirsys(PRIV->words,0);
-    int err,res=0;
+#endif
+	int err,res=0;
     big f,s,p,q,dp,dq,c,n,t;
 #ifndef MR_STATIC
     char *mem;
@@ -6330,7 +6676,7 @@ P1363_API int IFSP_RSA2(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 9);
+    mem=(char *)memalloc(_MIPP_ 9);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -6353,13 +6699,13 @@ P1363_API int IFSP_RSA2(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *
         OS2FEP(_MIPP_ F,f);
         multiply(_MIPP_ p,q,n);
         if (remain(_MIPP_ f,16)!=12) res=MR_P1363_BAD_ASSUMPTION;
-        if (compare(f,n)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (mr_compare(f,n)>=0) res=MR_P1363_BAD_ASSUMPTION;
     }
     if (res==0)
     {
         private_key_op(_MIPP_ p,q,dp,dq,c,f,s);
         subtract(_MIPP_ n,s,t);
-        if (compare(s,t)>0)
+        if (mr_compare(s,t)>0)
             convert_big_octet(_MIPP_ t,S);
         else
             convert_big_octet(_MIPP_ s,S);
@@ -6379,8 +6725,13 @@ P1363_API int IFSP_RSA2(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *
 
 P1363_API int IFVP_RSA2(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,PUB->words,0);
+#else
     miracl *mr_mip=mirsys(PUB->words,0);
-    int e,err,res=0;
+#endif
+	int e,err,res=0;
     big f,s,n;
 #ifndef MR_STATIC
     char *mem;
@@ -6392,7 +6743,7 @@ P1363_API int IFVP_RSA2(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 3);
+    mem=(char *)memalloc(_MIPP_ 3);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -6405,7 +6756,7 @@ P1363_API int IFVP_RSA2(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
         OS2FEP(_MIPP_ S,s);
         decr(_MIPP_ n,1,f);
         subdiv(_MIPP_ f,2,f);
-        if (compare(s,f)>0) res=MR_P1363_INVALID;
+        if (mr_compare(s,f)>0) res=MR_P1363_INVALID;
     }
     if (res==0)
     {        
@@ -6437,8 +6788,13 @@ P1363_API int IFVP_RSA2(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
 
 P1363_API int IFSP_RW(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *S)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+	miracl *mr_mip=mirsys(&instance,PRIV->words,0);
+#else
     miracl *mr_mip=mirsys(PRIV->words,0);
-    int err,res=0;
+#endif
+	int err,res=0;
     big f,s,p,q,dp,dq,c,n,t;
 #ifndef MR_STATIC
     char *mem;
@@ -6450,7 +6806,7 @@ P1363_API int IFSP_RW(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *S)
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 9);
+    mem=(char *)memalloc(_MIPP_ 9);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -6473,7 +6829,7 @@ P1363_API int IFSP_RW(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *S)
         OS2FEP(_MIPP_ F,f);
         multiply(_MIPP_ p,q,n);
         if (remain(_MIPP_ f,16)!=12) res=MR_P1363_BAD_ASSUMPTION;
-        if (compare(f,n)>=0) res=MR_P1363_BAD_ASSUMPTION;
+        if (mr_compare(f,n)>=0) res=MR_P1363_BAD_ASSUMPTION;
     }
     if (res==0)
     {
@@ -6481,7 +6837,7 @@ P1363_API int IFSP_RW(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *S)
             subdiv(_MIPP_ f,2,f);
         private_key_op(_MIPP_ p,q,dp,dq,c,f,s);
         subtract(_MIPP_ n,s,t);
-        if (compare(s,t)>0)
+        if (mr_compare(s,t)>0)
             convert_big_octet(_MIPP_ t,S);
         else
             convert_big_octet(_MIPP_ s,S);
@@ -6502,8 +6858,13 @@ P1363_API int IFSP_RW(BOOL (*idle)(void),if_private_key *PRIV,octet *F,octet *S)
 
 P1363_API int IFVP_RW(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
 {
+#ifdef MR_GENERIC_AND_STATIC
+	miracl instance;
+    miracl *mr_mip=mirsys(&instance,PUB->words,0);
+#else
     miracl *mr_mip=mirsys(PUB->words,0);
-    int e,err,res=0;
+#endif
+	int e,err,res=0;
     big f,s,n,t1,t2;
 #ifndef MR_STATIC
     char *mem;
@@ -6515,7 +6876,7 @@ P1363_API int IFVP_RW(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
     mr_mip->ERCON=TRUE;
     set_user_function(_MIPP_ idle);
 #ifndef MR_STATIC
-    mem=memalloc(_MIPP_ 5);
+    mem=(char *)memalloc(_MIPP_ 5);
     if (mem==NULL) res=MR_P1363_OUT_OF_MEMORY;
 #endif
     if (res==0)
@@ -6530,7 +6891,7 @@ P1363_API int IFVP_RW(BOOL (*idle)(void),if_public_key *PUB,octet *S,octet *F)
         OS2FEP(_MIPP_ S,s);
         decr(_MIPP_ n,1,f);
         subdiv(_MIPP_ f,2,f);
-        if (compare(s,f)>0) res=MR_P1363_INVALID;
+        if (mr_compare(s,f)>0) res=MR_P1363_INVALID;
     }
     if (res==0)
     {        

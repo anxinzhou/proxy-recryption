@@ -1,3 +1,37 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
  *   MIRACL routines for implementation of Elliptic Curve Cryptography over GF(2^m) 
  *   mrec2m.c
@@ -21,8 +55,6 @@
  *
  *   Space can be saved by removing unneeded functions and 
  *   deleting unrequired functionality 
- *
- *   Copyright (c) 2000-2007 Shamus Software Ltd.
  */
 
 #include <stdlib.h> 
@@ -93,7 +125,7 @@ BOOL ecurve2_init(_MIPD_ int m,int a,int b,int c,big a2,big a6,BOOL check,int ty
     }
 #endif
 
-if (mr_mip->Asize==MR_TOOBIG)
+	if (mr_mip->Asize==MR_TOOBIG)
         copy(a2,mr_mip->A);
 
     if (mr_mip->Bsize==MR_TOOBIG)
@@ -241,7 +273,6 @@ BOOL epoint2_norm(_MIPD_ epoint *p)
 #ifndef MR_NO_SS
     if (mr_mip->SS)
     {
-        copy(mr_mip->w8,p->Z);
         modmult2(_MIPP_ p->X,mr_mip->w8,p->X);
         modmult2(_MIPP_ p->Y,mr_mip->w8,p->Y); 
     }
@@ -588,18 +619,31 @@ static BOOL ecurve2_padd(_MIPD_ epoint *p,epoint *pa)
         add2(mr_mip->w4,mr_mip->w8,mr_mip->w8);             /* A=y2.z1+y1.z2 */
         add2(mr_mip->w1,mr_mip->w5,mr_mip->w1);             /* B=x2.z1+x1.z2 */
 
-        if (size(mr_mip->w6)==0)
+
+		if (size(mr_mip->w1)==0)
+		{
+			if (mr_compare(mr_mip->w2,mr_mip->w8)==0)
+			{ /* point at infinity */
+                epoint2_set(_MIPP_ NULL,NULL,0,pa);
+                return TRUE;
+			}
+			else return FALSE; /* should have doubled */
+		}
+		
+/*
+        if (size(mr_mip->w8)==0) 
         {
-            if (size(mr_mip->w4)==0)
-            { /* should have doubled! */
+            if (size(mr_mip->w1)==0)
+            { 
                 return FALSE;
             }
             else
-            { /* point at infinity */
+            { 
                 epoint2_set(_MIPP_ NULL,NULL,0,pa);
                 return TRUE;
             }
         }
+*/
 
         modsquare2(_MIPP_ mr_mip->w1,pa->X);               /* X=B^2 */
         modmult2(_MIPP_ pa->X,mr_mip->w1,pa->Z);           /* Z=B^3 */
@@ -724,7 +768,7 @@ static BOOL ecurve2_padd(_MIPD_ epoint *p,epoint *pa)
         modsquare2(_MIPP_ mr_mip->w3,pa->Z);             /* z3=T^2 */
 
         modmult2(_MIPP_ pa->Z,p->X,mr_mip->w4);          /* V=z3.x1 */
-        add2(p->X,p->Y,mr_mip->w5);                /* C=x1+y1 */
+        add2(p->X,p->Y,mr_mip->w5);                      /* C=x1+y1 */
         modsquare2(_MIPP_ mr_mip->w1,pa->X);
         modsquare2(_MIPP_ mr_mip->w2,mr_mip->w2);          /* S^2 */
         add2(mr_mip->w2,mr_mip->w1,mr_mip->w2);
@@ -764,6 +808,7 @@ void epoint2_copy(epoint *a,epoint *b)
     if (a==b) return;
     copy(a->X,b->X);
     copy(a->Y,b->Y);
+
 #ifndef MR_AFFINE_ONLY
     if (a->marker==MR_EPOINT_GENERAL) copy(a->Z,b->Z);
 #endif
@@ -900,6 +945,7 @@ big ecurve2_sub(_MIPD_ epoint *p,epoint *pa)
     return r;
 }
 
+#ifndef MR_NO_ECC_MULTIADD
 #ifndef MR_STATIC
 
 void ecurve2_multi_add(_MIPD_ int m,epoint **x,epoint **w)
@@ -931,7 +977,7 @@ void ecurve2_multi_add(_MIPD_ int m,epoint **x,epoint **w)
         flag=(int *)mr_alloc(_MIPP_ m,sizeof(int));
 
         convert(_MIPP_ 1,mr_mip->w3);  /* unity */
-        mem=memalloc(_MIPP_ 3*m);
+        mem=(char *)memalloc(_MIPP_ 3*m);
 
         for (i=0;i<m;i++)
         {
@@ -1025,6 +1071,7 @@ void ecurve2_multi_add(_MIPD_ int m,epoint **x,epoint **w)
     MR_OUT
 }
 
+#endif
 #endif
 
 #ifndef MR_NOKOBLITZ
@@ -1190,19 +1237,66 @@ static int tnaf(_MIPD_ big e,big hp,big hn)
 
 #endif
 
-#ifdef MR_SMALL_EWINDOW
-#define MR_STR_SZ 5
-#define MR_WIN_SZ 4
-#else
-#define MR_STR_SZ 11
-#define MR_WIN_SZ 5
+BOOL epoint2_multi_norm(_MIPD_ int m,big *work,epoint **p)
+{ /* Normalise an array of points of length m<20 - requires a workspace array of length m */
+
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
 #endif
+ 
+#ifndef MR_AFFINE_ONLY
+    int i;
+    big w[MR_MAX_M_T_S];
+    if (mr_mip->coord==MR_AFFINE) return TRUE;
+    if (mr_mip->ERNUM) return FALSE;   
+    if (m>MR_MAX_M_T_S) return FALSE;
+
+    MR_IN(192)
+
+    for (i=0;i<m;i++)
+    {
+        if (p[i]->marker==MR_EPOINT_NORMALIZED) w[i]=mr_mip->one;
+        else w[i]=p[i]->Z;
+
+    }
+
+    if (!multi_inverse2(_MIPP_ m,w,work)) 
+    {
+       MR_OUT
+       return FALSE;
+    }
+
+    for (i=0;i<m;i++)
+    {
+        copy(mr_mip->one,p[i]->Z);
+        p[i]->marker=MR_EPOINT_NORMALIZED;
+#ifndef MR_NO_SS
+        if (mr_mip->SS)
+        {
+            modmult2(_MIPP_ p[i]->X,work[i],p[i]->X);
+            modmult2(_MIPP_ p[i]->Y,work[i],p[i]->Y); 
+        }
+        else
+        {
+#endif
+            modmult2(_MIPP_ p[i]->X,work[i],p[i]->X);    /* X/Z */
+            modmult2(_MIPP_ work[i],work[i],mr_mip->w1);
+            modmult2(_MIPP_ p[i]->Y,mr_mip->w1,p[i]->Y);    /* Y/ZZ */
+#ifndef MR_NO_SS
+        }
+#endif
+
+    }    
+    MR_OUT
+#endif
+    return TRUE;   
+}
 
 static void table_init(_MIPD_ epoint *g,epoint **table)
 { /* A precomputation option for the multiplication of a  */
   /* fixed point, would be to precalculate and normalize  */
   /* this table */
-    int i;
+    int i,n,n3,nf,nb,t;
 #ifdef MR_OS_THREADS
     miracl *mr_mip=get_mip();
 #endif
@@ -1211,57 +1305,67 @@ static void table_init(_MIPD_ epoint *g,epoint **table)
 
     if (mr_mip->KOBLITZ)
     {
-        epoint2_copy(g,table[0]);
+       epoint2_copy(g,table[0]);
+       epoint2_copy(g,table[MR_ECC_STORE_2M-1]);
+       frobenius(_MIPP_ table[MR_ECC_STORE_2M-1]);
+       frobenius(_MIPP_ table[MR_ECC_STORE_2M-1]);  
+       nf=2;
 
-        epoint2_copy(g,table[3]);
-        frobenius(_MIPP_ table[3]);
-        frobenius(_MIPP_ table[3]);             /* p=tau^2.P */
-        epoint2_copy(table[3],table[1]);
-        ecurve2_sub(_MIPP_ g,table[1]);         /* [3] = (tau^2-1).P */
-        epoint2_copy(table[3],table[2]);
-        ecurve2_add(_MIPP_ g,table[2]);         /* [5] = (tau^2+1).P */
+       for (i=1;i<MR_ECC_STORE_2M;i++)
+       {  /* Consider i expressed as NAF */
 
-#ifndef MR_SMALL_EWINDOW 
-        epoint2_copy(table[1],table[9]);  
-        frobenius(_MIPP_ table[9]);
-        frobenius(_MIPP_ table[9]);
-        epoint2_copy(table[9],table[5]); /* [11] = tau^2(tau^2-1)-1 */
-        ecurve2_sub(_MIPP_ g,table[5]);
-        epoint2_copy(table[9],table[6]); /* [13] = tau^2(tau^2-1)+1 */
-        ecurve2_add(_MIPP_ g,table[6]);
+           n=i;
+           n3=3*i+1;
+           t=n3;
+           nb=0;
+           while (t>1)
+           { /* number of bits in n3 */
+               t>>=1;
+               nb++;
+           }
+           while (nb>nf) 
+           { /* move to next power of tau */
+               frobenius(_MIPP_ table[MR_ECC_STORE_2M-1]); 
+               nf++;
+           }
 
-        epoint2_copy(table[9],table[7]);  /* [15] = tau^2(tau^2-1)+(tau^2-1) */
-        ecurve2_add(_MIPP_ table[1],table[7]);
-        epoint2_copy(table[9],table[8]);  /* [17] = tau^2(tau^2-1)+(tau^2+1) */
-        ecurve2_add(_MIPP_ table[2],table[8]);
+           n3-=(1<<nb); /* subtract MSB */
+           n=n3-n;      /* get index of previously calculated value */
 
-        epoint2_copy(table[2],table[9]);
-        frobenius(_MIPP_ table[9]);
-        frobenius(_MIPP_ table[9]);
+           if (i==MR_ECC_STORE_2M-1)
+           { /* last one.. */
+                if (n>0) ecurve2_add(_MIPP_ table[n/2],table[i]);
+                else     ecurve2_sub(_MIPP_ table[(-n)/2],table[i]);   
+           }
+           else
+           { /* mostly mixed additions... */
 
-        epoint2_copy(table[9],table[10]); /* [21] = tau^2(tau^2+1)+1 */
-        ecurve2_sub(_MIPP_ g,table[9]);
-        ecurve2_add(_MIPP_ g,table[10]);
-#endif
-        frobenius(_MIPP_ table[3]);           /* p=tau^3.P */
+                if (n>0) epoint2_copy(table[n/2],table[i]);
+                if (n<0) 
+                {
+                    epoint2_copy(table[(-n)/2],table[i]);
+                    epoint2_negate(_MIPP_ table[i]);
+                }
 
-        epoint2_copy(table[3],table[4]);
-        ecurve2_sub(_MIPP_ g,table[3]);       /* [7] = (tau^3-1).P */
-        ecurve2_add(_MIPP_ g,table[4]);
+                ecurve2_add(_MIPP_ table[MR_ECC_STORE_2M-1],table[i]);
+           }    
+       }
     }
     else
     {
 #endif
+
         epoint2_copy(g,table[0]);
-        epoint2_copy(g,table[MR_STR_SZ-1]);
-        ecurve2_double(_MIPP_ table[MR_STR_SZ-1]);
-        epoint2_norm(_MIPP_ table[MR_STR_SZ-1]); /* makes additions below faster */
-        for (i=1;i<MR_STR_SZ-1;i++)
+        epoint2_copy(g,table[MR_ECC_STORE_2M-1]);
+        ecurve2_double(_MIPP_ table[MR_ECC_STORE_2M-1]);
+
+       /* epoint2_norm(_MIPP_ table[MR_ECC_STORE_2M-1]);  makes additions below faster */
+        for (i=1;i<MR_ECC_STORE_2M-1;i++)
         {  
             epoint2_copy(table[i-1],table[i]);
-            ecurve2_add(_MIPP_ table[MR_STR_SZ-1],table[i]);
+            ecurve2_add(_MIPP_ table[MR_ECC_STORE_2M-1],table[i]);
         }
-        ecurve2_add(_MIPP_ table[MR_STR_SZ-2],table[MR_STR_SZ-1]);
+        ecurve2_add(_MIPP_ table[MR_ECC_STORE_2M-2],table[MR_ECC_STORE_2M-1]);
 
 #ifndef MR_NOKOBLITZ
     }
@@ -1295,13 +1399,21 @@ void ecurve2_mult(_MIPD_ big e,epoint *pa,epoint *pt)
 { /* pt=e*pa; */
     int i,j,n,nb,nbs,nzs;
 #ifndef MR_AFFINE_ONLY
-    int coord;
+/*    int coord;  */
+    big work[MR_ECC_STORE_2M];
 #endif
-    epoint *table[MR_STR_SZ];
+    epoint *table[MR_ECC_STORE_2M];
 #ifdef MR_STATIC
-    char mem[MR_ECP_RESERVE_A(MR_STR_SZ)];  /* Reserve space for AFFINE (x,y) only */
+    char mem[MR_ECP_RESERVE(MR_ECC_STORE_2M)];
+ /*   char mem[MR_ECP_RESERVE_A(MR_ECC_STORE_2M)];   Reserve space for AFFINE (x,y) only */
+#ifndef MR_AFFINE_ONLY
+    char mem1[MR_BIG_RESERVE(MR_ECC_STORE_2M)];
+#endif
 #else
     char *mem;
+#ifndef MR_AFFINE_ONLY
+    char *mem1;
+#endif
 #endif
 #ifndef MR_ALWAYS_BINARY
     epoint *p;
@@ -1320,7 +1432,7 @@ void ecurve2_mult(_MIPD_ big e,epoint *pa,epoint *pt)
         MR_OUT
         return;
     }
-    epoint2_norm(_MIPP_ pa);
+    epoint2_norm(_MIPP_ pa); 
     epoint2_copy(pa,pt);
 
     copy(e,mr_mip->w9);
@@ -1353,39 +1465,47 @@ void ecurve2_mult(_MIPD_ big e,epoint *pa,epoint *pt)
 #endif
 #endif
 
-/* This is a bit of a bodge to get it to allocate less space for affine coordinates */
-
-#ifndef MR_AFFINE_ONLY
-        coord=mr_mip->coord;     /* switch to AFFINE coordinates */
-        mr_mip->coord=MR_AFFINE;
-#endif
-
 #ifdef MR_STATIC
-        memset(mem,0,MR_ECP_RESERVE_A(MR_STR_SZ));
+        memset(mem,0,MR_ECP_RESERVE(MR_ECC_STORE_2M));
+    /*    memset(mem,0,MR_ECP_RESERVE_A(MR_ECC_STORE_2M)); */
+#ifndef MR_AFFINE_ONLY
+        memset(mem1,0,MR_BIG_RESERVE(MR_ECC_STORE_2M));
+#endif
 #else
-        mem=ecp_memalloc(_MIPP_ MR_STR_SZ);
+        mem=(char *)ecp_memalloc(_MIPP_ MR_ECC_STORE_2M);
+#ifndef MR_AFFINE_ONLY
+        mem1=(char *)memalloc(_MIPP_ MR_ECC_STORE_2M);
+#endif
 #endif
 
-        for (i=0;i<=MR_STR_SZ-1;i++)
+        for (i=0;i<=MR_ECC_STORE_2M-1;i++)
+		{
             table[i]=epoint_init_mem(_MIPP_ mem,i);
+#ifndef MR_AFFINE_ONLY
+            work[i]=mirvar_mem(_MIPP_ mem1,i);
+#endif
+		}
 
-        table_init(_MIPP_ pt,table);
+		table_init(_MIPP_ pt,table);
 
 #ifndef MR_AFFINE_ONLY
-        mr_mip->coord=coord;
+        epoint2_multi_norm(_MIPP_ MR_ECC_STORE_2M,work,table);
 #endif
+
         nb=logb2(_MIPP_ mr_mip->w10);
+
         if ((n=logb2(_MIPP_ mr_mip->w9))>nb)
         {
             nb=n;
             epoint2_negate(_MIPP_ pt);
         }
+        epoint2_set(_MIPP_ NULL,NULL,0,pt);
 
-        for (i=nb-2;i>=0;)
+        for (i=nb-1;i>=0;)
         { /* add/subtract */
             if (mr_mip->user!=NULL) (*mr_mip->user)();
-            n=mr_naf_window(_MIPP_ mr_mip->w9,mr_mip->w10,i,&nbs,&nzs,MR_WIN_SZ);
-
+            n=mr_naf_window(_MIPP_ mr_mip->w9,mr_mip->w10,i,&nbs,&nzs,MR_ECC_STORE_2M);
+/* printf("n= %d nbs= %d nzs= %d \n",n,nbs,nzs); */
             for (j=0;j<nbs;j++)
             {
 #ifndef MR_NOKOBLITZ
@@ -1412,20 +1532,22 @@ void ecurve2_mult(_MIPD_ big e,epoint *pa,epoint *pt)
                 i-=nzs;
             }
         }
-
+/*
 #ifndef MR_AFFINE_ONLY
-        coord=mr_mip->coord;     /* switch to AFFINE coordinates */
+        coord=mr_mip->coord;      switch to AFFINE coordinates 
         mr_mip->coord=MR_AFFINE;
 #endif
-
+*/
 #ifdef MR_STATIC
-        memset(mem,0,MR_ECP_RESERVE_A(MR_STR_SZ));
+/*        memset(mem,0,MR_ECP_RESERVE_A(MR_ECC_STORE_2M)); */
+        memset(mem,0,MR_ECP_RESERVE(MR_ECC_STORE_2M));
 #else
-        ecp_memkill(_MIPP_ mem,MR_STR_SZ);
+        ecp_memkill(_MIPP_ mem,MR_ECC_STORE_2M);
 #endif        
 
 #ifndef MR_AFFINE_ONLY
-        mr_mip->coord=coord;
+        memkill(_MIPP_ mem1,MR_ECC_STORE_2M);
+/*        mr_mip->coord=coord; */
 #endif
 
 #ifndef MR_STATIC      
@@ -1463,9 +1585,11 @@ void ecurve2_mult(_MIPD_ big e,epoint *pa,epoint *pt)
     }
 #endif
 #endif
+    epoint2_norm(_MIPP_ pt);
     MR_OUT
 }
 
+#ifndef MR_NO_ECC_MULTIADD
 #ifndef MR_STATIC
 
 void ecurve2_multn(_MIPD_ int n,big *y,epoint **x,epoint *w)
@@ -1530,7 +1654,7 @@ void ecurve2_multn(_MIPD_ int n,big *y,epoint **x,epoint *w)
 void ecurve2_mult2(_MIPD_ big e,epoint *p,big ea,epoint *pa,epoint *pt)
 { /* pt=e*p+ea*pa; */
     int e1,h1,e2,h2,n,nb;
-    epoint *p1,*p2,*ps,*pd;
+    epoint *p1,*p2,*ps[2];
 #ifdef MR_STATIC
     char mem[MR_ECP_RESERVE(4)];
 #else
@@ -1538,6 +1662,11 @@ void ecurve2_mult2(_MIPD_ big e,epoint *p,big ea,epoint *pa,epoint *pt)
 #endif
 #ifdef MR_OS_THREADS
     miracl *mr_mip=get_mip();
+#endif
+#ifndef MR_AFFINE_ONLY
+    big work[2];
+    work[0]=mr_mip->w14;
+    work[1]=mr_mip->w15;
 #endif
     if (mr_mip->ERNUM) return;
 
@@ -1552,12 +1681,12 @@ void ecurve2_mult2(_MIPD_ big e,epoint *p,big ea,epoint *pa,epoint *pt)
 #ifdef MR_STATIC
     memset(mem,0,MR_ECP_RESERVE(4));
 #else
-    mem=ecp_memalloc(_MIPP_ 4);
+    mem=(char *)ecp_memalloc(_MIPP_ 4);
 #endif
     p2=epoint_init_mem(_MIPP_ mem,0);
     p1=epoint_init_mem(_MIPP_ mem,1);
-    ps=epoint_init_mem(_MIPP_ mem,2);
-    pd=epoint_init_mem(_MIPP_ mem,3);
+    ps[0]=epoint_init_mem(_MIPP_ mem,2);
+    ps[1]=epoint_init_mem(_MIPP_ mem,3);
 
     epoint2_norm(_MIPP_ pa);
     epoint2_copy(pa,p2);
@@ -1567,9 +1696,6 @@ void ecurve2_mult2(_MIPD_ big e,epoint *p,big ea,epoint *pa,epoint *pt)
         negify(mr_mip->w9,mr_mip->w9);
         epoint2_negate(_MIPP_ p2);
     } 
-    prepare_naf(_MIPP_ mr_mip->w9,mr_mip->w10,mr_mip->w9);
-    nb=logb2(_MIPP_ mr_mip->w10);
-    if ((n=logb2(_MIPP_ mr_mip->w9))>nb) nb=n;
 
     epoint2_norm(_MIPP_ p);
     epoint2_copy(p,p1);
@@ -1579,20 +1705,36 @@ void ecurve2_mult2(_MIPD_ big e,epoint *p,big ea,epoint *pa,epoint *pt)
         negify(mr_mip->w12,mr_mip->w12);
         epoint2_negate(_MIPP_ p1);
     }
-    prepare_naf(_MIPP_ mr_mip->w12,mr_mip->w13,mr_mip->w12);
-    if ((n=logb2(_MIPP_ mr_mip->w12))>nb) nb=n;
+
+#ifdef MR_NOKOBLITZ
+    mr_jsf(_MIPP_ mr_mip->w9,mr_mip->w12,mr_mip->w10,mr_mip->w9,mr_mip->w13,mr_mip->w12);
+#else
+    if (mr_mip->KOBLITZ)
+    {
+        prepare_naf(_MIPP_ mr_mip->w9,mr_mip->w10,mr_mip->w9);
+        prepare_naf(_MIPP_ mr_mip->w12,mr_mip->w13,mr_mip->w12);
+    }
+    else
+        mr_jsf(_MIPP_ mr_mip->w9,mr_mip->w12,mr_mip->w10,mr_mip->w9,mr_mip->w13,mr_mip->w12);
+#endif
+
+    nb=logb2(_MIPP_ mr_mip->w10);
     if ((n=logb2(_MIPP_ mr_mip->w13))>nb) nb=n;
+    if ((n=logb2(_MIPP_ mr_mip->w9))>nb) nb=n;
+    if ((n=logb2(_MIPP_ mr_mip->w12))>nb) nb=n;
 
     epoint2_set(_MIPP_ NULL,NULL,0,pt);            /* pt=0 */
 
     expb2(_MIPP_ nb-1,mr_mip->w11);
 
-    epoint2_copy(p1,ps);
-    ecurve2_add(_MIPP_ p2,ps);                    /* ps=p1+p2 */
-    epoint2_copy(p1,pd);
-    ecurve2_sub(_MIPP_ p2,pd);                    /* pd=p1-p2 */
-    epoint2_norm(_MIPP_ ps);
-    epoint2_norm(_MIPP_ pd);
+    epoint2_copy(p1,ps[0]);
+    ecurve2_add(_MIPP_ p2,ps[0]);                    /* ps=p1+p2 */
+    epoint2_copy(p1,ps[1]);
+    ecurve2_sub(_MIPP_ p2,ps[1]);                    /* pd=p1-p2 */
+
+#ifndef MR_AFFINE_ONLY
+    epoint2_multi_norm(_MIPP_ 2,work,ps);
+#endif
     while (size(mr_mip->w11) > 0)
     { /* add/subtract method */
         if (mr_mip->user!=NULL) (*mr_mip->user)();
@@ -1635,13 +1777,13 @@ void ecurve2_mult2(_MIPD_ big e,epoint *p,big ea,epoint *pa,epoint *pt)
             {
                 if (h1==1)
                 {
-                    if (h2==1) ecurve2_add(_MIPP_ ps,pt);
-                    else       ecurve2_add(_MIPP_ pd,pt);
+                    if (h2==1) ecurve2_add(_MIPP_ ps[0],pt);
+                    else       ecurve2_add(_MIPP_ ps[1],pt);
                 }
                 else
                 {
-                    if (h2==1) ecurve2_sub(_MIPP_ pd,pt);
-                    else       ecurve2_sub(_MIPP_ ps,pt);
+                    if (h2==1) ecurve2_sub(_MIPP_ ps[1],pt);
+                    else       ecurve2_sub(_MIPP_ ps[0],pt);
                 }
             }
         }
@@ -1657,6 +1799,8 @@ void ecurve2_mult2(_MIPD_ big e,epoint *p,big ea,epoint *pa,epoint *pt)
 
     MR_OUT
 }
+
+#endif
 
 /*   Routines to implement comb method for fast
  *   computation of x*G mod n, for fixed G and n, using precomputation. 
@@ -1680,7 +1824,7 @@ BOOL ebrick2_init(_MIPD_ ebrick2 *B,big x,big y,big a2,big a6,int m,int a,int b,
    * window is the window size in bits and              *
    * nb is the maximum number of bits in the multiplier */
 
-    int i,j,k,t,bp,len,bptr;
+    int i,j,k,t,bp,len,bptr,is;
     epoint **table;
     epoint *w;
 
@@ -1705,7 +1849,7 @@ BOOL ebrick2_init(_MIPD_ ebrick2 *B,big x,big y,big a2,big a6,int m,int a,int b,
 
     B->window=window;
     B->max=nb;
-    table=mr_alloc(_MIPP_ (1<<window),sizeof(epoint *));
+    table=(epoint **)mr_alloc(_MIPP_ (1<<window),sizeof(epoint *));
     
     if (table==NULL)
     {
@@ -1756,7 +1900,10 @@ BOOL ebrick2_init(_MIPD_ ebrick2 *B,big x,big y,big a2,big a6,int m,int a,int b,
         for (j=0;j<k;j++)
         {
             if (i&bp)
-                ecurve2_add(_MIPP_ table[1<<j],table[i]);
+			{
+				is=(1<<j);
+                ecurve2_add(_MIPP_ table[is],table[i]);
+			}
             bp<<=1;
         }
     }
@@ -1767,7 +1914,7 @@ BOOL ebrick2_init(_MIPD_ ebrick2 *B,big x,big y,big a2,big a6,int m,int a,int b,
 
     len=MR_ROUNDUP(m,MIRACL);
     bptr=0;
-    B->table=mr_alloc(_MIPP_ 2*len*(1<<window),sizeof(mr_small));
+    B->table=(mr_small *)mr_alloc(_MIPP_ 2*len*(1<<window),sizeof(mr_small));
 
     for (i=0;i<(1<<window);i++)
     {
@@ -1794,7 +1941,7 @@ void ebrick2_end(ebrick2 *B)
 
 #else
 
-/* use precomputated table in ROM - see ebrick2.c for example of how to create the table, and ecdh*.c 
+/* use precomputated table in ROM - use romaker2.c to create the table, and ecdh2m*.c 
    for an example of use */
 
 void ebrick2_init(ebrick2 *B,const mr_small* rom,big a2,big a6,int m,int a,int b,int c,int window,int nb)
@@ -1855,7 +2002,7 @@ int mul2_brick(_MIPD_ ebrick2 *B,big e,big x,big y)
 #ifdef MR_STATIC
     memset(mem,0,MR_ECP_RESERVE(2));
 #else
-    mem=ecp_memalloc(_MIPP_ 2);
+    mem=(char *)ecp_memalloc(_MIPP_ 2);
 #endif
     w=epoint_init_mem(_MIPP_ mem,0);
     z=epoint_init_mem(_MIPP_ mem,1);

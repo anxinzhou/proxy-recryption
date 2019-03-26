@@ -1,6 +1,5 @@
 /*
  *   Program to factor numbers using brute force.
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  *
  *   Requires: big.cpp
  */

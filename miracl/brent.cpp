@@ -4,8 +4,6 @@
  *   by Richard Brent in BIT Vol. 20 1980 pp 176-184
  *
  *   Requires: big.cpp zzn.cpp
- *
- *   Copyright (c) 1988-1998 Shamus Software Ltd.
  */
 
 #include <iostream>

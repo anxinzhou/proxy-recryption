@@ -1,11 +1,45 @@
+
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
 /*
+ *
  *   MIRACL Core module - contains initialisation code and general purpose 
  *   utilities
  *   mrcore.c
  *
  *   Space can be saved by removing unneeded functions (mr_and ?) 
  *
- *   Copyright (c) 1988-2007 Shamus Software Ltd.
  */
 
 #include "miracl.h"
@@ -147,50 +181,65 @@ static const int mr_small_primes[]=
 #ifndef MR_NO_STANDARD_IO
 
 static char *names[] =
-{"your program","innum","otnum","jack","normalise",
-"multiply","divide","incr","decr","premult",
-"subdiv","fdsize","egcd","cbase",
-"cinnum","cotnum","nroot","power",
-"powmod","bigdig","bigrand","nxprime","isprime",
-"mirvar","mad","multi_inverse","putdig",
-"add","subtract","mirsys","xgcd",
-"fpack","dconv","mr_shift","mround","fmul",
-"fdiv","fadd","fsub","fcomp","fconv",
-"frecip","fpmul","fincr","","ftrunc",
-"frand","sftbit","build","logb2","expint",
-"fpower","froot","fpi","fexp","flog","fpowf",
-"ftan","fatan","fsin","fasin","fcos","facos",
-"ftanh","fatanh","fsinh","fasinh","fcosh",
-"facosh","flop","gprime","powltr","fft_mult",
-"crt_init","crt","otstr","instr","cotstr","cinstr","powmod2",
-"prepare_monty","nres","redc","nres_modmult","nres_powmod",
-"nres_moddiv","nres_powltr","divisible","remain",
-"fmodulo","nres_modadd","nres_modsub","nres_negate",
-"ecurve_init","ecurve_add","ecurve_mult",
-"epoint_init","epoint_set","epoint_get","nres_powmod2",
-"nres_sqroot","sqroot","nres_premult","ecurve_mult2",
-"ecurve_sub","trial_division","nxsafeprime","nres_lucas","lucas",
-"brick_init","pow_brick","set_user_function",
-"nres_powmodn","powmodn","ecurve_multn",
-"ebrick_init","mul_brick","epoint_norm","nres_multi_inverse","",
-"nres_dotprod","epoint_negate","ecurve_multi_add",
-"ecurve2_init","","epoint2_set","epoint2_norm","epoint2_get",
-"epoint2_comp","ecurve2_add","epoint2_negate","ecurve2_sub",
-"ecurve2_multi_add","ecurve2_mult","ecurve2_multn","ecurve2_mult2",
-"ebrick2_init","mul2_brick","prepare_basis","strong_bigrand",
-"bytes_to_big","big_to_bytes","set_io_buffer_size",
-"epoint_getxyz","epoint_double_add","nres_double_inverse",
-"double_inverse","epoint_x","hamming","expb2","bigbits",
-"nres_lazy","zzn2_imul","nres_double_modadd","nres_double_modsub",
-"zzn2_isunity","zzn2_from_int","zzn2_negate","zzn2_conj","zzn2_add",
-"zzn2_sub","zzn2_smul","zzn2_mul","zzn2_inv","zzn2_timesi","zzn2_powl",
-"zzn2_from_bigs","zzn2_from_big","zzn2_from_ints",
-"zzn2_sadd","zzn2_ssub","zzn2_times_irp","zzn2_div2"};
-/* 0 - 173 (174 in all) */
+{(char *)"your program",(char *)"innum",(char *)"otnum",(char *)"jack",(char *)"normalise",
+(char *)"multiply",(char *)"divide",(char *)"incr",(char *)"decr",(char *)"premult",
+(char *)"subdiv",(char *)"fdsize",(char *)"egcd",(char *)"cbase",
+(char *)"cinnum",(char *)"cotnum",(char *)"nroot",(char *)"power",
+(char *)"powmod",(char *)"bigdig",(char *)"bigrand",(char *)"nxprime",(char *)"isprime",
+(char *)"mirvar",(char *)"mad",(char *)"multi_inverse",(char *)"putdig",
+(char *)"add",(char *)"subtract",(char *)"mirsys",(char *)"xgcd",
+(char *)"fpack",(char *)"dconv",(char *)"mr_shift",(char *)"mround",(char *)"fmul",
+(char *)"fdiv",(char *)"fadd",(char *)"fsub",(char *)"fcomp",(char *)"fconv",
+(char *)"frecip",(char *)"fpmul",(char *)"fincr",(char *)"",(char *)"ftrunc",
+(char *)"frand",(char *)"sftbit",(char *)"build",(char *)"logb2",(char *)"expint",
+(char *)"fpower",(char *)"froot",(char *)"fpi",(char *)"fexp",(char *)"flog",(char *)"fpowf",
+(char *)"ftan",(char *)"fatan",(char *)"fsin",(char *)"fasin",(char *)"fcos",(char *)"facos",
+(char *)"ftanh",(char *)"fatanh",(char *)"fsinh",(char *)"fasinh",(char *)"fcosh",
+(char *)"facosh",(char *)"flop",(char *)"gprime",(char *)"powltr",(char *)"fft_mult",
+(char *)"crt_init",(char *)"crt",(char *)"otstr",(char *)"instr",(char *)"cotstr",(char *)"cinstr",(char *)"powmod2",
+(char *)"prepare_monty",(char *)"nres",(char *)"redc",(char *)"nres_modmult",(char *)"nres_powmod",
+(char *)"nres_moddiv",(char *)"nres_powltr",(char *)"divisible",(char *)"remain",
+(char *)"fmodulo",(char *)"nres_modadd",(char *)"nres_modsub",(char *)"nres_negate",
+(char *)"ecurve_init",(char *)"ecurve_add",(char *)"ecurve_mult",
+(char *)"epoint_init",(char *)"epoint_set",(char *)"epoint_get",(char *)"nres_powmod2",
+(char *)"nres_sqroot",(char *)"sqroot",(char *)"nres_premult",(char *)"ecurve_mult2",
+(char *)"ecurve_sub",(char *)"trial_division",(char *)"nxsafeprime",(char *)"nres_lucas",(char *)"lucas",
+(char *)"brick_init",(char *)"pow_brick",(char *)"set_user_function",
+(char *)"nres_powmodn",(char *)"powmodn",(char *)"ecurve_multn",
+(char *)"ebrick_init",(char *)"mul_brick",(char *)"epoint_norm",(char *)"nres_multi_inverse",(char *)"",
+(char *)"nres_dotprod",(char *)"epoint_negate",(char *)"ecurve_multi_add",
+(char *)"ecurve2_init",(char *)"",(char *)"epoint2_set",(char *)"epoint2_norm",(char *)"epoint2_get",
+(char *)"epoint2_comp",(char *)"ecurve2_add",(char *)"epoint2_negate",(char *)"ecurve2_sub",
+(char *)"ecurve2_multi_add",(char *)"ecurve2_mult",(char *)"ecurve2_multn",(char *)"ecurve2_mult2",
+(char *)"ebrick2_init",(char *)"mul2_brick",(char *)"prepare_basis",(char *)"strong_bigrand",
+(char *)"bytes_to_big",(char *)"big_to_bytes",(char *)"set_io_buffer_size",
+(char *)"epoint_getxyz",(char *)"epoint_double_add",(char *)"nres_double_inverse",
+(char *)"double_inverse",(char *)"epoint_x",(char *)"hamming",(char *)"expb2",(char *)"bigbits",
+(char *)"nres_lazy",(char *)"zzn2_imul",(char *)"nres_double_modadd",(char *)"nres_double_modsub",
+/*155*/(char *)"",(char *)"zzn2_from_int",(char *)"zzn2_negate",(char *)"zzn2_conj",(char *)"zzn2_add",
+(char *)"zzn2_sub",(char *)"zzn2_smul",(char *)"zzn2_mul",(char *)"zzn2_inv",(char *)"zzn2_timesi",(char *)"zzn2_powl",
+(char *)"zzn2_from_bigs",(char *)"zzn2_from_big",(char *)"zzn2_from_ints",
+(char *)"zzn2_sadd",(char *)"zzn2_ssub",(char *)"zzn2_times_irp",(char *)"zzn2_div2",
+(char *)"zzn3_from_int",(char *)"zzn3_from_ints",(char *)"zzn3_from_bigs",
+(char *)"zzn3_from_big",(char *)"zzn3_negate",(char *)"zzn3_powq",(char *)"zzn3_init",
+(char *)"zzn3_add",(char *)"zzn3_sadd",(char *)"zzn3_sub",(char *)"zzn3_ssub",(char *)"zzn3_smul",
+(char *)"zzn3_imul",(char *)"zzn3_mul",(char *)"zzn3_inv",(char *)"zzn3_div2",(char *)"zzn3_timesi",
+(char *)"epoint_multi_norm",(char *)"mr_jsf",(char *)"epoint2_multi_norm",
+(char *)"ecn2_compare",(char *)"ecn2_norm",(char *)"ecn2_set",(char *)"zzn2_txx",
+(char *)"zzn2_txd",(char *)"nres_div2",(char *)"nres_div3",(char *)"zzn2_div3",
+(char *)"ecn2_setx",(char *)"ecn2_rhs",(char *)"zzn2_qr",(char *)"zzn2_sqrt",(char *)"ecn2_add",(char *)"ecn2_mul2_jsf",(char *)"ecn2_mul",
+(char *)"nres_div5",(char *)"zzn2_div5",(char *)"zzn2_sqr",(char *)"ecn2_add_sub",(char *)"ecn2_psi",(char *)"invmodp",
+(char *)"zzn2_multi_inverse",(char *)"ecn2_multi_norm",(char *)"ecn2_precomp",(char *)"ecn2_mul4_gls_v",
+(char *)"ecn2_mul2",(char *)"ecn2_precomp_gls",(char *)"ecn2_mul2_gls",
+(char *)"ecn2_brick_init",(char *)"ecn2_mul_brick_gls",(char *)"ecn2_multn",(char *)"zzn3_timesi2",
+(char *)"nres_complex",(char *)"zzn4_from_int",(char *)"zzn4_negate",(char *)"zzn4_conj",(char *)"zzn4_add",(char *)"zzn4_sadd",(char *)"zzn4_sub",(char *)"zzn4_ssub",(char *)"zzn4_smul",(char *)"zzn4_sqr",
+(char *)"zzn4_mul",(char *)"zzn4_inv",(char *)"zzn4_div2",(char *)"zzn4_powq",(char *)"zzn4_tx",(char *)"zzn4_imul",(char *)"zzn4_lmul",(char *)"zzn4_from_big",
+(char *)"ecn2_mult4"};
+
+/* 0 - 243 (244 in all) */
 
 #endif
 #endif
-
 
 #ifdef MR_NOASM
 
@@ -304,112 +353,115 @@ if (mr_mip->ERCON)
 #ifndef MR_NO_STANDARD_IO
 
 #ifndef MR_STRIPPED_DOWN
-mputs("\nMIRACL error from routine ");
+mputs((char *)"\nMIRACL error from routine ");
 if (mr_mip->depth<MR_MAXDEPTH) mputs(names[mr_mip->trace[mr_mip->depth]]);
-else                           mputs("???");
+else                           mputs((char *)"???");
 fputc('\n',stdout);
 
 for (i=mr_mip->depth-1;i>=0;i--)
 {
-    mputs("              called from ");
+    mputs((char *)"              called from ");
     if (i<MR_MAXDEPTH) mputs(names[mr_mip->trace[i]]);
-    else               mputs("???");
+    else               mputs((char *)"???");
     fputc('\n',stdout);
 }
 
 switch (nerr)
 {
 case 1 :
-mputs("Number base too big for representation\n");
+mputs((char *)"Number base too big for representation\n");
 break;
 case 2 :
-mputs("Division by zero attempted\n");
+mputs((char *)"Division by zero attempted\n");
 break;
 case 3 : 
-mputs("Overflow - Number too big\n");
+mputs((char *)"Overflow - Number too big\n");
 break;
 case 4 :
-mputs("Internal result is negative\n");
+mputs((char *)"Internal result is negative\n");
 break;
 case 5 : 
-mputs("Input format error\n");
+mputs((char *)"Input format error\n");
 break;
 case 6 :
-mputs("Illegal number base\n");
+mputs((char *)"Illegal number base\n");
 break;
 case 7 : 
-mputs("Illegal parameter usage\n");
+mputs((char *)"Illegal parameter usage\n");
 break;
 case 8 :
-mputs("Out of space\n");
+mputs((char *)"Out of space\n");
 break;
 case 9 :
-mputs("Even root of a negative number\n");
+mputs((char *)"Even root of a negative number\n");
 break;
 case 10:
-mputs("Raising integer to negative power\n");
+mputs((char *)"Raising integer to negative power\n");
 break;
 case 11:
-mputs("Attempt to take illegal root\n");
+mputs((char *)"Attempt to take illegal root\n");
 break;
 case 12:
-mputs("Integer operation attempted on Flash number\n");
+mputs((char *)"Integer operation attempted on Flash number\n");
 break;
 case 13:
-mputs("Flash overflow\n");
+mputs((char *)"Flash overflow\n");
 break;
 case 14:
-mputs("Numbers too big\n");
+mputs((char *)"Numbers too big\n");
 break;
 case 15:
-mputs("Log of a non-positive number\n");
+mputs((char *)"Log of a non-positive number\n");
 break;
 case 16:
-mputs("Flash to double conversion failure\n");
+mputs((char *)"Flash to double conversion failure\n");
 break;
 case 17:
-mputs("I/O buffer overflow\n");
+mputs((char *)"I/O buffer overflow\n");
 break;
 case 18:
-mputs("MIRACL not initialised - no call to mirsys()\n");
+mputs((char *)"MIRACL not initialised - no call to mirsys()\n");
 break;
 case 19:
-mputs("Illegal modulus \n");
+mputs((char *)"Illegal modulus \n");
 break;
 case 20:
-mputs("No modulus defined\n");
+mputs((char *)"No modulus defined\n");
 break;
 case 21:
-mputs("Exponent too big\n");
+mputs((char *)"Exponent too big\n");
 break;
 case 22:
-mputs("Unsupported Feature - check mirdef.h\n");
+mputs((char *)"Unsupported Feature - check mirdef.h\n");
 break;
 case 23:
-mputs("Specified double length type isn't double length\n");
+mputs((char *)"Specified double length type isn't double length\n");
 break;
 case 24:
-mputs("Specified basis is NOT irreducible\n");
+mputs((char *)"Specified basis is NOT irreducible\n");
 break;
 case 25:
-mputs("Unable to control Floating-point rounding\n");
+mputs((char *)"Unable to control Floating-point rounding\n");
 break;
 case 26:
-mputs("Base must be binary (MR_ALWAYS_BINARY defined in mirdef.h ?)\n");
+mputs((char *)"Base must be binary (MR_ALWAYS_BINARY defined in mirdef.h ?)\n");
 break;
 case 27:
-mputs("No irreducible basis defined\n");
+mputs((char *)"No irreducible basis defined\n");
 break;
 case 28:
-mputs("Composite modulus\n");
+mputs((char *)"Composite modulus\n");
+break;
+case 29:
+mputs((char *)"Input/output error when reading from RNG device node\n");
 break;
 default:
-mputs("Undefined error\n");
+mputs((char *)"Undefined error\n");
 break;
 }
 exit(0);
 #else
-mputs("MIRACL error\n");
+mputs((char *)"MIRACL error\n");
 exit(0);
 #endif
 
@@ -492,7 +544,7 @@ void irand(_MIPD_ mr_unsign32 seed)
 #endif
     mr_mip->borrow=0L;
     mr_mip->rndptr=0;
-    mr_mip->ira[0]^=seed;
+    mr_mip->ira[0]=seed;
     for (i=1;i<NK;i++)
     { /* fill initialisation vector */
         in=(NV*i)%NK;
@@ -523,7 +575,7 @@ mr_small mr_shiftbits(mr_small x,int n)
 #else
     if (n==0) return x;
     if (n>0) x<<=n;
-    else x>>=n;
+    else x>>=(-n);
     return x;
 #endif
 
@@ -630,53 +682,6 @@ void zero(flash x)
     x->len=0;
 }
 
-void convert(_MIPD_ int n ,big x)
-{  /*  convert integer n to big number format  */
-    int m;
-    mr_lentype s;
-#ifdef MR_FP
-    mr_small dres;
-#endif
-#ifdef MR_OS_THREADS
-    miracl *mr_mip=get_mip();
-#endif
-    zero(x);
-    if (n==0) return;
-    s=0;
-    if (n<0)
-    {
-        s=MR_MSBIT;
-        n=(-n);
-    }
-    m=0;
-#ifndef MR_SIMPLE_BASE
-    if (mr_mip->base==0)
-    {
-#endif
-#ifndef MR_NOFULLWIDTH
-#if MR_IBITS > MIRACL
-        while (n>0)
-        {
-            x->w[m++]=(mr_small)(n%((mr_small)1<<(MIRACL)));
-            n/=((mr_small)1<<(MIRACL));
-        }
-#else
-        x->w[m++]=(mr_small)n;
-#endif
-#endif
-#ifndef MR_SIMPLE_BASE
-    }
-    else while (n>0)
-    {
-        x->w[m++]=MR_REMAIN((mr_small)n,mr_mip->base);
-        n/=mr_mip->base;
-    }
-#endif
-    x->len=(m|s);
-}
-
-#ifndef MR_STATIC
-
 void uconvert(_MIPD_ unsigned int n ,big x)
 {  /*  convert unsigned integer n to big number format  */
     int m;
@@ -710,12 +715,49 @@ void uconvert(_MIPD_ unsigned int n ,big x)
     else while (n>0)
     {
         x->w[m++]=MR_REMAIN((mr_small)n,mr_mip->base);
-        n/=mr_mip->base;
+		n=(unsigned int)((mr_small)n/mr_mip->base);
     }
 #endif
-    x->len=(m);
+    x->len=m;
 }
 
+void tconvert(_MIPD_ mr_utype n,big x)
+{
+	mr_lentype s;
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+    if (n==0) {zero(x); return;}
+    s=0;
+    if (n<0)
+    {
+        s=MR_MSBIT;
+        n=(-n);
+    }
+	x->w[0]=n;
+	x->len=1;
+    x->len|=s;
+}
+
+void convert(_MIPD_ int n ,big x)
+{  /*  convert signed integer n to big number format  */
+    mr_lentype s;
+
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+    if (n==0) {zero(x); return;}
+    s=0;
+    if (n<0)
+    {
+        s=MR_MSBIT;
+        n=(-n);
+    }
+    uconvert(_MIPP_ (unsigned int)n,x);
+    x->len|=s;
+}
+
+#ifndef MR_STATIC
 #ifdef mr_dltype
 
 void dlconv(_MIPD_ mr_dltype n,big x)
@@ -761,10 +803,9 @@ void dlconv(_MIPD_ mr_dltype n,big x)
 
 #endif
 
-void lgconv(_MIPD_ long n,big x)
-{ /* convert long integer to big number format - rarely needed */
+void ulgconv(_MIPD_ unsigned long n,big x)
+{ /* convert unsigned long integer to big number format - rarely needed */
     int m;
-    mr_lentype s;
 #ifdef MR_FP
     mr_small dres;
 #endif
@@ -773,12 +814,7 @@ void lgconv(_MIPD_ long n,big x)
 #endif
     zero(x);
     if (n==0) return;
-    s=0;
-    if (n<0)
-    {
-        s=MR_MSBIT;
-        n=(-n);
-    }
+
     m=0;
 #ifndef MR_SIMPLE_BASE
     if (mr_mip->base==0)
@@ -800,10 +836,29 @@ void lgconv(_MIPD_ long n,big x)
     else while (n>0)
     {
         x->w[m++]=MR_REMAIN(n,mr_mip->base);
-        n/=mr_mip->base;
+		n=(unsigned long)((mr_small)n/mr_mip->base);
     }
 #endif
-    x->len=(m|s);
+    x->len=m;
+}
+
+void lgconv(_MIPD_ long n,big x)
+{ /* convert signed long integer to big number format - rarely needed */
+    mr_lentype s;
+
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+    if (n==0) {zero(x); return;}
+    s=0;
+    if (n<0)
+    {
+        s=MR_MSBIT;
+        n=(-n);
+    }
+    ulgconv(_MIPP_ (unsigned long)n,x);
+
+    x->len|=s;
 }
 
 flash mirvar(_MIPD_ int iv)
@@ -954,8 +1009,6 @@ BOOL init_big_from_rom(big x,int len,const mr_small *rom,int romsize,int *romptr
     return TRUE;
 }
 
-
-
 /* Initialise an elliptic curve point from ROM */
 
 BOOL init_point_from_rom(epoint *P,int len,const mr_small *rom,int romsize,int *romptr)
@@ -966,26 +1019,30 @@ BOOL init_point_from_rom(epoint *P,int len,const mr_small *rom,int romsize,int *
     return TRUE;
 }
 
-miracl *mirsys(_MIPD_ int nd,mr_small nb)
+#ifdef MR_GENERIC_AND_STATIC
+miracl *mirsys(miracl *mr_mip,int nd,mr_small nb)
+#else
+miracl *mirsys(int nd,mr_small nb)
+#endif
 {  /*  Initialize MIRACL system to   *
     *  use numbers to base nb, and   *
     *  nd digits or (-nd) bytes long */
 
 /* In these cases mr_mip is passed as the first parameter */
 
+#ifdef MR_GENERIC_AND_STATIC
+	return mirsys_basic(mr_mip,nd,nb);
+#endif
+
 #ifdef MR_GENERIC_MT
-    return mirsys_basic(mr_mip,nd,nb);
-#else
-#ifdef MR_STATIC
+#ifndef MR_STATIC
+	miracl *mr_mip=mr_first_alloc();
     return mirsys_basic(mr_mip,nd,nb);
 #endif
 #endif
 /* In these cases mr_mip is a "global" pointer and the mip itself is allocated from the heap. 
    In fact mr_mip (and mip) may be thread specific if some multi-threading scheme is implemented */
-
-#ifndef MR_GENERIC_MT
 #ifndef MR_STATIC
-
  #ifdef MR_WINDOWS_MT
     miracl *mr_mip=mr_first_alloc();
     TlsSetValue(mr_key,mr_mip);
@@ -1007,11 +1064,12 @@ miracl *mirsys(_MIPD_ int nd,mr_small nb)
      #endif
    #endif
  #endif
-    mr_mip=get_mip();
+#endif
 
+#ifndef MR_GENERIC_MT
+    mr_mip=get_mip();
+#endif
     return mirsys_basic(mr_mip,nd,nb);
-#endif
-#endif
 }
 
 miracl *mirsys_basic(miracl *mr_mip,int nd,mr_small nb)
@@ -1019,6 +1077,7 @@ miracl *mirsys_basic(miracl *mr_mip,int nd,mr_small nb)
 #ifndef MR_NO_RAND
     int i;
 #endif
+   
     mr_small b,nw;
 #ifdef MR_FP
     mr_small dres;
@@ -1124,8 +1183,6 @@ miracl *mirsys_basic(miracl *mr_mip,int nd,mr_small nb)
     }
 #endif
 
-    mr_mip->base_mask=mr_mip->base-1;
-
 #ifdef MR_ALWAYS_BINARY
     if (mr_mip->base!=mr_mip->base2) 
     {
@@ -1157,7 +1214,7 @@ miracl *mirsys_basic(miracl *mr_mip,int nd,mr_small nb)
     }
 #endif
 
-    mr_mip->nib=(int)(nw+1);   /* add one extra word for small overflows */     
+   /* mr_mip->nib=(int)(nw+1);    add one extra word for small overflows */     
 
 #ifdef MR_FLASH
     mr_mip->workprec=mr_mip->nib;
@@ -1168,7 +1225,12 @@ miracl *mirsys_basic(miracl *mr_mip,int nd,mr_small nb)
    
 #endif
 
+#ifndef MR_DOUBLE_BIG
     mr_mip->check=ON;
+#else
+    mr_mip->check=OFF;
+#endif
+
 #ifndef MR_SIMPLE_BASE
 #ifndef MR_SIMPLE_IO
     mr_mip->IOBASE=10;   /* defaults */
@@ -1204,8 +1266,9 @@ miracl *mirsys_basic(miracl *mr_mip,int nd,mr_small nb)
 #endif
     mr_mip->qnr=0;
     mr_mip->cnr=0;
-    mr_mip->TWIST=FALSE;
+    mr_mip->TWIST=0;
     mr_mip->pmod8=0;
+	mr_mip->pmod9=0;
 
 /* quick start for rng. irand(.) should be called first before serious use.. */
 
@@ -1245,6 +1308,8 @@ miracl *mirsys_basic(miracl *mr_mip,int nd,mr_small nb)
     mr_mip->nib=(mr_mip->nib-1)/2;
 
 /* allocate memory for workspace variables */
+   
+#ifndef MR_DOUBLE_BIG
 
     mr_mip->w0=mirvar_mem(_MIPP_ mr_mip->workspace,0);  /* double length */
     mr_mip->w1=mirvar_mem(_MIPP_ mr_mip->workspace,2);
@@ -1267,16 +1332,58 @@ miracl *mirsys_basic(miracl *mr_mip,int nd,mr_small nb)
     mr_mip->pR=mirvar_mem(_MIPP_ mr_mip->workspace,22); /* double length */
     mr_mip->A=mirvar_mem(_MIPP_ mr_mip->workspace,24);
     mr_mip->B=mirvar_mem(_MIPP_ mr_mip->workspace,25);
+    mr_mip->one=mirvar_mem(_MIPP_ mr_mip->workspace,26);
 #ifdef MR_KCM
-    mr_mip->big_ndash=mirvar_mem(_MIPP_ mr_mip->workspace,26);
-    mr_mip->ws=mirvar_mem(_MIPP_ mr_mip->workspace,27);
+    mr_mip->big_ndash=mirvar_mem(_MIPP_ mr_mip->workspace,27);
+    mr_mip->ws=mirvar_mem(_MIPP_ mr_mip->workspace,28);
+    mr_mip->wt=mirvar_mem(_MIPP_ mr_mip->workspace,29); /* double length */
 #endif
 #ifdef MR_FLASH
 #ifdef MR_KCM
-    mr_mip->pi=mirvar_mem(_MIPP_ mr_mip->workspace,28);
+    mr_mip->pi=mirvar_mem(_MIPP_ mr_mip->workspace,31);
 #else
-    mr_mip->pi=mirvar_mem(_MIPP_ mr_mip->workspace,26);
+    mr_mip->pi=mirvar_mem(_MIPP_ mr_mip->workspace,27);
 #endif
+#endif
+
+#else
+/* w0-w7 are double normal length */
+    mr_mip->w0=mirvar_mem(_MIPP_ mr_mip->workspace,0);  /* quad length */
+    mr_mip->w1=mirvar_mem(_MIPP_ mr_mip->workspace,4);  /* double length */
+    mr_mip->w2=mirvar_mem(_MIPP_ mr_mip->workspace,6);
+    mr_mip->w3=mirvar_mem(_MIPP_ mr_mip->workspace,8);
+    mr_mip->w4=mirvar_mem(_MIPP_ mr_mip->workspace,10);
+    mr_mip->w5=mirvar_mem(_MIPP_ mr_mip->workspace,12);  /* quad length */
+    mr_mip->w6=mirvar_mem(_MIPP_ mr_mip->workspace,16);  /* quad length */
+    mr_mip->w7=mirvar_mem(_MIPP_ mr_mip->workspace,20);  /* quad length */
+    mr_mip->w8=mirvar_mem(_MIPP_ mr_mip->workspace,24);
+
+    mr_mip->w9=mirvar_mem(_MIPP_ mr_mip->workspace,25);
+    mr_mip->w10=mirvar_mem(_MIPP_ mr_mip->workspace,26);
+    mr_mip->w11=mirvar_mem(_MIPP_ mr_mip->workspace,27);
+    mr_mip->w12=mirvar_mem(_MIPP_ mr_mip->workspace,28);
+    mr_mip->w13=mirvar_mem(_MIPP_ mr_mip->workspace,29);
+    mr_mip->w14=mirvar_mem(_MIPP_ mr_mip->workspace,30);
+    mr_mip->w15=mirvar_mem(_MIPP_ mr_mip->workspace,31);
+    mr_mip->sru=mirvar_mem(_MIPP_ mr_mip->workspace,32);
+    mr_mip->modulus=mirvar_mem(_MIPP_ mr_mip->workspace,33);
+    mr_mip->pR=mirvar_mem(_MIPP_ mr_mip->workspace,34); /* double length */
+    mr_mip->A=mirvar_mem(_MIPP_ mr_mip->workspace,36);
+    mr_mip->B=mirvar_mem(_MIPP_ mr_mip->workspace,37);
+    mr_mip->one=mirvar_mem(_MIPP_ mr_mip->workspace,38);
+#ifdef MR_KCM
+    mr_mip->big_ndash=mirvar_mem(_MIPP_ mr_mip->workspace,39);
+    mr_mip->ws=mirvar_mem(_MIPP_ mr_mip->workspace,40);
+    mr_mip->wt=mirvar_mem(_MIPP_ mr_mip->workspace,41); /* double length */
+#endif
+#ifdef MR_FLASH
+#ifdef MR_KCM
+    mr_mip->pi=mirvar_mem(_MIPP_ mr_mip->workspace,43);
+#else
+    mr_mip->pi=mirvar_mem(_MIPP_ mr_mip->workspace,39);
+#endif
+#endif
+
 #endif
     MR_OUT
     return mr_mip;
@@ -1354,7 +1461,7 @@ void mirexit(_MIPDO_ )
 #ifndef MR_STATIC
     mr_free(mr_mip);
 #ifdef MR_WINDOWS_MT
-	TlsSetValue(mr_key, NULL);		//Thank you Thales
+	TlsSetValue(mr_key, NULL);		/* Thank you Thales */
 #endif
 #endif
 
@@ -1497,11 +1604,42 @@ void mr_and(big x,big y,big z)
 #endif
     if (ny<nx) nr=ny;
     else       nr=nx;
+
     for (i=0;i<nr;i++)
         z->w[i]=x->w[i]&y->w[i];
     for (i=nr;i<nz;i++) 
         z->w[i]=0;
     z->len=nr;
+	mr_lzero(z);
+}
+
+void mr_xor(big x,big y,big z)
+{ 
+     int i,nx,ny,nz,nr;
+     if (x==y)
+     {
+         copy(x,z);
+         return;
+     }
+
+#ifdef MR_FLASH
+     nx=mr_lent(x);
+     ny=mr_lent(y);
+     nz=mr_lent(z);
+#else
+     ny=(y->len&(MR_OBITS));
+     nx=(x->len&(MR_OBITS));
+     nz=(z->len&(MR_OBITS));
+#endif
+     if (ny<nx) nr=nx;
+     else       nr=ny;
+
+     for (i=0;i<nr;i++)
+         z->w[i]=x->w[i]^y->w[i];
+     for (i=nr;i<nz;i++)
+         z->w[i]=0;
+     z->len=nr;
+	 mr_lzero(z);
 }
 
 #endif
@@ -1756,10 +1894,40 @@ unsigned int igcd(unsigned int x,unsigned int y)
     return y;
 }
 
+unsigned long lgcd(unsigned long x,unsigned long y)
+{ /* long GCD, returns GCD of x and y */
+    unsigned long r;
+    if (y==0) return x;
+    while ((r=x%y)!=0)
+        x=y,y=r;
+    return y;
+}
+
 unsigned int isqrt(unsigned int num,unsigned int guess)
 { /* square root of an integer */
     unsigned int sqr;
     unsigned int oldguess=guess;
+    if (num==0) return 0;
+    if (num<4) return 1;
+  
+    for (;;)
+    { /* Newtons iteration */
+     /*   sqr=guess+(((num/guess)-guess)/2); */
+        sqr=((num/guess)+guess)/2;
+        if (sqr==guess || sqr==oldguess) 
+        {
+            if (sqr*sqr>num) sqr--;
+            return sqr;
+        }
+        oldguess=guess;
+        guess=sqr;
+    }
+}
+
+unsigned long mr_lsqrt(unsigned long num,unsigned long guess)
+{ /* square root of a long */
+    unsigned long sqr;
+    unsigned long oldguess=guess;
     if (num==0) return 0;
     if (num<4) return 1;
   
@@ -1810,6 +1978,16 @@ int mr_testbit(_MIPD_ big x,int n)
     if ((x->w[n/mr_mip->lg2b] & ((mr_small)1<<(n%mr_mip->lg2b))) >0) return 1;
 #endif
     return 0;
+}
+
+void mr_addbit(_MIPD_ big x,int n)
+{ /* add 2^n to positive x - where you know that bit is zero. Use with care! */
+#ifdef MR_OS_THREADS
+    miracl *mr_mip=get_mip();
+#endif
+    mr_lentype m=n/mr_mip->lg2b;
+    x->w[m]+=mr_shiftbits((mr_small)1,n%mr_mip->lg2b);
+    if (x->len<m+1) x->len=m+1;
 }
 
 int recode(_MIPD_ big e,int t,int w,int i)
@@ -1917,24 +2095,23 @@ int mr_window2(_MIPD_ big x,big y,int i,int *nbs,int *nzs)
     return r;
 }
 
-int mr_naf_window(_MIPD_ big x,big x3,int i,int *nbs,int *nzs,int window_size)
-{ /* returns sliding window value, using window of size    *
-   * window_size (typically 5)                             *
-   * starting at i-th bit of x. nbs is number of bits      *
-   * processed. nzs is number of additional trailing       *    
-   * zeros detected. x and x3 (which is 3*x) are           *
-   * combined to produce the NAF (non-adjacent form)       *
-   * So if x=11011(27) and x3 is 1010001, the LSB is       *
-   * ignored and the value 100T0T (32-4-1=27) processed,   *
-   * where T is -1. Note x.P = (3x-x)/2.P. This value will *
-   * return +7, with nbs=4 and nzs=1, having stopped after *
-   * the first 4 bits. Note in an NAF non-zero elements    *
-   * are never side by side, so 10T10T won't happen        *
-   * NOTE: return value n zero or odd, -21 <= n <= +21     */
+int mr_naf_window(_MIPD_ big x,big x3,int i,int *nbs,int *nzs,int store)
+{ /* returns sliding window value, using fractional windows   *
+   * where "store" precomputed values are precalulated and    *
+   * stored. Scanning starts at the i-th bit of  x. nbs is    *
+   * the number of bits processed. nzs is number of           *
+   * additional trailing zeros detected. x and x3 (which is   *
+   * 3*x) are combined to produce the NAF (non-adjacent       *
+   * form). So if x=11011(27) and x3 is 1010001, the LSB is   *
+   * ignored and the value 100T0T (32-4-1=27) processed,      *
+   * where T is -1. Note x.P = (3x-x)/2.P. This value will    *
+   * return +7, with nbs=4 and nzs=1, having stopped after    *
+   * the first 4 bits. If it goes too far, it must backtrack  *
+   * Note in an NAF non-zero elements are never side by side, *
+   * so 10T10T won't happen. NOTE: return value n zero or     * 
+   * odd, -21 <= n <= +21     */
 
-    int nb,j,r,w;
-    BOOL last;
-    w=window_size;
+    int nb,j,r,biggest;
 
  /* get first bit */
     nb=mr_testbit(_MIPP_ x3,i)-mr_testbit(_MIPP_ x,i);
@@ -1942,27 +2119,30 @@ int mr_naf_window(_MIPD_ big x,big x3,int i,int *nbs,int *nzs,int window_size)
     *nbs=1;
     *nzs=0;
     if (nb==0) return 0;
-    last=FALSE;
-    if (i<=w) 
-    {
-        w=i;
-        last=TRUE;
-    }
+    if (i==0) return nb;
+
+    biggest=2*store-1;
 
     if (nb>0) r=1;
     else      r=(-1);
 
-    for (j=i-1;j>i-w;j--)
-    { /* scan the bits */
+    for (j=i-1;j>0;j--)
+    {
         (*nbs)++;
         r*=2;
         nb=mr_testbit(_MIPP_ x3,j)-mr_testbit(_MIPP_ x,j);
-        if (nb==0) continue;
         if (nb>0) r+=1;
         if (nb<0) r-=1;
-           
-    } 
-    if (!last && r%2!=0) (*nzs)++;
+        if (abs(r)>biggest) break;
+    }
+
+    if (r%2!=0 && j!=0)
+    { /* backtrack */
+        if (nb>0) r=(r-1)/2;
+        if (nb<0) r=(r+1)/2;
+        (*nbs)--;
+    }
+    
     while (r%2==0)
     { /* remove trailing zeros */
         r/=2;
@@ -1984,7 +2164,7 @@ BOOL point_at_infinity(epoint *p)
 #ifndef MR_STATIC
 
 epoint* epoint_init(_MIPDO_ )
-{ /* initialise epoint to point at infinity. */
+{ /* initialise epoint to general point at infinity. */
     epoint *p;
     char *ptr;
 

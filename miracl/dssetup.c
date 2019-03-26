@@ -1,5 +1,5 @@
 /*
- *   Proposed Digital Signature Standard
+ *   Digital Signature Standard
  *
  *   See Communications ACM July 1992, Vol. 35 No. 7
  *   This new standard for digital signatures has been proposed by 
@@ -8,8 +8,6 @@
  *
  *   This program generates the common values p, q and g to a file
  *   common.dss
- *
- *   Copyright (c) 1988-2003 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -60,7 +58,7 @@ int main()
     forever 
     {
         bigrand(t,p);
-        if (compare(p,s)<=0) continue;
+        if (mr_compare(p,s)<=0) continue;
         premult(p,2,p);
         multiply(p,q,p);
         incr(p,1,p);

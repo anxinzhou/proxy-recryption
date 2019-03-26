@@ -1,10 +1,42 @@
+/***************************************************************************
+                                                                           *
+Copyright 2013 CertiVox UK Ltd.                                           *
+                                                                           *
+This file is part of CertiVox MIRACL Crypto SDK.                           *
+                                                                           *
+The CertiVox MIRACL Crypto SDK provides developers with an                 *
+extensive and efficient set of cryptographic functions.                    *
+For further information about its features and functionalities please      *
+refer to http://www.certivox.com                                           *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is free software: you can                 *
+  redistribute it and/or modify it under the terms of the                  *
+  GNU Affero General Public License as published by the                    *
+  Free Software Foundation, either version 3 of the License,               *
+  or (at your option) any later version.                                   *
+                                                                           *
+* The CertiVox MIRACL Crypto SDK is distributed in the hope                *
+  that it will be useful, but WITHOUT ANY WARRANTY; without even the       *
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
+  See the GNU Affero General Public License for more details.              *
+                                                                           *
+* You should have received a copy of the GNU Affero General Public         *
+  License along with CertiVox MIRACL Crypto SDK.                           *
+  If not, see <http://www.gnu.org/licenses/>.                              *
+                                                                           *
+You can be released from the requirements of the license by purchasing     *
+a commercial license. Buying such a license is mandatory as soon as you    *
+develop commercial activities involving the CertiVox MIRACL Crypto SDK     *
+without disclosing the source code of your own applications, or shipping   *
+the CertiVox MIRACL Crypto SDK with a closed source product.               *
+                                                                           *
+***************************************************************************/
+
 #ifndef MIRACL_H
 #define MIRACL_H
 
 /*
  *   main MIRACL header - miracl.h.
- *
- *   Copyright (c) 1988-2007 Shamus Software Ltd.
  */
 
 #include "mirdef.h"
@@ -14,7 +46,7 @@
 /* Use a smaller buffer if space is limited, don't be so wasteful! */
 
 #ifdef MR_STATIC
-#define MR_DEFAULT_BUFFER_SIZE 256
+#define MR_DEFAULT_BUFFER_SIZE 260
 #else
 #define MR_DEFAULT_BUFFER_SIZE 1024
 #endif
@@ -25,23 +57,43 @@
 #define MR_KARATSUBA 2
 #endif
 
+#ifndef MR_DOUBLE_BIG
+
 #ifdef MR_KCM
   #ifdef MR_FLASH
-    #define MR_SPACES 29
+    #define MR_SPACES 32
   #else
-    #define MR_SPACES 28
+    #define MR_SPACES 31
   #endif
 #else
   #ifdef MR_FLASH
-    #define MR_SPACES 27
+    #define MR_SPACES 28
   #else
-    #define MR_SPACES 26
+    #define MR_SPACES 27
   #endif
+#endif
+
+#else
+
+#ifdef MR_KCM
+  #ifdef MR_FLASH
+    #define MR_SPACES 44
+  #else
+    #define MR_SPACES 43
+  #endif
+#else
+  #ifdef MR_FLASH
+    #define MR_SPACES 40
+  #else
+    #define MR_SPACES 39
+  #endif
+#endif
+
 #endif
 
 /* To avoid name clashes - undefine this */
 
-#define compare mr_compare
+/* #define compare mr_compare */
 
 #ifdef MR_AVR
 #include <avr/pgmspace.h>
@@ -53,11 +105,8 @@
 
 #define MR_SL sizeof(long)
 
-
-#define MR_ESIZE_A (((sizeof(epoint)+MR_BIG_RESERVE(2))-1)/MR_SL+1)*MR_SL
-#define MR_ECP_RESERVE_A(n) ((n)*MR_ESIZE_A+MR_SL)
-
 #ifdef MR_STATIC
+
 #define MR_SIZE (((sizeof(struct bigtype)+(MR_STATIC+2)*sizeof(mr_utype))-1)/MR_SL+1)*MR_SL
 #define MR_BIG_RESERVE(n) ((n)*MR_SIZE+MR_SL)
 
@@ -67,6 +116,11 @@
 #define MR_ESIZE (((sizeof(epoint)+MR_BIG_RESERVE(3))-1)/MR_SL+1)*MR_SL
 #endif
 #define MR_ECP_RESERVE(n) ((n)*MR_ESIZE+MR_SL)
+
+#define MR_ESIZE_A (((sizeof(epoint)+MR_BIG_RESERVE(2))-1)/MR_SL+1)*MR_SL
+#define MR_ECP_RESERVE_A(n) ((n)*MR_ESIZE_A+MR_SL)
+
+
 #endif
 
 /* useful macro to convert size of big in words, to size of required structure */
@@ -106,6 +160,15 @@
 #endif
 #endif
 
+#ifdef _M_X64
+#ifdef _WIN64
+#if MIRACL==64
+#define MR_WIN64
+#include <intrin.h>
+#endif
+#endif
+#endif
+
 #ifndef MR_NO_FILE_IO
 #include <stdio.h>
 #endif
@@ -139,6 +202,7 @@
 #define MR_ERR_NOT_BINARY        26
 #define MR_ERR_NO_BASIS          27
 #define MR_ERR_COMPOSITE_MODULUS 28
+#define MR_ERR_DEV_RANDOM        29
 
                /* some useful definitions */
 
@@ -158,10 +222,23 @@
 #define PLUS 1
 #define MINUS (-1)
 
+#define M1 (MIRACL-1)
+#define M2 (MIRACL-2)
+#define M3 (MIRACL-3)
+#define M4 (MIRACL-4)
+#define TOPBIT ((mr_small)1<<M1)
+#define SECBIT ((mr_small)1<<M2)
+#define THDBIT ((mr_small)1<<M3)
+#define M8 (MIRACL-8)
+
 #define MR_MAXDEPTH 24
                               /* max routine stack depth */
 /* big and flash variables consist of an encoded length, *
  * and an array of mr_smalls containing the digits       */
+
+#ifdef MR_COUNT_OPS
+extern int fpm2,fpi2,fpc,fpa,fpx;
+#endif
 
 typedef int BOOL;
 
@@ -246,7 +323,8 @@ typedef big flash;
 
 #endif
 
-#define MR_HASH_BYTES     20
+/* Default Hash function output size in bytes */
+#define MR_HASH_BYTES     32
 
 /* Marsaglia & Zaman Random number generator */
 /*         constants      alternatives       */
@@ -321,6 +399,12 @@ mr_unsign64 w[80];
 
 typedef sha512 sha384;
 
+typedef struct {
+mr_unsign64 length;
+mr_unsign64 S[5][5];
+int rate,len;
+} sha3;
+
 #endif
 
 /* Symmetric Encryption algorithm structure */
@@ -347,6 +431,25 @@ mr_unsign32 rkey[60];
 char f[16];
 } aes;
 
+/* AES-GCM suppport. See mrgcm.c */
+
+#define GCM_ACCEPTING_HEADER 0
+#define GCM_ACCEPTING_CIPHER 1
+#define GCM_NOT_ACCEPTING_MORE 2
+#define GCM_FINISHED 3
+#define GCM_ENCRYPTING 0
+#define GCM_DECRYPTING 1
+
+typedef struct {
+mr_unsign32 table[128][4]; /* 2k bytes */
+MR_BYTE stateX[16];
+MR_BYTE Y_0[16];
+mr_unsign32 counter;
+mr_unsign32 lenA[2],lenC[2];
+int status;
+aes a;
+} gcm;
+
                /* Elliptic curve point status */
 
 #define MR_EPOINT_GENERAL    0
@@ -358,6 +461,45 @@ char f[16];
 #define MR_AFFINE     1
 #define MR_BEST       2
 #define MR_TWIST      8
+
+#define MR_OVER       0
+#define MR_ADD        1
+#define MR_DOUBLE     2
+
+/* Twist type */
+
+#define MR_QUADRATIC 2
+#define MR_CUBIC_M   0x3A
+#define MR_CUBIC_D   0x3B
+#define MR_QUARTIC_M 0x4A
+#define MR_QUARTIC_D 0x4B
+#define MR_SEXTIC_M  0x6A
+#define MR_SEXTIC_D  0x6B
+
+
+/* Fractional Sliding Windows for ECC - how much precomputation storage to use ? */
+/* Note that for variable point multiplication there is an optimal value 
+   which can be reduced if space is short. For fixed points its a matter of 
+   how much ROM is available to store precomputed points.
+   We are storing the k points (P,3P,5P,7P,...,[2k-1].P) */
+
+/* These values can be manually tuned for optimal performance... */
+
+#ifdef MR_SMALL_EWINDOW
+#define MR_ECC_STORE_N  3   /* point store for ecn  variable point multiplication */
+#define MR_ECC_STORE_2M 3   /* point store for ec2m variable point multiplication */
+#define MR_ECC_STORE_N2 3   /* point store for ecn2 variable point multiplication */
+#else
+#define MR_ECC_STORE_N  8   /* 8/9 is close to optimal for 256 bit exponents */
+#define MR_ECC_STORE_2M 9   
+#define MR_ECC_STORE_N2 8   
+#endif
+
+/*#define MR_ECC_STORE_N2_PRECOMP MR_ECC_STORE_N2 */
+                            /* Might want to make this bigger.. */
+
+/* If multi-addition is of m points, and s precomputed values are required, this is max of m*s (=4.10?) */
+#define MR_MAX_M_T_S 64
 
 /* Elliptic Curve epoint structure. Uses projective (X,Y,Z) co-ordinates */
 
@@ -417,13 +559,44 @@ typedef struct
     big b;
 } zzn2;
 
+typedef struct
+{
+    zzn2 a;
+    zzn2 b;
+    BOOL unitary;
+} zzn4;
+
+typedef struct 
+{
+    int marker;
+    zzn2 x;
+    zzn2 y;
+#ifndef MR_AFFINE_ONLY
+    zzn2 z;
+#endif
+
+} ecn2;
+
+typedef struct
+{
+    big a;
+    big b;
+    big c;
+} zzn3;
+
+typedef struct
+{
+	zzn2 a;
+	zzn2 b;
+	zzn2 c;
+} zzn6_3x2;
+
 /* main MIRACL instance structure */
 
 /* ------------------------------------------------------------------------*/
 
 typedef struct {
 mr_small base;       /* number base     */
-mr_small base_mask;
 mr_small apbase;     /* apparent base   */
 int   pack;          /* packing density */
 int   lg2b;          /* bits in base    */
@@ -507,10 +680,11 @@ big w5,w6,w7;
 big w8,w9,w10,w11;
 big w12,w13,w14,w15;
 big sru;
+big one;
 
 #ifdef MR_KCM
 big big_ndash;
-big ws;
+big ws,wt;
 #endif
 
 big A,B;
@@ -523,10 +697,11 @@ int  IOBSIZ;       /* size of i/o buffer */
 BOOL ERCON;        /* error control   */
 int  ERNUM;        /* last error code */
 int  NTRY;         /* no. of tries for probablistic primality testing   */
-#ifndef MR_SIMPLE_BASE
 #ifndef MR_SIMPLE_IO
-int  IOBASE;       /* base for input and output */
 int  INPLEN;       /* input length               */
+#ifndef MR_SIMPLE_BASE
+int  IOBASE;       /* base for input and output */
+
 #endif
 #endif
 #ifdef MR_FLASH
@@ -575,11 +750,12 @@ char *workspace;
 char workspace[MR_BIG_RESERVE(MR_SPACES)];
 #endif
 
-BOOL TWIST; /* set to twisted curve */
+int TWIST; /* set to twisted curve */
 int qnr;    /* a QNR -1 for p=3 mod 4, -2 for p=5 mod 8, 0 otherwise */
 int cnr;    /* a cubic non-residue */
 int pmod8;
-
+int pmod9;
+BOOL NO_CARRY;
 } miracl;
 
 /* ------------------------------------------------------------------------*/
@@ -609,6 +785,10 @@ extern miracl *mr_mip;  /* pointer to MIRACL's only global variable */
 #endif
 
 #ifdef MR_GENERIC_MT
+
+#ifdef MR_STATIC
+#define MR_GENERIC_AND_STATIC
+#endif
 
 #define _MIPT_  miracl *,
 #define _MIPTO_ miracl *
@@ -660,6 +840,7 @@ extern mr_small mr_sdiv(_MIPT_ big,mr_small,mr_large,big);
 #else
 extern mr_small mr_sdiv(_MIPT_ big,mr_small,big);
 extern void mr_and(big,big,big);
+extern void mr_xor(big,big,big);
 #endif
 extern void  mr_shift(_MIPT_ big,int,big); 
 extern miracl *mr_first_alloc(void);
@@ -668,6 +849,7 @@ extern void  mr_free(void *);
 extern void  set_user_function(_MIPT_ BOOL (*)(void));
 extern void  set_io_buffer_size(_MIPT_ int);
 extern int   mr_testbit(_MIPT_ big,int);
+extern void  mr_addbit(_MIPT_ big,int);
 extern int   recode(_MIPT_ big ,int ,int ,int );
 extern int   mr_window(_MIPT_ big,int,int *,int *,int);
 extern int   mr_window2(_MIPT_ big,big,int,int *,int *);
@@ -697,14 +879,18 @@ extern epoint* epoint_init_mem_variable(_MIPT_ char *,int,int);
 /* Group 1 - General purpose, I/O and basic arithmetic routines  */
 
 extern unsigned int   igcd(unsigned int,unsigned int); 
+extern unsigned long  lgcd(unsigned long,unsigned long); 
 extern mr_small sgcd(mr_small,mr_small);
 extern unsigned int   isqrt(unsigned int,unsigned int);
+extern unsigned long  mr_lsqrt(unsigned long,unsigned long);
 extern void  irand(_MIPT_ mr_unsign32);
 extern mr_small brand(_MIPTO_ );       
 extern void  zero(flash);
 extern void  convert(_MIPT_ int,big);
 extern void  uconvert(_MIPT_ unsigned int,big);
 extern void  lgconv(_MIPT_ long,big);
+extern void  ulgconv(_MIPT_ unsigned long,big);
+extern void  tconvert(_MIPT_ mr_utype,big);
 
 #ifdef mr_dltype
 extern void  dlconv(_MIPT_ mr_dltype,big);
@@ -719,7 +905,11 @@ extern void  mr_init_threading(void);
 extern void  mr_end_threading(void);
 extern miracl *get_mip(void );
 extern void  set_mip(miracl *);
-extern miracl *mirsys(_MIPT_ int,mr_small);
+#ifdef MR_GENERIC_AND_STATIC
+extern miracl *mirsys(miracl *,int,mr_small);
+#else
+extern miracl *mirsys(int,mr_small);
+#endif
 extern miracl *mirsys_basic(miracl *,int,mr_small);
 extern void  mirexit(_MIPTO_ );
 extern int   exsign(flash);
@@ -740,7 +930,7 @@ extern void  premult(_MIPT_ big,int,big);
 extern int   subdiv(_MIPT_ big,int,big);  
 extern BOOL  subdivisible(_MIPT_ big,int);
 extern int   remain(_MIPT_ big,int);   
-extern void  bytes_to_big(_MIPT_ int,char *,big);
+extern void  bytes_to_big(_MIPT_ int,const char *,big);
 extern int   big_to_bytes(_MIPT_ int,big,char *,BOOL);
 extern mr_small normalise(_MIPT_ big,big);
 extern void  multiply(_MIPT_ big,big,big);
@@ -781,6 +971,7 @@ extern void  gprime(_MIPT_ int);
 extern int   jack(_MIPT_ big,big);
 extern int   egcd(_MIPT_ big,big,big);
 extern int   xgcd(_MIPT_ big,big,big,big,big);
+extern int   invmodp(_MIPT_ big,big,big);
 extern int   logb2(_MIPT_ big);
 extern int   hamming(_MIPT_ big);
 extern void  expb2(_MIPT_ int,big);
@@ -839,9 +1030,10 @@ extern void  nres(_MIPT_ big,big);
 extern void  redc(_MIPT_ big,big);        
 
 extern void  nres_negate(_MIPT_ big,big);
-extern void  nres_modadd(_MIPT_ big,big,big);    
+extern void  nres_modadd(_MIPT_ big,big,big);  
 extern void  nres_modsub(_MIPT_ big,big,big); 
 extern void  nres_lazy(_MIPT_ big,big,big,big,big,big);
+extern void  nres_complex(_MIPT_ big,big,big,big);
 extern void  nres_double_modadd(_MIPT_ big,big,big);    
 extern void  nres_double_modsub(_MIPT_ big,big,big); 
 extern void  nres_premult(_MIPT_ big,int,big);
@@ -856,6 +1048,9 @@ extern BOOL  nres_sqroot(_MIPT_ big,big);
 extern void  nres_lucas(_MIPT_ big,big,big,big);
 extern BOOL  nres_double_inverse(_MIPT_ big,big,big,big);
 extern BOOL  nres_multi_inverse(_MIPT_ int,big *,big *);
+extern void  nres_div2(_MIPT_ big,big);
+extern void  nres_div3(_MIPT_ big,big);
+extern void  nres_div5(_MIPT_ big,big);
 
 extern void  shs_init(sha *);
 extern void  shs_process(sha *,int);
@@ -875,14 +1070,28 @@ extern void  shs384_init(sha384 *);
 extern void  shs384_process(sha384 *,int);
 extern void  shs384_hash(sha384 *,char *);
 
+extern void  sha3_init(sha3 *,int);
+extern void  sha3_process(sha3 *,int);
+extern void  sha3_hash(sha3 *,char *);
+
 #endif
 
 extern BOOL  aes_init(aes *,int,int,char *,char *);
 extern void  aes_getreg(aes *,char *);
+extern void  aes_ecb_encrypt(aes *,MR_BYTE *);
+extern void  aes_ecb_decrypt(aes *,MR_BYTE *);
 extern mr_unsign32 aes_encrypt(aes *,char *);
 extern mr_unsign32 aes_decrypt(aes *,char *);
 extern void  aes_reset(aes *,int,char *);
 extern void  aes_end(aes *);
+
+extern void  gcm_init(gcm *,int,char *,int,char *);
+extern BOOL  gcm_add_header(gcm *,char *,int);
+extern BOOL  gcm_add_cipher(gcm *,int,char *,int,char *);
+extern void  gcm_finish(gcm *,char *);
+
+extern void FPE_encrypt(int ,aes *,mr_unsign32 ,mr_unsign32 ,char *,int);
+extern void FPE_decrypt(int ,aes *,mr_unsign32 ,mr_unsign32 ,char *,int);
 
 extern void  strong_init(csprng *,int,char *,mr_unsign32);   
 extern int   strong_rng(csprng *);
@@ -892,14 +1101,18 @@ extern void  strong_kill(csprng *);
 
 /* special modular multipliers */
 
-extern void  comba_mult(_MIPT_ big,big,big);
-extern void  comba_square(_MIPT_ big,big);
+extern void  comba_mult(big,big,big);
+extern void  comba_square(big,big);
 extern void  comba_redc(_MIPT_ big,big);
-extern void  comba_add(_MIPT_ big,big,big);
-extern void  comba_sub(_MIPT_ big,big,big);
-extern void  comba_double_add(_MIPT_ big,big,big);
-extern void  comba_double_sub(_MIPT_ big,big,big);
+extern void  comba_modadd(_MIPT_ big,big,big);
+extern void  comba_modsub(_MIPT_ big,big,big);
+extern void  comba_double_modadd(_MIPT_ big,big,big);
+extern void  comba_double_modsub(_MIPT_ big,big,big);
 extern void  comba_negate(_MIPT_ big,big);
+extern void  comba_add(big,big,big);
+extern void  comba_sub(big,big,big);
+extern void  comba_double_add(big,big,big);
+extern void  comba_double_sub(big,big,big);
 
 extern void  comba_mult2(_MIPT_ big,big,big);
 
@@ -918,13 +1131,15 @@ extern BOOL  kcm_top(_MIPT_ int,big,big,big);
 
 extern BOOL point_at_infinity(epoint *);
 
+extern void mr_jsf(_MIPT_ big,big,big,big,big,big);
+
 extern void ecurve_init(_MIPT_ big,big,big,int);
-extern big  ecurve_add(_MIPT_ epoint *,epoint *);
-extern big  ecurve_sub(_MIPT_ epoint *,epoint *);
+extern int  ecurve_add(_MIPT_ epoint *,epoint *);
+extern int  ecurve_sub(_MIPT_ epoint *,epoint *);
 extern void ecurve_double_add(_MIPT_ epoint *,epoint *,epoint *,epoint *,big *,big *);
 extern void ecurve_multi_add(_MIPT_ int,epoint **,epoint **);
 extern void ecurve_double(_MIPT_ epoint*);
-extern void ecurve_mult(_MIPT_ big,epoint *,epoint *);
+extern int  ecurve_mult(_MIPT_ big,epoint *,epoint *);
 extern void ecurve_mult2(_MIPT_ big,epoint *,big,epoint *,epoint *);
 extern void ecurve_multn(_MIPT_ int,big *,epoint**,epoint *);
 
@@ -932,7 +1147,8 @@ extern BOOL epoint_x(_MIPT_ big);
 extern BOOL epoint_set(_MIPT_ big,big,int,epoint*);
 extern int  epoint_get(_MIPT_ epoint*,big,big);
 extern void epoint_getxyz(_MIPT_ epoint *,big,big,big);
-extern int  epoint_norm(_MIPT_ epoint *);
+extern BOOL epoint_norm(_MIPT_ epoint *);
+extern BOOL epoint_multi_norm(_MIPT_ int,big *,epoint **);  
 extern void epoint_free(epoint *);
 extern void epoint_copy(epoint *,epoint *);
 extern BOOL epoint_comp(_MIPT_ epoint *,epoint *);
@@ -995,6 +1211,7 @@ extern void zzn2_add(_MIPT_ zzn2 *,zzn2 *,zzn2 *);
 extern void zzn2_sub(_MIPT_ zzn2 *,zzn2 *,zzn2 *);
 extern void zzn2_smul(_MIPT_ zzn2 *,big,zzn2 *);
 extern void zzn2_mul(_MIPT_ zzn2 *,zzn2 *,zzn2 *);
+extern void zzn2_sqr(_MIPT_ zzn2 *,zzn2 *);
 extern void zzn2_inv(_MIPT_ zzn2 *);
 extern void zzn2_timesi(_MIPT_ zzn2 *);
 extern void zzn2_powl(_MIPT_ zzn2 *,big,zzn2 *);
@@ -1005,9 +1222,119 @@ extern void zzn2_from_big(_MIPT_ big, zzn2 *);
 extern void zzn2_sadd(_MIPT_ zzn2 *,big,zzn2 *);
 extern void zzn2_ssub(_MIPT_ zzn2 *,big,zzn2 *);
 extern void zzn2_div2(_MIPT_ zzn2 *);
+extern void zzn2_div3(_MIPT_ zzn2 *);
+extern void zzn2_div5(_MIPT_ zzn2 *);
 extern void zzn2_imul(_MIPT_ zzn2 *,int,zzn2 *);
 extern BOOL zzn2_compare(zzn2 *,zzn2 *);
+extern void zzn2_txx(_MIPT_ zzn2 *);
+extern void zzn2_txd(_MIPT_ zzn2 *);
+extern BOOL zzn2_sqrt(_MIPT_ zzn2 *,zzn2 *);
+extern BOOL zzn2_qr(_MIPT_ zzn2 *);
+extern BOOL zzn2_multi_inverse(_MIPT_ int,zzn2 *,zzn2 *);
 
+
+/* zzn3 stuff */
+
+extern void zzn3_set(_MIPT_ int,big);
+extern BOOL zzn3_iszero(zzn3 *);
+extern BOOL zzn3_isunity(_MIPT_ zzn3 *);
+extern void zzn3_from_int(_MIPT_ int,zzn3 *);
+extern void zzn3_from_ints(_MIPT_ int,int,int,zzn3 *);
+extern void zzn3_copy(zzn3 *,zzn3 *);
+extern void zzn3_zero(zzn3 *);
+extern void zzn3_negate(_MIPT_ zzn3 *,zzn3 *);
+extern void zzn3_powq(_MIPT_ zzn3 *,zzn3 *);
+extern void zzn3_add(_MIPT_ zzn3 *,zzn3 *,zzn3 *);
+extern void zzn3_sub(_MIPT_ zzn3 *,zzn3 *,zzn3 *);
+extern void zzn3_smul(_MIPT_ zzn3 *,big,zzn3 *);
+extern void zzn3_mul(_MIPT_ zzn3 *,zzn3 *,zzn3 *);
+extern void zzn3_inv(_MIPT_ zzn3 *);
+extern void zzn3_timesi(_MIPT_ zzn3 *);
+extern void zzn3_timesi2(_MIPT_ zzn3 *);
+extern void zzn3_powl(_MIPT_ zzn3 *,big,zzn3 *);
+extern void zzn3_from_zzns(big,big,big,zzn3 *);
+extern void zzn3_from_bigs(_MIPT_ big,big,big,zzn3 *);
+extern void zzn3_from_zzn(big,zzn3 *);
+extern void zzn3_from_zzn_1(big,zzn3 *);
+extern void zzn3_from_zzn_2(big,zzn3 *);
+extern void zzn3_from_big(_MIPT_ big, zzn3 *);
+extern void zzn3_sadd(_MIPT_ zzn3 *,big,zzn3 *);
+extern void zzn3_ssub(_MIPT_ zzn3 *,big,zzn3 *);
+extern void zzn3_div2(_MIPT_ zzn3 *);
+extern void zzn3_imul(_MIPT_ zzn3 *,int,zzn3 *);
+extern BOOL zzn3_compare(zzn3 *,zzn3 *);
+
+/* zzn4 stuff */
+
+extern BOOL zzn4_iszero(zzn4 *);
+extern BOOL zzn4_isunity(_MIPT_ zzn4 *);
+extern void zzn4_from_int(_MIPT_ int,zzn4 *);
+extern void zzn4_copy(zzn4 *,zzn4 *);
+extern void zzn4_zero(zzn4 *);
+extern void zzn4_negate(_MIPT_ zzn4 *,zzn4 *);
+extern void zzn4_powq(_MIPT_ zzn2 *,zzn4 *);
+extern void zzn4_add(_MIPT_ zzn4 *,zzn4 *,zzn4 *);
+extern void zzn4_sub(_MIPT_ zzn4 *,zzn4 *,zzn4 *);
+extern void zzn4_smul(_MIPT_ zzn4 *,zzn2 *,zzn4 *);
+extern void zzn4_sqr(_MIPT_ zzn4 *,zzn4 *);
+extern void zzn4_mul(_MIPT_ zzn4 *,zzn4 *,zzn4 *);
+extern void zzn4_inv(_MIPT_ zzn4 *);
+extern void zzn4_timesi(_MIPT_ zzn4 *);
+extern void zzn4_tx(_MIPT_ zzn4 *);
+extern void zzn4_from_zzn2s(zzn2 *,zzn2 *,zzn4 *);
+extern void zzn4_from_zzn2(zzn2 *,zzn4 *);
+extern void zzn4_from_zzn2h(zzn2 *,zzn4 *);
+extern void zzn4_from_zzn(big,zzn4 *);
+extern void zzn4_from_big(_MIPT_ big , zzn4 *);
+extern void zzn4_sadd(_MIPT_ zzn4 *,zzn2 *,zzn4 *);
+extern void zzn4_ssub(_MIPT_ zzn4 *,zzn2 *,zzn4 *);
+extern void zzn4_div2(_MIPT_ zzn4 *);
+extern void zzn4_conj(_MIPT_ zzn4 *,zzn4 *);
+extern void zzn4_imul(_MIPT_ zzn4 *,int,zzn4 *);
+extern void zzn4_lmul(_MIPT_ zzn4 *,big,zzn4 *);
+extern BOOL zzn4_compare(zzn4 *,zzn4 *);
+
+/* ecn2 stuff */
+
+extern BOOL ecn2_iszero(ecn2 *);
+extern void ecn2_copy(ecn2 *,ecn2 *);
+extern void ecn2_zero(ecn2 *);
+extern BOOL ecn2_compare(_MIPT_ ecn2 *,ecn2 *);
+extern void ecn2_norm(_MIPT_ ecn2 *);
+extern void ecn2_get(_MIPT_ ecn2 *,zzn2 *,zzn2 *,zzn2 *);
+extern void ecn2_getxy(ecn2 *,zzn2 *,zzn2 *);
+extern void ecn2_getx(ecn2 *,zzn2 *);
+extern void ecn2_getz(_MIPT_ ecn2 *,zzn2 *);
+extern void ecn2_rhs(_MIPT_ zzn2 *,zzn2 *);
+extern BOOL ecn2_set(_MIPT_ zzn2 *,zzn2 *,ecn2 *);
+extern BOOL ecn2_setx(_MIPT_ zzn2 *,ecn2 *);
+extern void ecn2_setxyz(_MIPT_ zzn2 *,zzn2 *,zzn2 *,ecn2 *);
+extern void ecn2_negate(_MIPT_ ecn2 *,ecn2 *);
+extern BOOL ecn2_add3(_MIPT_ ecn2 *,ecn2 *,zzn2 *,zzn2 *,zzn2 *);
+extern BOOL ecn2_add2(_MIPT_ ecn2 *,ecn2 *,zzn2 *,zzn2 *);
+extern BOOL ecn2_add1(_MIPT_ ecn2 *,ecn2 *,zzn2 *);
+extern BOOL ecn2_add(_MIPT_ ecn2 *,ecn2 *);
+extern BOOL ecn2_sub(_MIPT_ ecn2 *,ecn2 *);
+extern BOOL ecn2_add_sub(_MIPT_ ecn2 *,ecn2 *,ecn2 *,ecn2 *);
+extern int ecn2_mul2_jsf(_MIPT_ big,ecn2 *,big,ecn2 *,ecn2 *);
+extern int ecn2_mul(_MIPT_ big,ecn2 *);
+extern void ecn2_psi(_MIPT_ zzn2 *,ecn2 *);
+extern BOOL ecn2_multi_norm(_MIPT_ int ,zzn2 *,ecn2 *);
+extern int ecn2_mul4_gls_v(_MIPT_ big *,int,ecn2 *,big *,ecn2 *,zzn2 *,ecn2 *);
+extern int ecn2_muln_engine(_MIPT_ int,int,int,int,big *,big *,big *,big *,ecn2 *,ecn2 *,ecn2 *);
+extern void ecn2_precomp_gls(_MIPT_ int,BOOL,ecn2 *,zzn2 *,ecn2 *);
+extern int ecn2_mul2_gls(_MIPT_ big *,ecn2 *,zzn2 *,ecn2 *);
+extern void ecn2_precomp(_MIPT_ int,BOOL,ecn2 *,ecn2 *);
+extern int ecn2_mul2(_MIPT_ big,int,ecn2 *,big,ecn2 *,ecn2 *);
+#ifndef MR_STATIC
+extern BOOL ecn2_brick_init(_MIPT_ ebrick *,zzn2 *,zzn2 *,big,big,big,int,int);
+extern void ecn2_brick_end(ebrick *);
+#else
+extern void ebrick_init(ebrick *,const mr_small *,big,big,big,int,int);
+#endif
+extern void ecn2_mul_brick_gls(_MIPT_ ebrick *B,big *,zzn2 *,zzn2 *,zzn2 *);
+extern void ecn2_multn(_MIPT_ int,big *,ecn2 *,ecn2 *);
+extern void ecn2_mult4(_MIPT_ big *,ecn2 *,ecn2 *);
 /* Group 3 - Floating-slash routines      */
 
 #ifdef MR_FLASH
@@ -1097,13 +1424,20 @@ first two of the above.
 
 #ifndef MR_NOASM
 
+/* Win64 - inline the time critical function */
+#ifndef MR_NO_INTRINSICS
+	#ifdef MR_WIN64
+		#define muldvd(a,b,c,rp) (*(rp)=_umul128((a),(b),&(tm)),*(rp)+=(c),tm+=(*(rp)<(c)),tm)
+		#define muldvd2(a,b,c,rp) (tr=_umul128((a),(b),&(tm)),tr+=(*(c)),tm+=(tr<(*(c))),tr+=(*(rp)),tm+=(tr<(*(rp))),*(rp)=tr,*(c)=tm)
+	#endif
+
 /* Itanium - inline the time-critical functions */
 
     #ifdef MR_ITANIUM
         #define muldvd(a,b,c,rp)  (tm=_m64_xmahu((a),(b),(c)),*(rp)=_m64_xmalu((a),(b),(c)),tm)
         #define muldvd2(a,b,c,rp) (tm=_m64_xmalu((a),(b),(*(c))),*(c)=_m64_xmahu((a),(b),(*(c))),tm+=*(rp),*(c)+=(tm<*(rp)),*(rp)=tm)
     #endif
-
+#endif
 /*
 
 SSE2 code. Works as for itanium - but in fact it is slower than the regular code so not recommended

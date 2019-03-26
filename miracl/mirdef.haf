@@ -6,8 +6,6 @@
  *   See mrmuldv.any for details.
  *   This mode of operation is not recommended.
  *
- *         
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #define MIRACL 16

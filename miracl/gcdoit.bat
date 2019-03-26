@@ -45,13 +45,20 @@ gcc -c -O2 mrfast.c
 gcc -c -O2 mrshs.c
 gcc -c -O2 mrshs256.c
 gcc -c -O2 mrshs512.c
+gcc -c -O2 mrsha3.c
+gcc -c -O2 mrfpe.c
 gcc -c -O2 mraes.c
+gcc -c -O2 mrgcm.c
 gcc -c -O2 mrlucas.c
 gcc -c -O2 mrzzn2.c
+gcc -c -O2 mrzzn2b.c
+gcc -c -O2 mrzzn3.c
+gcc -c -O2 mrzzn4.c
 gcc -c -O2 mrstrong.c
 gcc -c -O2 mrbrick.c
 gcc -c -O2 mrebrick.c
 gcc -c -O2 mrec2m.c
+gcc -c -O2 mrecn2.c
 gcc -c -O2 mrgf2m.c
 gcc -c -O2 mrflash.c
 gcc -c -O2 mrfrnd.c
@@ -67,16 +74,15 @@ as mrmuldv.gpp -o mrmuldv.o
 
 rem gcc -c -O2 -fomit-frame-pointer mrcomba.c
 
-ar rc miracl.a mrcore.o mrarth0.o mrarth1.o mrarth2.o mralloc.o mrsmall.o
-ar r  miracl.a mrio1.o mrio2.o mrjack.o mrgcd.o mrxgcd.o mrarth3.o mrbits.o mrzzn2.o
+ar rc miracl.a mrcore.o mrarth0.o mrarth1.o mrarth2.o mralloc.o mrsmall.o mrgcm.o mrfpe.o mrsha3.o
+ar r  miracl.a mrio1.o mrio2.o mrjack.o mrgcd.o mrxgcd.o mrarth3.o mrbits.o mrzzn2.o mrzzn3.o mrzzn4.o
 ar r  miracl.a mrrand.o mrprime.o mrcrt.o mrscrt.o mrmonty.o mrcurve.o mrpower.o mrsroot.o
-ar r  miracl.a mrfast.o mrshs.o mraes.o mrlucas.o mrstrong.o mrbrick.o 
-ar r  miracl.a mrshs256.o mrshs512.o mrmuldv.o mrebrick.o mrgf2m.o mrec2m.o
+ar r  miracl.a mrfast.o mrshs.o mraes.o mrlucas.o mrstrong.o mrbrick.o mrecn2.o
+ar r  miracl.a mrshs256.o mrshs512.o mrmuldv.o mrebrick.o mrgf2m.o mrec2m.o mrzzn2b.o
 ar r  miracl.a mrdouble.o mrround.o mrbuild.o mrflsh1.o mrpi.o mrflsh2.o mrflsh3.o mrflsh4.o mrflash.o mrfrnd.o
 
 del mr*.o
 gpp  -c -O2 big.cpp
-gpp  -c -O2 crt.cpp
 gpp  -c -O2 zzn.cpp
 gpp  -c -O2 ecn.cpp
 gpp  -c -O2 ec2.cpp

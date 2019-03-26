@@ -1,7 +1,8 @@
 //
-// cl /O2 /GX findbase.cpp gf2m.cpp big.cpp ms32.lib
+// cl /O2 /GX findbase.cpp gf2m.cpp big.cpp miracl.lib
 //
 // program to find "best" irreducible polynomial for GF(2^m)
+// See http://eprint.iacr.org/2007/192
 // cl /O2 /GX findbase.cpp gf2m.cpp big.cpp miracl.lib
 // To generate the code for the reduction in a form for inclusion in 
 // mrgf2m.c, function reduce2(.) use the irp.cpp utility
@@ -43,8 +44,14 @@ Miracl precision=100;
 
 /* Pentium Costs MIRACL = 32 */
 
-int ls[32]={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
-int rs[32]={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+//int ls[32]={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+//int rs[32]={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+
+
+/* x86-64 Costs MIRACL=64 */
+
+int ls[64]={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+int rs[64]={0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 
 
 /* ARM Costs MIRACL = 32 */

@@ -8,7 +8,6 @@
  *
  *   Requires: big.cpp
  *
- *   Copyright (c) 1988-2006 Shamus Software Ltd.
  */
 
 #include <iostream>

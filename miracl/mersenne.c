@@ -4,7 +4,6 @@
  *
  *   Try this only in a 32-bit (or better!) environment
  *
- *   Copyright (c) 1988-1997 Shamus Software Ltd.
  */
 
 #include <stdio.h>
@@ -62,7 +61,7 @@ int main()
             add(L,T,L);
             sftbit(T,q,T);
             subtract(L,T,L);
-            if (compare(L,m)>=0) subtract(L,m,L);
+            if (mr_compare(L,m)>=0) subtract(L,m,L);
         }
         if (size(L)==0)
         { /* mersenne prime found! */
