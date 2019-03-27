@@ -1,22 +1,36 @@
 # proxy-recryption
 
-For more infomation, check here [http://spar.isi.jhu.edu/~mgreen/prl/](http://spar.isi.jhu.edu/~mgreen/prl/)
+A C version base on library [PBC](https://crypto.stanford.edu/pbc/)
 
+A go version with C Wrapper.
 
-## run
+# usage
 
-**!!!For linux only**
+## For C version
 
-```bash
-cd PRE-Library-master/src
+1. Install GMP [https://gmplib.org/](https://gmplib.org/), A big number library
+
+2. Install [PBC](https://crypto.stanford.edu/pbc/). A curve and pairing library
+
+3. Under folder C.  
+
 ```
-```bash
-make all
+make
 ```
-After Make, a dynamic library libproxy.so will be located in current folder.
 
-Run following for test and example
+4. Test 
+
 ```
-./proxylib_test
+./proxy
 ```
+
+## For Go wrapper
+
+Follow example under folder Go. You can see how to used the compiled `so` and header file to use the c version in GO.
+
+GMP header file is located in `/usr/local/include`. PBC header file is located in `/usr/local/include/pbc`.  `proxy.h` is also required (under this project folder `C/`)
+
+
+
+# ! This is only for experiment use.
 
