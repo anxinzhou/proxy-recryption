@@ -1,5 +1,10 @@
 # proxy-recryption
 
+Realization for *Temporary Unidirectional Proxy Re-encryption* in [Improved Proxy Re-Encryption Schemes with Applications to
+Secure Distributed Storage](https://eprint.iacr.org/2005/028.pdf)
+
+
+
 A C version base on library [PBC](https://crypto.stanford.edu/pbc/)
 
 A go version with C Wrapper.
