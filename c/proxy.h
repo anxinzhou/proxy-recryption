@@ -3,7 +3,6 @@
 #include <pbc.h>
 #include <pbc_test.h>
 #include <string.h>
-#endif
 
 // init curve 
 void init();
@@ -44,3 +43,6 @@ void dec_recryption(unsigned char * message_buffer, unsigned char * share1_buffe
 
 // quick test for recryption scheme;
 void proxy_encryption_test();
+
+
+#endif
